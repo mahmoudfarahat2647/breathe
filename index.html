@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<title>Breathe — Triangle Breathing Exercise</title>
+<style>
+  /* ============================================================
+     DESIGN TOKENS
+     ============================================================ */
+  :root{
+    --bg-base:        #0a0e1a;
+    --bg-base-2:      #0d1220;
+    --blob-inhale:    #38bdf8;
+    --blob-hold:      #a78bfa;
+    --blob-exhale:    #fb923c;
+
+    --ink-100:        #f3f6fb;
+    --ink-300:        #b7c0d1;
+    --ink-500:        #8891a3;
+    --ink-700:        #545e73;
+
+    --panel-bg:       rgba(255,255,255,0.045);
+    --panel-border:   rgba(255,255,255,0.09);
+    --panel-bg-strong:rgba(255,255,255,0.07);
+
+    --triangle-idle:  rgba(255,255,255,0.14);
+    --triangle-base:  rgba(255,255,255,0.07);
+
+    --phase-inhale:   #7dd3fc;
+    --phase-hold:     #c4b5fd;
+    --phase-exhale:   #fdba74;
+    --phase-current:  #7dd3fc;
+
+    --danger:         #f87171;
+
+    --font-display: ui-serif, "Iowan Old Style", "Palatino Linotype", "Georgia", serif;
+    --font-label:   ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+    --font-arabic:  "Segoe UI", Tahoma, "Geeza Pro", "Noto Naskh Arabic", "Arial", sans-serif;
+
+    --ease-breath: cubic-bezier(.37,.01,.63,1);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0;
+    width:100%; height:100%;
+    overflow-x:hidden;
+    background:var(--bg-base);
+    color:var(--ink-100);
+    font-family:var(--font-label);
+    -webkit-tap-highlight-color:transparent;
+  }
+  body{
+    min-height:100vh;
+    min-height:100dvh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    isolation:isolate;
+  }
+
+  /* ============================================================
+     AMBIENT BACKGROUND — soft blobs that tint gently with phase
+     ============================================================ */
+  .ambient{
+    position:fixed; inset:0;
+    z-index:-1;
+    overflow:hidden;
+    background:
+      radial-gradient(circle at 50% 8%, var(--bg-base-2), var(--bg-base) 55%);
+  }
+  .ambient .blob{
+    position:absolute;
+    width:60vmax; height:60vmax;
+    border-radius:50%;
+    filter:blur(90px);
+    opacity:.16;
+    transition:opacity 1.6s var(--ease-breath), background 1.6s var(--ease-breath);
+    will-change:transform;
+  }
+  .ambient .blob.b1{
+    top:-22vmax; left:-16vmax;
+    background:var(--blob-inhale);
+    animation:driftA 26s ease-in-out infinite;
+  }
+  .ambient .blob.b2{
+    bottom:-24vmax; right:-14vmax;
+    background:var(--blob-hold);
+    animation:driftB 32s ease-in-out infinite;
+  }
+  .ambient .blob.b3{
+    bottom:-20vmax; left:8vmax;
+    background:var(--blob-exhale);
+    opacity:.10;
+    animation:driftC 30s ease-in-out infinite;
+  }
+  body.phase-inhale .ambient .blob.b1{ opacity:.24; }
+  body.phase-hold   .ambient .blob.b2{ opacity:.22; }
+  body.phase-exhale .ambient .blob.b3{ opacity:.20; }
+
+  @keyframes driftA{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(4vmax,3vmax) scale(1.08); }
+  }
+  @keyframes driftB{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(-3vmax,-4vmax) scale(1.06); }
+  }
+  @keyframes driftC{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(2vmax,-3vmax) scale(1.05); }
+  }
+
+  /* ============================================================
+     HEADER — tiny, quiet wordmark
+     ============================================================ */
+  .app-header{
+    display:flex;
+    align-items:center;
+    gap:.55em;
+    padding:clamp(14px,3vh,26px) clamp(16px,4vw,32px) 0;
+    color:var(--ink-500);
+    font-size:.78rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    user-select:none;
+  }
+  .app-header .dot{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--phase-current);
+    transition:background .6s var(--ease-breath);
+    box-shadow:0 0 8px var(--phase-current);
+  }
+  .app-header .ar{
+    font-family:var(--font-arabic);
+    letter-spacing:0;
+    color:var(--ink-700);
+  }
+
+  /* ============================================================
+     STAGE — the triangle lives here
+     ============================================================ */
+  .stage{
+    flex:1 1 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    padding:clamp(8px,2vh,20px) clamp(12px,4vw,20px);
+    min-height:0;
+  }
+
+  .triangle-wrap{
+    position:relative;
+    width:min(84vw, 62vh, 560px);
+    aspect-ratio:400 / 366;
+    filter:drop-shadow(0 30px 60px rgba(0,0,0,.45));
+  }
+
+  svg.triangle-svg{
+    width:100%; height:100%;
+    display:block;
+    overflow:visible;
+  }
+
+  .triangle-base{
+    fill:none;
+    stroke:var(--triangle-base);
+    stroke-width:2;
+    stroke-linejoin:round;
+  }
+
+  .triangle-side{
+    fill:none;
+    stroke-width:7;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-dasharray:1;
+    transition:stroke .5s var(--ease-breath), filter .5s var(--ease-breath);
+  }
+  .triangle-side.pending{
+    stroke:var(--triangle-idle);
+    filter:none;
+  }
+  .triangle-side.completed{
+    stroke: color-mix(in srgb, var(--phase-current) 55%, transparent);
+    filter:none;
+  }
+  .triangle-side.active{
+    stroke:var(--phase-current);
+    filter:
+      drop-shadow(0 0 6px var(--phase-current))
+      drop-shadow(0 0 22px var(--phase-current));
+  }
+  #side-inhale.active{ --phase-current:var(--phase-inhale); }
+  #side-hold.active{ --phase-current:var(--phase-hold); }
+  #side-exhale.active{ --phase-current:var(--phase-exhale); }
+
+  .progress-dot{
+    fill:#fff;
+    filter:drop-shadow(0 0 6px var(--phase-current)) drop-shadow(0 0 14px var(--phase-current));
+    opacity:1;
+    transition:opacity .35s ease;
+  }
+  svg.triangle-svg.idle .progress-dot{ opacity:0; }
+
+  /* ============================================================
+     TRIANGLE CONTENT — phase label / countdown, overlaid
+     ============================================================ */
+  .triangle-content{
+    position:absolute;
+    left:50%; top:61%;
+    transform:translate(-50%,-50%);
+    width:56%;
+    max-width:340px;
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:clamp(2px,.6vmin,6px);
+    pointer-events:none;
+  }
+
+  .phase-en{
+    font-family:var(--font-label);
+    font-weight:600;
+    font-size:clamp(.78rem, 2.1vmin, 1.05rem);
+    letter-spacing:.32em;
+    text-transform:uppercase;
+    color:var(--ink-300);
+    transition:color .5s var(--ease-breath);
+  }
+  .phase-ar{
+    font-family:var(--font-arabic);
+    font-size:clamp(1rem, 3vmin, 1.5rem);
+    color:var(--ink-500);
+    line-height:1;
+  }
+  .countdown{
+    font-family:var(--font-display);
+    font-weight:500;
+    font-size:clamp(3.6rem, 13vmin, 8rem);
+    line-height:1;
+    color:var(--ink-100);
+    font-variant-numeric:tabular-nums;
+    margin:.05em 0;
+    letter-spacing:-.02em;
+  }
+  .duration-hint{
+    font-family:var(--font-label);
+    font-size:clamp(.68rem, 1.7vmin, .85rem);
+    color:var(--ink-700);
+    letter-spacing:.06em;
+  }
+
+  @keyframes phasePulse{
+    0%{ transform:scale(.93); opacity:.55; }
+    55%{ transform:scale(1.035); }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .triangle-content.pulse .phase-en,
+  .triangle-content.pulse .phase-ar{
+    animation:phasePulse .55s var(--ease-breath);
+  }
+
+  /* ============================================================
+     CONTROL DECK
+     ============================================================ */
+  .control-deck{
+    flex:0 0 auto;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:clamp(10px,1.6vh,16px);
+    padding:0 clamp(14px,4vw,28px) clamp(16px,3vh,26px);
+  }
+
+  .panel{
+    width:100%;
+    max-width:640px;
+    background:var(--panel-bg);
+    border:1px solid var(--panel-border);
+    border-radius:18px;
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    padding:clamp(12px,2vh,16px) clamp(14px,2.5vw,20px);
+  }
+
+  /* transport row */
+  .transport-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .btn{
+    font-family:var(--font-label);
+    font-size:.92rem;
+    font-weight:600;
+    letter-spacing:.04em;
+    border-radius:999px;
+    border:1px solid transparent;
+    padding:.78em 1.7em;
+    cursor:pointer;
+    touch-action:manipulation;
+    transition:transform .15s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn:active{ transform:scale(.96); }
+  .btn-primary{
+    background:linear-gradient(135deg, var(--phase-inhale), #38bdf8);
+    color:#04121c;
+    min-width:112px;
+  }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-secondary{
+    background:transparent;
+    border-color:var(--panel-border);
+    color:var(--ink-300);
+  }
+  .btn-secondary:hover{ background:rgba(255,255,255,.06); color:var(--ink-100); }
+  .btn:focus-visible, .step-btn:focus-visible, .switch-input:focus-visible + .switch{
+    outline:2px solid #7dd3fc;
+    outline-offset:3px;
+  }
+
+  .stats-row{
+    display:flex;
+    justify-content:center;
+    gap:clamp(20px,6vw,48px);
+    margin-top:12px;
+  }
+  .stat{ text-align:center; }
+  .stat-label{
+    display:block;
+    font-size:.66rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-700);
+    margin-bottom:2px;
+  }
+  .stat-value{
+    font-family:var(--font-display);
+    font-size:1.25rem;
+    color:var(--ink-100);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* durations panel */
+  .durations{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 22px;
+    justify-content:center;
+  }
+  .duration-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:150px;
+    justify-content:space-between;
+    flex:1 1 150px;
+  }
+  .duration-label{
+    display:flex;
+    flex-direction:column;
+    line-height:1.2;
+    font-size:.82rem;
+    color:var(--ink-300);
+  }
+  .duration-label .ar{
+    font-family:var(--font-arabic);
+    font-size:.78rem;
+    color:var(--ink-700);
+  }
+  .stepper{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .step-btn{
+    width:30px; height:30px;
+    border-radius:50%;
+    border:1px solid var(--panel-border);
+    background:rgba(255,255,255,.04);
+    color:var(--ink-100);
+    font-size:1rem;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    touch-action:manipulation;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .step-btn:hover{ background:rgba(255,255,255,.1); }
+  .step-btn:active{ transform:scale(.9); }
+  .step-value{
+    min-width:2.6em;
+    text-align:center;
+    font-variant-numeric:tabular-nums;
+    font-size:.9rem;
+    color:var(--ink-100);
+  }
+
+  .default-row{
+    width:100%;
+    display:flex;
+    justify-content:center;
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px solid var(--panel-border);
+  }
+  .btn-ghost{
+    background:rgba(125,211,252,.08);
+    border:1px solid rgba(125,211,252,.28);
+    color:var(--phase-inhale);
+    font-size:.82rem;
+    padding:.62em 1.3em;
+  }
+  .btn-ghost:hover{ background:rgba(125,211,252,.15); }
+  .default-hint{
+    width:100%;
+    text-align:center;
+    font-size:.72rem;
+    line-height:1.4;
+    color:var(--ink-700);
+    margin:8px 0 0;
+  }
+
+  /* sound row */
+  .aux-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:22px;
+  }
+  .switch-field{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    cursor:pointer;
+    user-select:none;
+    font-size:.85rem;
+    color:var(--ink-300);
+  }
+  .switch-input{
+    position:absolute;
+    opacity:0;
+    width:1px; height:1px;
+  }
+  .switch{
+    position:relative;
+    width:42px; height:24px;
+    border-radius:999px;
+    background:rgba(255,255,255,.12);
+    border:1px solid var(--panel-border);
+    transition:background .2s ease;
+    flex:0 0 auto;
+  }
+  .switch::after{
+    content:"";
+    position:absolute;
+    top:2px; left:2px;
+    width:18px; height:18px;
+    border-radius:50%;
+    background:var(--ink-100);
+    transition:transform .2s ease;
+  }
+  .switch-input:checked + .switch{
+    background:linear-gradient(135deg, var(--phase-inhale), #38bdf8);
+  }
+  .switch-input:checked + .switch::after{
+    transform:translateX(18px);
+  }
+
+  /* screen-reader only */
+  .sr-only{
+    position:absolute;
+    width:1px; height:1px;
+    padding:0; margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+  }
+
+  /* ============================================================
+     RESPONSIVE
+     ============================================================ */
+  @media (max-width:480px){
+    .transport-row{ gap:10px; }
+    .btn{ padding:.72em 1.3em; font-size:.86rem; }
+    .stats-row{ gap:26px; }
+    .duration-row{ min-width:120px; }
+  }
+  @media (max-height:640px){
+    .app-header{ padding-top:8px; }
+    .triangle-wrap{ width:min(78vw, 46vh, 480px); }
+  }
+
+  /* ============================================================
+     REDUCED MOTION
+     ============================================================ */
+  @media (prefers-reduced-motion: reduce){
+    .ambient .blob{ animation:none !important; }
+    .triangle-content.pulse .phase-en,
+    .triangle-content.pulse .phase-ar{ animation:none !important; }
+    .btn, .step-btn{ transition:none !important; }
+    .triangle-side{ transition:stroke .01s linear, filter .01s linear; }
+  }
+</style>
+</head>
+<body class="phase-inhale">
+
+  <div class="ambient" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+
+  <header class="app-header">
+    <span class="dot" aria-hidden="true"></span>
+    <span>Breathe</span>
+    <span class="ar">تنفّس</span>
+  </header>
+
+  <main class="stage">
+    <div class="triangle-wrap">
+      <svg class="triangle-svg idle" id="triangleSvg" viewBox="0 0 400 366" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">
+        <path class="triangle-base" d="M200,39 L365,325 L35,325 Z" />
+        <path id="side-inhale" class="triangle-side pending" data-phase="inhale" pathLength="1" d="M35,325 L200,39" />
+        <path id="side-hold"   class="triangle-side pending" data-phase="hold"   pathLength="1" d="M200,39 L365,325" />
+        <path id="side-exhale" class="triangle-side pending" data-phase="exhale" pathLength="1" d="M365,325 L35,325" />
+        <circle id="progressDot" class="progress-dot" r="7" cx="35" cy="325"></circle>
+      </svg>
+
+      <div class="triangle-content" id="triangleContent">
+        <span class="phase-en" id="phaseEn">INHALE</span>
+        <span class="phase-ar" id="phaseAr" lang="ar" dir="rtl">شهيق</span>
+        <span class="countdown" id="countdown">4</span>
+        <span class="duration-hint" id="durationHint">4 seconds</span>
+      </div>
+    </div>
+  </main>
+
+  <div class="sr-only" aria-live="polite" id="announcer"></div>
+
+  <section class="control-deck" aria-label="Breathing exercise controls">
+
+    <div class="panel">
+      <div class="transport-row">
+        <button id="startBtn" class="btn btn-primary" type="button">Start</button>
+        <button id="pauseBtn" class="btn btn-primary" type="button" hidden>Pause</button>
+        <button id="resetBtn" class="btn btn-secondary" type="button">Reset</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat">
+          <span class="stat-label">Cycle</span>
+          <span class="stat-value" id="cycleCount">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Elapsed</span>
+          <span class="stat-value" id="elapsedTime">00:00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel durations" aria-label="Phase durations">
+      <div class="duration-row">
+        <span class="duration-label">Inhale <span class="ar" lang="ar" dir="rtl">شهيق</span></span>
+        <div class="stepper">
+          <button class="step-btn" type="button" data-phase="inhale" data-dir="-1" aria-label="Decrease inhale duration">−</button>
+          <span class="step-value" id="inhaleValue">4s</span>
+          <button class="step-btn" type="button" data-phase="inhale" data-dir="1" aria-label="Increase inhale duration">+</button>
+        </div>
+      </div>
+      <div class="duration-row">
+        <span class="duration-label">Hold <span class="ar" lang="ar" dir="rtl">حبس</span></span>
+        <div class="stepper">
+          <button class="step-btn" type="button" data-phase="hold" data-dir="-1" aria-label="Decrease hold duration">−</button>
+          <span class="step-value" id="holdValue">4s</span>
+          <button class="step-btn" type="button" data-phase="hold" data-dir="1" aria-label="Increase hold duration">+</button>
+        </div>
+      </div>
+      <div class="duration-row">
+        <span class="duration-label">Exhale <span class="ar" lang="ar" dir="rtl">زفير</span></span>
+        <div class="stepper">
+          <button class="step-btn" type="button" data-phase="exhale" data-dir="-1" aria-label="Decrease exhale duration">−</button>
+          <span class="step-value" id="exhaleValue">6s</span>
+          <button class="step-btn" type="button" data-phase="exhale" data-dir="1" aria-label="Increase exhale duration">+</button>
+        </div>
+      </div>
+
+      <div class="default-row">
+        <button id="defaultBtn" class="btn btn-ghost" type="button">Reset to Recommended (4-4-6)</button>
+      </div>
+      <p class="default-hint">A commonly recommended calming pattern — inhale 4s, hold 4s, exhale 6s. The longer exhale helps activate the body's relaxation response. Not medical advice.</p>
+    </div>
+
+    <div class="panel aux-row">
+      <label class="switch-field" for="soundToggle">
+        <input type="checkbox" id="soundToggle" class="switch-input" />
+        <span class="switch" aria-hidden="true"></span>
+        Sound
+      </label>
+    </div>
+
+  </section>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     CONFIG / STATE
+     ============================================================ */
+  var PHASES = ["inhale", "hold", "exhale"];
+  var PHASE_META = {
+    inhale: { en:"INHALE", ar:"شهيق", min:2, max:15 },
+    hold:   { en:"HOLD",   ar:"حبس",  min:1, max:15 },
+    exhale: { en:"EXHALE", ar:"زفير", min:2, max:15 }
+  };
+  // start/end vertex coordinates for each triangle side, matching the SVG "d" paths
+  var SIDE_COORDS = {
+    inhale: { x1:35,  y1:325, x2:200, y2:39  },
+    hold:   { x1:200, y1:39,  x2:365, y2:325 },
+    exhale: { x1:365, y1:325, x2:35,  y2:325 }
+  };
+
+  var durations = { inhale:4, hold:4, exhale:6 };
+  var DEFAULT_DURATIONS = { inhale:4, hold:4, exhale:6 }; // commonly recommended calming pattern (longer exhale)
+
+  var state = "idle";           // 'idle' | 'running' | 'paused'
+  var currentPhaseIndex = 0;
+  var currentDuration = durations.inhale;
+  var phaseElapsed = 0;         // seconds into current phase
+  var totalElapsed = 0;         // seconds since this session started
+  var cycleCount = 0;
+
+  var lastFrameTime = null;
+  var rafId = null;
+  var soundEnabled = false;
+  var audioCtx = null;
+
+  /* ============================================================
+     DOM REFERENCES
+     ============================================================ */
+  var el = {
+    body: document.body,
+    svg: document.getElementById("triangleSvg"),
+    sides: {
+      inhale: document.getElementById("side-inhale"),
+      hold:   document.getElementById("side-hold"),
+      exhale: document.getElementById("side-exhale")
+    },
+    dot: document.getElementById("progressDot"),
+    content: document.getElementById("triangleContent"),
+    phaseEn: document.getElementById("phaseEn"),
+    phaseAr: document.getElementById("phaseAr"),
+    countdown: document.getElementById("countdown"),
+    durationHint: document.getElementById("durationHint"),
+    startBtn: document.getElementById("startBtn"),
+    pauseBtn: document.getElementById("pauseBtn"),
+    resetBtn: document.getElementById("resetBtn"),
+    cycleCount: document.getElementById("cycleCount"),
+    elapsedTime: document.getElementById("elapsedTime"),
+    soundToggle: document.getElementById("soundToggle"),
+    announcer: document.getElementById("announcer"),
+    inhaleValue: document.getElementById("inhaleValue"),
+    holdValue: document.getElementById("holdValue"),
+    exhaleValue: document.getElementById("exhaleValue")
+  };
+
+  var valueEls = { inhale: el.inhaleValue, hold: el.holdValue, exhale: el.exhaleValue };
+
+  /* ============================================================
+     AUDIO — subtle generated tones via Web Audio API
+     ============================================================ */
+  function ensureAudioContext(){
+    if (!audioCtx){
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) audioCtx = new Ctx();
+    }
+    if (audioCtx && audioCtx.state === "suspended"){
+      audioCtx.resume();
+    }
+  }
+
+  function playTone(freqStart, freqEnd, duration, delay){
+    if (!soundEnabled || !audioCtx) return;
+    var t0 = audioCtx.currentTime + (delay || 0);
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freqStart, t0);
+    osc.frequency.linearRampToValueAtTime(freqEnd, t0 + duration);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(0.14, t0 + Math.min(0.06, duration * 0.3));
+    gain.gain.linearRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.05);
+  }
+
+  function playPhaseSound(phase){
+    if (!soundEnabled) return;
+    if (phase === "inhale"){
+      playTone(220, 440, 0.5, 0);
+    } else if (phase === "hold"){
+      playTone(392, 392, 0.16, 0);
+      playTone(392, 392, 0.16, 0.22);
+    } else if (phase === "exhale"){
+      playTone(440, 180, 0.7, 0);
+    }
+  }
+
+  /* ============================================================
+     PHASE / VISUAL HELPERS
+     ============================================================ */
+  function applySideClasses(){
+    for (var i = 0; i < PHASES.length; i++){
+      var phase = PHASES[i];
+      var sideEl = el.sides[phase];
+      sideEl.classList.remove("active", "completed", "pending");
+      if (i < currentPhaseIndex){
+        sideEl.classList.add("completed");
+        sideEl.style.strokeDashoffset = "0";
+      } else if (i === currentPhaseIndex){
+        sideEl.classList.add("active");
+        sideEl.style.strokeDashoffset = "1";
+      } else {
+        sideEl.classList.add("pending");
+        sideEl.style.strokeDashoffset = "1";
+      }
+    }
+  }
+
+  function updatePhaseLabels(phase){
+    var meta = PHASE_META[phase];
+    el.phaseEn.textContent = meta.en;
+    el.phaseAr.textContent = meta.ar;
+    el.durationHint.textContent = currentDuration + (currentDuration === 1 ? " second" : " seconds");
+    el.body.classList.remove("phase-inhale", "phase-hold", "phase-exhale");
+    el.body.classList.add("phase-" + phase);
+  }
+
+  function triggerPulse(){
+    el.content.classList.remove("pulse");
+    // force reflow so the animation can restart
+    void el.content.offsetWidth;
+    el.content.classList.add("pulse");
+  }
+
+  function announcePhase(phase){
+    var meta = PHASE_META[phase];
+    el.announcer.textContent = meta.en + ". " + currentDuration + " seconds.";
+  }
+
+  /* ============================================================
+     CORE STATE MACHINE
+     ============================================================ */
+  function nextPhase(isCycleStart){
+    if (isCycleStart){
+      currentPhaseIndex = 0;
+      cycleCount += 1;
+    } else {
+      currentPhaseIndex = (currentPhaseIndex + 1) % PHASES.length;
+      if (currentPhaseIndex === 0){
+        cycleCount += 1;
+      }
+    }
+    var phase = PHASES[currentPhaseIndex];
+    phaseElapsed = 0;
+    currentDuration = durations[phase];
+
+    applySideClasses();
+    updatePhaseLabels(phase);
+    triggerPulse();
+    playPhaseSound(phase);
+    announcePhase(phase);
+    el.cycleCount.textContent = String(cycleCount);
+  }
+
+  function updateTimer(){
+    var phase = PHASES[currentPhaseIndex];
+    var remaining = Math.max(0, currentDuration - phaseElapsed);
+    var displayValue = Math.max(1, Math.ceil(remaining - 0.0001));
+    if (remaining <= 0.0001) displayValue = 0;
+    el.countdown.textContent = String(displayValue);
+
+    var mins = Math.floor(totalElapsed / 60);
+    var secs = Math.floor(totalElapsed % 60);
+    el.elapsedTime.textContent =
+      (mins < 10 ? "0" + mins : mins) + ":" + (secs < 10 ? "0" + secs : secs);
+  }
+
+  function updateTriangleAnimation(){
+    var phase = PHASES[currentPhaseIndex];
+    var progress = currentDuration > 0 ? Math.min(1, phaseElapsed / currentDuration) : 1;
+    var activeSide = el.sides[phase];
+    activeSide.style.strokeDashoffset = String(1 - progress);
+
+    var coords = SIDE_COORDS[phase];
+    var x = coords.x1 + (coords.x2 - coords.x1) * progress;
+    var y = coords.y1 + (coords.y2 - coords.y1) * progress;
+    el.dot.setAttribute("cx", x.toFixed(2));
+    el.dot.setAttribute("cy", y.toFixed(2));
+  }
+
+  function formatTime(totalSeconds){
+    var m = Math.floor(totalSeconds / 60);
+    var s = Math.floor(totalSeconds % 60);
+    return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+  }
+
+  /* ============================================================
+     ANIMATION LOOP — driven by timestamps, not setInterval
+     ============================================================ */
+  function loop(now){
+    if (state !== "running") return;
+    if (lastFrameTime === null) lastFrameTime = now;
+    var delta = (now - lastFrameTime) / 1000;
+    // guard against huge jumps (e.g. tab was backgrounded)
+    if (delta > 1) delta = 1;
+    lastFrameTime = now;
+
+    phaseElapsed += delta;
+    totalElapsed += delta;
+
+    var guard = 0;
+    while (phaseElapsed >= currentDuration && guard < PHASES.length + 1){
+      var overflow = phaseElapsed - currentDuration;
+      nextPhase(false);
+      phaseElapsed = overflow;
+      guard++;
+    }
+
+    updateTimer();
+    updateTriangleAnimation();
+
+    rafId = requestAnimationFrame(loop);
+  }
+
+  /* ============================================================
+     TRANSPORT CONTROLS
+     ============================================================ */
+  function startBreathing(){
+    if (state === "running") return;
+
+    ensureAudioContext();
+
+    if (state === "idle"){
+      cycleCount = 0;
+      totalElapsed = 0;
+      phaseElapsed = 0;
+      currentPhaseIndex = 0;
+      el.svg.classList.remove("idle");
+      state = "running";
+      nextPhase(true);
+    } else {
+      // resuming from paused — keep progress, just continue
+      state = "running";
+    }
+
+    lastFrameTime = null;
+    el.startBtn.hidden = true;
+    el.pauseBtn.hidden = false;
+    el.pauseBtn.focus();
+
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function pauseBreathing(){
+    if (state !== "running") return;
+    state = "paused";
+    if (rafId) cancelAnimationFrame(rafId);
+    lastFrameTime = null;
+    el.pauseBtn.hidden = true;
+    el.startBtn.hidden = false;
+    el.startBtn.textContent = "Resume";
+    el.startBtn.focus();
+  }
+
+  function resetBreathing(){
+    if (rafId) cancelAnimationFrame(rafId);
+    state = "idle";
+    lastFrameTime = null;
+    currentPhaseIndex = 0;
+    phaseElapsed = 0;
+    totalElapsed = 0;
+    cycleCount = 0;
+    currentDuration = durations.inhale;
+
+    el.svg.classList.add("idle");
+    el.sides.inhale.classList.remove("active","completed");
+    el.sides.inhale.classList.add("pending");
+    el.sides.inhale.style.strokeDashoffset = "1";
+    el.sides.hold.classList.remove("active","completed");
+    el.sides.hold.classList.add("pending");
+    el.sides.hold.style.strokeDashoffset = "1";
+    el.sides.exhale.classList.remove("active","completed");
+    el.sides.exhale.classList.add("pending");
+    el.sides.exhale.style.strokeDashoffset = "1";
+
+    updatePhaseLabels("inhale");
+    el.countdown.textContent = String(durations.inhale);
+    el.cycleCount.textContent = "0";
+    el.elapsedTime.textContent = "00:00";
+    el.dot.setAttribute("cx", SIDE_COORDS.inhale.x1);
+    el.dot.setAttribute("cy", SIDE_COORDS.inhale.y1);
+
+    el.startBtn.hidden = false;
+    el.startBtn.textContent = "Start";
+    el.pauseBtn.hidden = true;
+  }
+
+  /* ============================================================
+     DURATION STEPPERS
+     ============================================================ */
+  function refreshDurationDisplays(){
+    PHASES.forEach(function(phase){
+      valueEls[phase].textContent = durations[phase] + "s";
+    });
+    if (state === "idle"){
+      currentDuration = durations.inhale;
+      el.countdown.textContent = String(durations.inhale);
+      el.durationHint.textContent = durations.inhale + (durations.inhale === 1 ? " second" : " seconds");
+    }
+  }
+
+  function adjustDuration(phase, dir){
+    var meta = PHASE_META[phase];
+    var next = durations[phase] + dir;
+    next = Math.max(meta.min, Math.min(meta.max, next));
+    durations[phase] = next;
+    refreshDurationDisplays();
+  }
+
+  function applyDefaultDurations(){
+    durations.inhale = DEFAULT_DURATIONS.inhale;
+    durations.hold = DEFAULT_DURATIONS.hold;
+    durations.exhale = DEFAULT_DURATIONS.exhale;
+    refreshDurationDisplays();
+  }
+
+  /* ============================================================
+     EVENT WIRING
+     ============================================================ */
+  el.startBtn.addEventListener("click", startBreathing);
+  el.pauseBtn.addEventListener("click", pauseBreathing);
+  el.resetBtn.addEventListener("click", resetBreathing);
+
+  document.querySelectorAll(".step-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var phase = btn.getAttribute("data-phase");
+      var dir = parseInt(btn.getAttribute("data-dir"), 10);
+      adjustDuration(phase, dir);
+    });
+  });
+
+  var defaultBtn = document.getElementById("defaultBtn");
+  defaultBtn.addEventListener("click", applyDefaultDurations);
+
+  el.soundToggle.addEventListener("change", function(){
+    soundEnabled = el.soundToggle.checked;
+    if (soundEnabled) ensureAudioContext();
+  });
+
+  document.addEventListener("keydown", function(e){
+    var activeTag = document.activeElement ? document.activeElement.tagName : "";
+    if (activeTag === "BUTTON" || activeTag === "INPUT"){
+      // let native activation (Enter/Space) handle focused controls themselves
+      if (e.key === "r" || e.key === "R"){
+        resetBreathing();
+      }
+      return;
+    }
+    if (e.code === "Space"){
+      e.preventDefault();
+      if (state === "running") pauseBreathing(); else startBreathing();
+    } else if (e.key === "r" || e.key === "R"){
+      resetBreathing();
+    }
+  });
+
+  /* ============================================================
+     INITIAL RENDER
+     ============================================================ */
+  refreshDurationDisplays();
+  resetBreathing();
+
+})();
+</script>
+</body>
+</html>
