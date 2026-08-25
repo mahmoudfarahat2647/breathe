@@ -6,10 +6,20 @@ import { AmbientBackground } from "./ambient-background";
 import { BreathingTriangle } from "./breathing-triangle";
 import { ControlDeck } from "./control-deck";
 import { handleBreathingKeydown } from "./keyboard";
+import {
+  createHttpBreathingPersistence,
+  type BreathingPersistence,
+} from "./persistence";
 import { useBreathingEngine } from "./use-breathing-engine";
 
-export function BreatheApp() {
-  const engine = useBreathingEngine();
+const httpPersistence = createHttpBreathingPersistence();
+
+export function BreatheApp({
+  persistence = httpPersistence,
+}: {
+  persistence?: BreathingPersistence;
+} = {}) {
+  const engine = useBreathingEngine({ persistence });
   const startRef = useRef<HTMLButtonElement>(null);
   const pauseRef = useRef<HTMLButtonElement>(null);
   const statusRef = useRef(engine.engine.status);

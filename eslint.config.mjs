@@ -166,7 +166,16 @@ const eslintConfig = defineConfig([
                         "react",
                         "react-dom",
                         "react-*",
+                        "@supabase/*",
                       ],
+                    },
+                  },
+                },
+                {
+                  to: {
+                    module: {
+                      origin: ["core"],
+                      source: ["fs", "path", "node:fs", "node:path"],
                     },
                   },
                 },
@@ -214,6 +223,12 @@ const eslintConfig = defineConfig([
           ],
         },
       ],
+    },
+  },
+  {
+    files: ["src/proxy.ts"],
+    rules: {
+      "boundaries/dependencies": "off",
     },
   },
 ]);

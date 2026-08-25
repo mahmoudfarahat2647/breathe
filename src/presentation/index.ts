@@ -8,4 +8,10 @@ export { BreatheApp } from "./breathe-app";
 export { BreathingTriangle } from "./breathing-triangle";
 export { ControlDeck } from "./control-deck";
 export { DurationStepper } from "./duration-stepper";
+export {
+  createHttpBreathingPersistence,
+  SETTINGS_SAVE_DEBOUNCE_MS,
+  type BreathingPersistence,
+} from "./persistence";
+export { snapshotCompletedSession } from "./session-snapshot";
 export { useBreathingEngine } from "./use-breathing-engine";
