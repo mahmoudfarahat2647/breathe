@@ -11,6 +11,7 @@ pnpm install
 pnpm dev
 pnpm test
 pnpm test:e2e
+pnpm test:db
 pnpm lint
 pnpm typecheck
 pnpm build
@@ -27,4 +28,9 @@ pnpm build
 
 ## Environment
 
-Copy `.env.example` to `.env.local` and fill public Supabase values when persistence work begins (Phase 4+). Never commit secrets or service-role keys.
+Copy `.env.example` to `.env.local` and fill public Supabase values (project URL and anon/publishable key). Never commit secrets or service-role keys. Enable anonymous sign-ins in the Supabase project. Local schema and RLS tests:
+
+```bash
+supabase start
+pnpm test:db
+```

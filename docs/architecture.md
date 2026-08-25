@@ -20,6 +20,7 @@ Dependencies point **inward**. Outer layers adapt to inner layers. Boundary data
 2. **Domain** must not mention outer-layer names, file paths, or database row shapes.
 3. **Presentation** must not import Infrastructure repositories or Supabase clients directly; persistence goes through Application ports composed in App/route handlers.
 4. Data crossing boundaries is plain objects / DTOs — not ORM rows or React state objects.
+5. **App route handlers** verify JWT claims with `getClaims()`, derive `UserId` server-side, and never trust ownership IDs from request bodies or headers.
 
 ## Enforcement
 

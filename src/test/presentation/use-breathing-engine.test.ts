@@ -1,6 +1,10 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import {
+  SETTINGS_SAVE_DEBOUNCE_MS,
+  type BreathingPersistence,
+} from "@/presentation/persistence";
 import { useBreathingEngine } from "@/presentation/use-breathing-engine";
 
 function createRafStub() {
@@ -158,5 +162,292 @@ describe("useBreathingEngine", () => {
       result.current.start();
     });
     expect(audio.playPhase).toHaveBeenLastCalledWith("inhale", true);
+  });
+});
+
+const SESSION_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const SESSION_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+
+function createScheduleStub() {
+  let nextId = 1;
+  let now = 0;
+  const pending = new Map<number, { callback: () => void; fireAt: number }>();
+  return {
+    schedule(callback: () => void, delayMs: number) {
+      const id = nextId++;
+      pending.set(id, { callback, fireAt: now + delayMs });
+      return id;
+    },
+    cancel(id: number) {
+      pending.delete(id);
+    },
+    advance(ms: number) {
+      now += ms;
+      for (const [id, timer] of [...pending]) {
+        if (timer.fireAt <= now) {
+          pending.delete(id);
+          timer.callback();
+        }
+      }
+    },
+  };
+}
+
+function fakePersistence(
+  overrides: Partial<BreathingPersistence> = {},
+): BreathingPersistence {
+  return {
+    async initialize() {
+      return { inhale: 4, hold: 4, exhale: 6 };
+    },
+    async saveSettings() {},
+    async saveSession() {},
+    ...overrides,
+  };
+}
+
+function completeCycles(
+  frames: ReturnType<typeof createRafStub>,
+  seconds: number,
+  startMs = 0,
+) {
+  act(() => {
+    frames.flush(startMs);
+  });
+  for (let elapsed = 1; elapsed <= seconds; elapsed += 1) {
+    act(() => {
+      frames.flush(startMs + elapsed * 1000);
+    });
+  }
+}
+
+describe("useBreathingEngine persistence", () => {
+  it("restores stored durations after initialize", async () => {
+    const persistence = fakePersistence({
+      initialize: vi.fn(async () => ({ inhale: 5, hold: 2, exhale: 8 })),
+    });
+    const { result } = renderHook(() => useBreathingEngine({ persistence }));
+
+    await waitFor(() => {
+      expect(result.current.view.stepperValues).toEqual({
+        inhale: "5s",
+        hold: "2s",
+        exhale: "8s",
+      });
+    });
+  });
+
+  it("keeps the exercise on 4-4-6 when initialize fails", async () => {
+    const persistence = fakePersistence({
+      initialize: vi.fn(async () => {
+        throw new Error("offline");
+      }),
+    });
+    const { result } = renderHook(() =>
+      useBreathingEngine({
+        persistence,
+        audio: { ensure: vi.fn(), playPhase: vi.fn(), context: null },
+      }),
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.view.stepperValues).toEqual({
+      inhale: "4s",
+      hold: "4s",
+      exhale: "6s",
+    });
+
+    act(() => {
+      result.current.start();
+    });
+    expect(result.current.view.showPause).toBe(true);
+  });
+
+  it("does not overwrite local edits that happen before initialize resolves", async () => {
+    let resolveInit!: (value: {
+      inhale: number;
+      hold: number;
+      exhale: number;
+    }) => void;
+    const persistence = fakePersistence({
+      initialize: () =>
+        new Promise((resolve) => {
+          resolveInit = resolve;
+        }),
+    });
+    const { result } = renderHook(() => useBreathingEngine({ persistence }));
+
+    act(() => {
+      result.current.adjust("inhale", 1);
+    });
+    expect(result.current.view.stepperValues.inhale).toBe("5s");
+
+    await act(async () => {
+      resolveInit({ inhale: 8, hold: 8, exhale: 8 });
+      await Promise.resolve();
+    });
+
+    expect(result.current.view.stepperValues.inhale).toBe("5s");
+  });
+
+  it("debounces settings saves by 800 ms and persists recommended defaults", () => {
+    const clocks = createScheduleStub();
+    const saveSettings = vi.fn(async () => {});
+    const { result } = renderHook(() =>
+      useBreathingEngine({
+        persistence: fakePersistence({ saveSettings }),
+        schedule: clocks.schedule,
+        cancel: clocks.cancel,
+      }),
+    );
+
+    act(() => {
+      result.current.adjust("inhale", 1);
+      result.current.adjust("inhale", 1);
+      result.current.adjust("hold", 1);
+    });
+    act(() => {
+      clocks.advance(SETTINGS_SAVE_DEBOUNCE_MS - 1);
+    });
+    expect(saveSettings).not.toHaveBeenCalled();
+
+    act(() => {
+      clocks.advance(1);
+    });
+    expect(saveSettings).toHaveBeenCalledTimes(1);
+    expect(saveSettings).toHaveBeenCalledWith({
+      inhale: 6,
+      hold: 5,
+      exhale: 6,
+    });
+
+    act(() => {
+      result.current.recommend();
+    });
+    act(() => {
+      clocks.advance(SETTINGS_SAVE_DEBOUNCE_MS);
+    });
+    expect(saveSettings).toHaveBeenLastCalledWith({
+      inhale: 4,
+      hold: 4,
+      exhale: 6,
+    });
+  });
+
+  it("flushes the latest pending settings save on unmount", () => {
+    const clocks = createScheduleStub();
+    const saveSettings = vi.fn(async () => {});
+    const { result, unmount } = renderHook(() =>
+      useBreathingEngine({
+        persistence: fakePersistence({ saveSettings }),
+        schedule: clocks.schedule,
+        cancel: clocks.cancel,
+      }),
+    );
+
+    act(() => {
+      result.current.adjust("inhale", 1);
+      result.current.adjust("exhale", 1);
+    });
+    expect(saveSettings).not.toHaveBeenCalled();
+
+    act(() => {
+      unmount();
+    });
+
+    expect(saveSettings).toHaveBeenCalledTimes(1);
+    expect(saveSettings).toHaveBeenCalledWith(
+      { inhale: 5, hold: 4, exhale: 7 },
+      undefined,
+    );
+  });
+
+  it("does not persist a zero-cycle reset and saves completed sessions once per id", () => {
+    const frames = createRafStub();
+    const saveSession = vi.fn(async () => {});
+    const createSessionId = vi
+      .fn()
+      .mockReturnValueOnce(SESSION_A)
+      .mockReturnValueOnce(SESSION_B);
+    const { result } = renderHook(() =>
+      useBreathingEngine({
+        raf: frames.raf,
+        caf: frames.caf,
+        audio: { ensure: vi.fn(), playPhase: vi.fn(), context: null },
+        persistence: fakePersistence({ saveSession }),
+        createSessionId,
+      }),
+    );
+
+    act(() => {
+      result.current.start();
+    });
+    completeCycles(frames, 2);
+    act(() => {
+      result.current.reset();
+    });
+    expect(saveSession).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.adjust("inhale", 1);
+      result.current.start();
+    });
+    completeCycles(frames, 15);
+    expect(result.current.engine.cycleCount).toBe(1);
+
+    act(() => {
+      result.current.reset();
+    });
+    expect(saveSession).toHaveBeenCalledTimes(1);
+    expect(saveSession).toHaveBeenCalledWith({
+      id: SESSION_A,
+      cycleCount: 1,
+      elapsedSeconds: expect.any(Number),
+      durations: { inhale: 5, hold: 4, exhale: 6 },
+    });
+
+    act(() => {
+      result.current.start();
+    });
+    completeCycles(frames, 15);
+    act(() => {
+      result.current.reset();
+    });
+    expect(saveSession).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ id: SESSION_B }),
+    );
+  });
+
+  it("resets even when session save throws", () => {
+    const frames = createRafStub();
+    const { result } = renderHook(() =>
+      useBreathingEngine({
+        raf: frames.raf,
+        caf: frames.caf,
+        audio: { ensure: vi.fn(), playPhase: vi.fn(), context: null },
+        persistence: fakePersistence({
+          saveSession: vi.fn(async () => {
+            throw new Error("offline");
+          }),
+        }),
+        createSessionId: () => SESSION_A,
+      }),
+    );
+
+    act(() => {
+      result.current.start();
+    });
+    completeCycles(frames, 14);
+    act(() => {
+      result.current.reset();
+    });
+
+    expect(result.current.view.primaryLabel).toBe("Start");
+    expect(result.current.view.elapsed).toBe("00:00");
+    expect(result.current.view.svgIdle).toBe(true);
   });
 });
