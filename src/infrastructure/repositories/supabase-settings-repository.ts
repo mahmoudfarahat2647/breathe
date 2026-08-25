@@ -5,7 +5,7 @@ import type {
 
 import { PersistenceError } from "../errors";
 import { settingsDtoToRow, settingsRowToDto } from "../mappers/settings-row";
-import type { BreathingSupabaseClient } from "../supabase/browser-client";
+import type { BreathingSupabaseClient } from "../supabase/server-client";
 
 export class SupabaseSettingsRepository implements SettingsRepository {
   constructor(private readonly client: BreathingSupabaseClient) {}

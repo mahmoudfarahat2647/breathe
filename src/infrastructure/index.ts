@@ -25,17 +25,14 @@ export { settingsDtoToRow, settingsRowToDto } from "./mappers/settings-row";
 export { SupabaseSessionRepository } from "./repositories/supabase-session-repository";
 export { SupabaseSettingsRepository } from "./repositories/supabase-settings-repository";
 export {
-  createSupabaseBrowserClient,
+  createSupabaseServerClient,
   type BreathingSupabaseClient,
-} from "./supabase/browser-client";
+  type CookieMethods,
+  type CookieToSet,
+} from "./supabase/server-client";
 export type { Database } from "./supabase/database.types";
 export {
   PersistenceConfigError,
   getSupabasePublicEnv,
   hasSupabasePublicEnv,
 } from "./supabase/env";
-export {
-  createSupabaseServerClient,
-  type CookieMethods,
-  type CookieToSet,
-} from "./supabase/server-client";

@@ -5,7 +5,7 @@ import type {
 
 import { PersistenceError } from "../errors";
 import { sessionDtoToRow } from "../mappers/session-row";
-import type { BreathingSupabaseClient } from "../supabase/browser-client";
+import type { BreathingSupabaseClient } from "../supabase/server-client";
 
 export class SupabaseSessionRepository implements SessionRepository {
   constructor(private readonly client: BreathingSupabaseClient) {}

@@ -17,7 +17,11 @@ describe("toErrorResponse", () => {
     });
     expect(toErrorResponse(new UnauthenticatedError()).status).toBe(401);
     expect(toErrorResponse(new DomainValidationError("bad")).status).toBe(400);
-    expect(toErrorResponse(new PersistenceError("down")).status).toBe(503);
+    const persistenceResponse = toErrorResponse(new PersistenceError("down"));
+    expect(persistenceResponse.status).toBe(503);
+    await expect(persistenceResponse.json()).resolves.toEqual({
+      error: "Persistence is temporarily unavailable.",
+    });
   });
 });
 
