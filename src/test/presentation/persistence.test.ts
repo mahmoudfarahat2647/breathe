@@ -197,20 +197,49 @@ describe("createHttpBreathingPersistence", () => {
     expect(keepalive).toBe(true);
   });
 
-  it("posts a session snapshot without a trusted user id and retries the same id", async () => {
+  it("posts a session snapshot without a trusted user id", async () => {
     const bodies: unknown[] = [];
-    let attempts = 0;
     const persistence = createHttpBreathingPersistence({
       fetch: vi.fn(async (input, init) => {
-        expect(String(input)).toBe("/api/sessions");
+        const url = String(input);
+        if (url === "/api/auth/anonymous") {
+          return jsonResponse({ userId: USER_ID });
+        }
+        expect(url).toBe("/api/sessions");
         expect(init?.method).toBe("POST");
         const body = JSON.parse(String(init?.body));
         bodies.push(body);
         expect(body).not.toHaveProperty("userId");
         expect(body).not.toHaveProperty("user_id");
-        attempts += 1;
-        if (attempts === 1) {
-          return jsonResponse({ error: "down" }, 503);
+        return jsonResponse({ outcome: "saved" });
+      }) as typeof fetch,
+    });
+
+    const snapshot = {
+      id: SESSION_ID,
+      cycleCount: 2,
+      elapsedSeconds: 28,
+      durations: { inhale: 4, hold: 4, exhale: 6 },
+    };
+
+    await persistence.saveSession(snapshot);
+    expect(bodies).toEqual([snapshot]);
+  });
+
+  it("awaits auth and re-authenticates on 401 before retrying the same session id", async () => {
+    const calls: string[] = [];
+    let sessionAttempts = 0;
+    const persistence = createHttpBreathingPersistence({
+      fetch: vi.fn(async (input, init) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+        calls.push(`${method} ${url}`);
+        if (url === "/api/auth/anonymous") {
+          return jsonResponse({ userId: USER_ID });
+        }
+        sessionAttempts += 1;
+        if (sessionAttempts === 1) {
+          return jsonResponse({ error: "auth required" }, 401);
         }
         return jsonResponse({ outcome: "saved" });
       }) as typeof fetch,
@@ -224,8 +253,33 @@ describe("createHttpBreathingPersistence", () => {
     };
 
     await persistence.saveSession(snapshot);
-    expect(attempts).toBe(2);
-    expect(bodies).toEqual([snapshot, snapshot]);
+    expect(calls).toEqual([
+      "POST /api/auth/anonymous",
+      "POST /api/sessions",
+      "POST /api/auth/anonymous",
+      "POST /api/sessions",
+    ]);
+  });
+
+  it("does not retry validation failures", async () => {
+    let sessionAttempts = 0;
+    const persistence = createHttpBreathingPersistence({
+      fetch: vi.fn(async (input) => {
+        if (String(input) === "/api/auth/anonymous") {
+          return jsonResponse({ userId: USER_ID });
+        }
+        sessionAttempts += 1;
+        return jsonResponse({ error: "invalid" }, 400);
+      }) as typeof fetch,
+    });
+
+    await persistence.saveSession({
+      id: SESSION_ID,
+      cycleCount: 1,
+      elapsedSeconds: 14,
+      durations: { inhale: 4, hold: 4, exhale: 6 },
+    });
+    expect(sessionAttempts).toBe(1);
   });
 
   it("does not throw when session retries also fail", async () => {

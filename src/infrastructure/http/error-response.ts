@@ -23,10 +23,10 @@ export function toErrorResponse(error: unknown): Response {
   if (error instanceof SyntaxError) {
     return jsonResponse({ error: "Request body must be valid JSON." }, 400);
   }
-  if (
-    error instanceof PersistenceError ||
-    error instanceof PersistenceConfigError
-  ) {
+  if (error instanceof PersistenceError) {
+    return jsonResponse({ error: "Persistence is temporarily unavailable." }, 503);
+  }
+  if (error instanceof PersistenceConfigError) {
     return jsonResponse({ error: error.message }, 503);
   }
 

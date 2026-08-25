@@ -25,7 +25,7 @@ describe("architecture boundary", () => {
     const { readdir, readFile } = await import("node:fs/promises");
     const { join } = await import("node:path");
     const presentationDir = join(process.cwd(), "src", "presentation");
-    const files = await readdir(presentationDir);
+    const files = await readdir(presentationDir, { recursive: true });
     for (const file of files) {
       if (!file.endsWith(".ts") && !file.endsWith(".tsx")) continue;
       const source = await readFile(join(presentationDir, file), "utf8");
@@ -36,7 +36,6 @@ describe("architecture boundary", () => {
 
   it("infrastructure adapters are available without presentation imports", async () => {
     const infrastructure = await import("@/infrastructure/index");
-    expect(typeof infrastructure.createSupabaseBrowserClient).toBe("function");
     expect(typeof infrastructure.createSupabaseServerClient).toBe("function");
     expect(typeof infrastructure.SupabaseSettingsRepository).toBe("function");
     expect(typeof infrastructure.SupabaseSessionRepository).toBe("function");

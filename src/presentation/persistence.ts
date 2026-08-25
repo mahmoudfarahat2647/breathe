@@ -85,9 +85,6 @@ export function createHttpBreathingPersistence(options?: {
         const body: unknown = await settingsResponse.json();
         return BreathingSettings.fromDto(body as BreathingSettingsDto).toDto();
       } catch {
-        if (!authReady) {
-          authReady = Promise.resolve();
-        }
         return { ...DEFAULT_SETTINGS };
       }
     },
@@ -121,19 +118,26 @@ export function createHttpBreathingPersistence(options?: {
     },
 
     async saveSession(session) {
-      const body = JSON.stringify(session);
-      for (let attempt = 0; attempt < 2; attempt += 1) {
-        try {
-          const response = await request("/api/sessions", {
+      try {
+        await awaitAuthReady();
+
+        const postOnce = () =>
+          request("/api/sessions", {
             method: "POST",
-            body,
+            body: JSON.stringify(session),
           });
-          if (response.ok || response.status === 202) {
-            return;
-          }
-        } catch {
-          // Retry the same snapshot id; ignore a final failure.
+
+        let response = await postOnce();
+        if (response.ok) {
+          return;
         }
+
+        if (response.status === 401 || response.status === 403) {
+          await trackAuth(ensureAnonymous());
+          response = await postOnce();
+        }
+      } catch {
+        // Persistence must never block the breathing exercise.
       }
     },
   };
