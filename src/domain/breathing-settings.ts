@@ -1,0 +1,76 @@
+import { DomainValidationError } from "./errors";
+import { PHASE_DURATION_LIMITS, type Phase } from "./phase";
+
+export type BreathingSettingsDto = {
+  inhale: number;
+  hold: number;
+  exhale: number;
+};
+
+const DEFAULT_DURATIONS: BreathingSettingsDto = {
+  inhale: 4,
+  hold: 4,
+  exhale: 6,
+};
+
+export class BreathingSettings {
+  readonly inhale: number;
+  readonly hold: number;
+  readonly exhale: number;
+
+  private constructor(dto: BreathingSettingsDto) {
+    this.inhale = dto.inhale;
+    this.hold = dto.hold;
+    this.exhale = dto.exhale;
+    Object.freeze(this);
+  }
+
+  static default(): BreathingSettings {
+    return new BreathingSettings(DEFAULT_DURATIONS);
+  }
+
+  static fromDto(dto: BreathingSettingsDto): BreathingSettings {
+    return new BreathingSettings({
+      inhale: assertDuration("inhale", dto?.inhale),
+      hold: assertDuration("hold", dto?.hold),
+      exhale: assertDuration("exhale", dto?.exhale),
+    });
+  }
+
+  toDto(): BreathingSettingsDto {
+    return {
+      inhale: this.inhale,
+      hold: this.hold,
+      exhale: this.exhale,
+    };
+  }
+
+  durationFor(phase: Phase): number {
+    return this[phase];
+  }
+
+  adjust(phase: Phase, direction: number): BreathingSettings {
+    const limits = PHASE_DURATION_LIMITS[phase];
+    const next = Math.max(
+      limits.min,
+      Math.min(limits.max, this.durationFor(phase) + direction),
+    );
+    return BreathingSettings.fromDto({
+      ...this.toDto(),
+      [phase]: next,
+    });
+  }
+}
+
+function assertDuration(phase: Phase, value: unknown): number {
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    throw new DomainValidationError(`${phase} duration must be an integer.`);
+  }
+  const limits = PHASE_DURATION_LIMITS[phase];
+  if (value < limits.min || value > limits.max) {
+    throw new DomainValidationError(
+      `${phase} duration must be between ${limits.min} and ${limits.max}.`,
+    );
+  }
+  return value;
+}
