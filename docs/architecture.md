@@ -29,6 +29,6 @@ Dependencies point **inward**. Outer layers adapt to inner layers. Boundary data
 - Unit and component tests live under `src/test/` (and Playwright under `e2e/`) so test tooling imports do not weaken inner-layer rules.
 - Domain/Application unit tests run under Vitest without requiring a browser for core logic.
 
-## Reference HTML
+## Reference Implementation
 
-`index.html` at the repository root remains the behavioral and visual reference until Phase 6 verification passes. Do not modify it during feature work.
+The Next.js implementation is the sole application in the repository. Full behavioral, visual, responsive, accessibility, and security parity has been verified against the original reference contract.

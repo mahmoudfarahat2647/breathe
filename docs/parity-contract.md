@@ -1,8 +1,8 @@
 # Reference parity contract
 
-Source of truth: repository-root `index.html` (unchanged during implementation).
+Full parity has been verified against the original reference specification. Next.js is the sole implementation in the repository.
 
-Every observable behavior below must keep an automated check and/or an explicit visual check. Phase 3 implements UI/interaction parity; Phase 6 closes verification.
+Every observable behavior below is verified via automated tests (unit, component, Playwright e2e) and explicit visual/accessibility checks. Phase 6 closes verification.
 
 Legend: **A** = automated (unit / component / Playwright), **V** = explicit visual/manual screenshot check.
 
