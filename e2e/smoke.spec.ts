@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("foundation smoke", () => {
-  test("home page loads", async ({ page }) => {
+  test("home page loads the breathe wordmark", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Breathe" })).toBeVisible();
+    await expect(page.getByText("Breathe", { exact: true })).toBeVisible();
+    await expect(page.getByText("تنفّس")).toBeVisible();
   });
 });

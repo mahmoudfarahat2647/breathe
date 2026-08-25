@@ -1,3 +1,5 @@
+"use client"
+
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -18,6 +20,14 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        breathePrimary:
+          "breathe-btn breathe-btn-primary border-transparent bg-clip-border shadow-none hover:bg-transparent focus-visible:border-transparent focus-visible:ring-0",
+        breatheSecondary:
+          "breathe-btn breathe-btn-secondary bg-transparent shadow-none hover:bg-transparent focus-visible:border-transparent focus-visible:ring-0",
+        breatheGhost:
+          "breathe-btn breathe-btn-ghost shadow-none hover:bg-transparent focus-visible:border-transparent focus-visible:ring-0",
+        breatheStep:
+          "breathe-step-btn border-transparent bg-transparent p-0 shadow-none hover:bg-transparent focus-visible:border-transparent focus-visible:ring-0",
       },
       size: {
         default:
@@ -31,6 +41,7 @@ const buttonVariants = cva(
         "icon-sm":
           "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
         "icon-lg": "size-9",
+        breathe: "h-auto min-h-0 gap-0 px-0 py-0",
       },
     },
     defaultVariants: {
