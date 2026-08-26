@@ -16,7 +16,6 @@ describe("toBreathingViewModel", () => {
     const view = toBreathingViewModel(createIdleBreathingState(), settings);
 
     expect(view.phaseEn).toBe("INHALE");
-    expect(view.phaseAr).toBe("شهيق");
     expect(view.countdown).toBe("4");
     expect(view.durationHint).toBe("4 seconds");
     expect(view.cycleCount).toBe("0");
@@ -28,7 +27,8 @@ describe("toBreathingViewModel", () => {
     expect(view.sides.inhale.state).toBe("pending");
     expect(view.sides.hold.state).toBe("pending");
     expect(view.sides.exhale.state).toBe("pending");
-    expect(view.dot).toEqual({ x: 35, y: 325 });
+    expect(view.sides.rest.state).toBe("pending");
+    expect(view.dot).toEqual({ x: 40, y: 360 });
     expect(view.announcement).toBe("INHALE. 4 seconds.");
   });
 
@@ -62,6 +62,7 @@ describe("toBreathingViewModel", () => {
       inhale: 2,
       hold: 1,
       exhale: 2,
+      rest: 1,
     });
     const started = startBreathing(createIdleBreathingState());
     let state = advanceBreathingState(started, 0, oneSecondHold);
@@ -79,6 +80,7 @@ describe("toBreathingViewModel", () => {
       inhale: "4s",
       hold: "4s",
       exhale: "6s",
+      rest: "2s",
     });
   });
 });

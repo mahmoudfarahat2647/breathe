@@ -1,9 +1,17 @@
 import type { Metadata, Viewport } from "next";
+import { Outfit } from "next/font/google";
+
 import "./globals.css";
 
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Breathe — Triangle Breathing Exercise",
-  description: "Calm triangle breathing exercise",
+  title: "Breathe | Square breathing",
+  description: "A calm square breathing exercise. Inhale, hold, exhale, rest.",
 };
 
 export const viewport: Viewport = {
@@ -15,8 +23,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="dark h-full antialiased">
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+    <html
+      lang="en"
+      className={`${outfit.variable} dark h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <body
+        className={`${outfit.className} min-h-full flex flex-col bg-background text-foreground`}
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>

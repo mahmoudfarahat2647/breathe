@@ -32,7 +32,7 @@ function session(overrides: Partial<BreathingSessionDto> = {}): BreathingSession
     userId: USER_ID,
     cycleCount: 2,
     elapsedSeconds: 28,
-    durations: { inhale: 4, hold: 4, exhale: 6 },
+    durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     ...overrides,
   };
 }
@@ -85,6 +85,7 @@ describe("SaveSession", () => {
       inhale: 4,
       hold: 4,
       exhale: 6,
+      rest: 2,
     });
   });
 

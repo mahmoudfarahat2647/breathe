@@ -3,6 +3,7 @@ export type BreathingSettingsRow = {
   inhale_seconds: number;
   hold_seconds: number;
   exhale_seconds: number;
+  rest_seconds: number;
   created_at: string;
   updated_at: string;
 };
@@ -15,6 +16,7 @@ export type BreathingSessionRow = {
   inhale_seconds: number;
   hold_seconds: number;
   exhale_seconds: number;
+  rest_seconds: number;
   created_at: string;
 };
 
@@ -28,6 +30,7 @@ export type Database = {
           inhale_seconds: number;
           hold_seconds: number;
           exhale_seconds: number;
+          rest_seconds?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -36,6 +39,7 @@ export type Database = {
           inhale_seconds?: number;
           hold_seconds?: number;
           exhale_seconds?: number;
+          rest_seconds?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -51,6 +55,7 @@ export type Database = {
           inhale_seconds: number;
           hold_seconds: number;
           exhale_seconds: number;
+          rest_seconds?: number;
           created_at?: string;
         };
         Update: {
@@ -61,6 +66,7 @@ export type Database = {
           inhale_seconds?: number;
           hold_seconds?: number;
           exhale_seconds?: number;
+          rest_seconds?: number;
           created_at?: string;
         };
         Relationships: [];

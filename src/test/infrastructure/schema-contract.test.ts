@@ -1,10 +1,13 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const migration = readFileSync(
-  "supabase/migrations/20260825202339_breathing_settings_and_sessions.sql",
-  "utf8",
-);
+const migrationsDir = "supabase/migrations";
+const migration = readdirSync(migrationsDir)
+  .filter((name) => name.endsWith(".sql"))
+  .sort()
+  .map((name) => readFileSync(join(migrationsDir, name), "utf8"))
+  .join("\n");
 const envExample = readFileSync(".env.example", "utf8");
 
 describe("schema contract", () => {
@@ -18,6 +21,8 @@ describe("schema contract", () => {
     expect(migration).toMatch(/inhale_seconds between 2 and 15/);
     expect(migration).toMatch(/hold_seconds between 1 and 15/);
     expect(migration).toMatch(/exhale_seconds between 2 and 15/);
+    expect(migration).toMatch(/rest_seconds between 1 and 15/);
+    expect(migration).toMatch(/rest_seconds >= 0/);
     expect(migration).toMatch(/cycle_count >= 1/);
     expect(migration).toMatch(/elapsed_seconds >= 0/);
     expect(migration).toMatch(

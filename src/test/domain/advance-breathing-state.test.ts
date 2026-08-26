@@ -75,7 +75,7 @@ describe("advanceBreathingState", () => {
     expect(afterInhale.totalElapsedSeconds).toBeCloseTo(4, 8);
   });
 
-  it("counts a new cycle when exhale wraps to inhale", () => {
+  it("enters rest after inhale, hold, and exhale without incrementing the cycle", () => {
     const state = play(
       startBreathing(createIdleBreathingState()),
       0,
@@ -83,9 +83,40 @@ describe("advanceBreathingState", () => {
       settings,
     );
 
+    expect(state.phaseIndex).toBe(3);
+    expect(state.cycleCount).toBe(0);
+    expect(state.phaseElapsedSeconds).toBeCloseTo(0, 8);
+  });
+
+  it("counts a new cycle when rest wraps to inhale", () => {
+    const state = play(
+      startBreathing(createIdleBreathingState()),
+      0,
+      16,
+      settings,
+    );
+
     expect(state.phaseIndex).toBe(0);
     expect(state.cycleCount).toBe(1);
     expect(state.phaseElapsedSeconds).toBeCloseTo(0, 8);
+  });
+
+  it("overflows through rest when a single frame covers multiple remaining phases", () => {
+    const compact = BreathingSettings.fromDto({
+      inhale: 2,
+      hold: 1,
+      exhale: 2,
+      rest: 1,
+    });
+    const started = startBreathing(createIdleBreathingState());
+    const first = advanceBreathingState(started, 0, compact);
+    const nearEndOfInhale = advanceBreathingState(first, 1_900, compact);
+    expect(nearEndOfInhale.phaseIndex).toBe(0);
+
+    const overflowed = advanceBreathingState(nearEndOfInhale, 2_900, compact);
+    expect(overflowed.phaseIndex).toBe(1);
+    expect(overflowed.phaseElapsedSeconds).toBeCloseTo(0, 8);
+    expect(overflowed.cycleCount).toBe(0);
   });
 
   it("caps a backgrounded-tab jump at one second", () => {
@@ -104,6 +135,7 @@ describe("advanceBreathingState", () => {
       inhale: 15,
       hold: 15,
       exhale: 15,
+      rest: 15,
     });
     const state = play(startBreathing(createIdleBreathingState()), 0, 6, long);
     expect(state.phaseIndex).toBe(0);
@@ -114,6 +146,7 @@ describe("advanceBreathingState", () => {
       inhale: 2,
       hold: 1,
       exhale: 2,
+      rest: 1,
     });
     const stillInhale = advanceBreathingState(state, 6_000, short);
 
@@ -137,6 +170,7 @@ describe("advanceBreathingState", () => {
       inhale: 4,
       hold: 8,
       exhale: 6,
+      rest: 2,
     });
     const intoHold = play(
       duringInhale,
@@ -165,6 +199,7 @@ describe("advanceBreathingState", () => {
       inhale: 15,
       hold: 4,
       exhale: 6,
+      rest: 2,
     });
     const running = play(startBreathing(createIdleBreathingState()), 0, 3, long);
     expect(running.phaseDurationSeconds).toBe(15);
@@ -180,6 +215,7 @@ describe("advanceBreathingState", () => {
       inhale: 2,
       hold: 1,
       exhale: 2,
+      rest: 1,
     });
     const firstResumeFrame = advanceBreathingState(resumed, 90_000, short);
     expect(firstResumeFrame.phaseDurationSeconds).toBe(15);
@@ -203,6 +239,7 @@ describe("advanceBreathingState", () => {
       inhale: 2,
       hold: 1,
       exhale: 2,
+      rest: 1,
     });
     const last = frames[frames.length - 1]!;
     current = advanceBreathingState(last, last.lastFrameTimeMs!, shortened);
@@ -292,7 +329,7 @@ describe("reset and side states", () => {
     const running = play(
       startBreathing(createIdleBreathingState()),
       0,
-      14,
+      16,
       settings,
     );
     expect(running.cycleCount).toBeGreaterThan(0);
@@ -308,6 +345,7 @@ describe("reset and side states", () => {
       inhale: "pending",
       hold: "pending",
       exhale: "pending",
+      rest: "pending",
     });
   });
 
@@ -316,6 +354,13 @@ describe("reset and side states", () => {
       inhale: "completed",
       hold: "active",
       exhale: "pending",
+      rest: "pending",
+    });
+    expect(sideStates(3)).toEqual({
+      inhale: "completed",
+      hold: "completed",
+      exhale: "completed",
+      rest: "active",
     });
   });
 });

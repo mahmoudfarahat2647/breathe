@@ -6,7 +6,7 @@ A pixel-faithful, accessible, and resilient breathing exercise application built
 
 ## 🌟 Overview
 
-Breathe delivers an immersive triangle breathing experience (Inhale → Hold → Exhale) with bilingual labels (English & Arabic), precision SVG animation, Web Audio synthesis, full keyboard controls, responsive layouts, reduced-motion adaptations, and resilient anonymous Supabase persistence.
+Breathe delivers an immersive square breathing experience (Inhale → Hold → Exhale → Rest) with English labels, precision SVG animation, Web Audio synthesis, full keyboard controls, responsive layouts, reduced-motion adaptations, and resilient anonymous Supabase persistence.
 
 The codebase strictly follows **Clean Architecture** with inward-pointing dependencies and automated layer boundary enforcement.
 
@@ -119,18 +119,18 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-or-publishable-key
 
 All features have been verified against the parity specification:
 
-- **SVG Triangle Geometry:** Exact coordinates (`M200,39 L365,325 L35,325 Z`), phase side paths, stroke dash-offset interpolation, and progress dot positioning.
+- **SVG Square Geometry:** Exact coordinates (`M40,360 L40,40 L360,40 L360,360 Z`), phase side paths, stroke dash-offset interpolation, and progress dot positioning.
 - **Timestamp Engine:** Pure timestamp-driven progression using `requestAnimationFrame` with background tab delta clamping (1s cap) and multi-phase overflow handling.
 - **Controls & Accessibility:**
   - Transport buttons: Start, Pause, Resume, Reset.
-  - Bilingual typography: English & Arabic phase labels.
-  - Duration steppers: Inhale (2–15s), Hold (1–15s), Exhale (2–15s), Reset to Recommended (4-4-6).
+  - English phase labels: Inhale, Hold, Exhale, Rest.
+  - Duration steppers: Inhale (2-15s), Hold (1-15s), Exhale (2-15s), Rest (1-15s), Use 4-4-6-2.
   - ARIA Live announcer (`aria-live="polite"`), focus management, and keyboard controls (`Space` to toggle, `R` to reset).
 - **Responsive Design:** Optimized for Desktop, Mobile (`< 480px`), and Short Viewports (`< 640px` height).
 - **Reduced Motion:** Respects `prefers-reduced-motion: reduce` by disabling blob drift and pulsing animations.
 - **Resilient Persistence:**
   - Client-side UUID generation for idempotent session snapshot saves on Reset (≥ 1 full cycle).
-  - Debounced (800ms) settings persistence with fallback to 4-4-6 defaults.
+  - Debounced (800ms) settings persistence with fallback to 4-4-6-2 defaults.
   - Non-blocking offline/API error recovery.
 
 ---

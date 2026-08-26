@@ -23,7 +23,6 @@ export type SideView = {
 export type BreathingViewModel = {
   phase: Phase;
   phaseEn: string;
-  phaseAr: string;
   countdown: string;
   durationHint: string;
   cycleCount: string;
@@ -49,13 +48,12 @@ export function toBreathingViewModel(
     state.status === "idle"
       ? 0
       : phaseProgress(state.phaseElapsedSeconds, displayedDuration);
-  const labels = PHASE_LABELS[phase];
+  const label = PHASE_LABELS[phase];
   const sides = sideStates(state.phaseIndex, state.status);
 
   return {
     phase,
-    phaseEn: labels.en,
-    phaseAr: labels.ar,
+    phaseEn: label,
     countdown: String(
       state.status === "idle"
         ? settings.inhale
@@ -72,13 +70,15 @@ export function toBreathingViewModel(
       inhale: sideView(sides.inhale, progress),
       hold: sideView(sides.hold, progress),
       exhale: sideView(sides.exhale, progress),
+      rest: sideView(sides.rest, progress),
     },
     dot: interpolateDot(phase, progress),
-    announcement: `${labels.en}. ${displayedDuration} seconds.`,
+    announcement: `${label}. ${displayedDuration} seconds.`,
     stepperValues: {
       inhale: `${settings.inhale}s`,
       hold: `${settings.hold}s`,
       exhale: `${settings.exhale}s`,
+      rest: `${settings.rest}s`,
     },
     displayedDuration,
   };

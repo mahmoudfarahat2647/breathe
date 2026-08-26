@@ -17,16 +17,20 @@ describe("settings row mapper", () => {
         inhale_seconds: 5,
         hold_seconds: 2,
         exhale_seconds: 8,
+        rest_seconds: 3,
       }),
-    ).toEqual({ inhale: 5, hold: 2, exhale: 8 });
+    ).toEqual({ inhale: 5, hold: 2, exhale: 8, rest: 3 });
   });
 
   it("maps inner DTOs to database columns", () => {
-    expect(settingsDtoToRow(USER_ID, { inhale: 5, hold: 2, exhale: 8 })).toEqual({
+    expect(
+      settingsDtoToRow(USER_ID, { inhale: 5, hold: 2, exhale: 8, rest: 3 }),
+    ).toEqual({
       user_id: USER_ID,
       inhale_seconds: 5,
       hold_seconds: 2,
       exhale_seconds: 8,
+      rest_seconds: 3,
     });
   });
 });
@@ -42,13 +46,14 @@ describe("session row mapper", () => {
         inhale_seconds: 4,
         hold_seconds: 4,
         exhale_seconds: 6,
+        rest_seconds: 2,
       }),
     ).toEqual({
       id: SESSION_ID,
       userId: USER_ID,
       cycleCount: 2,
       elapsedSeconds: 28.5,
-      durations: { inhale: 4, hold: 4, exhale: 6 },
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     });
   });
 
@@ -59,7 +64,7 @@ describe("session row mapper", () => {
         userId: USER_ID,
         cycleCount: 2,
         elapsedSeconds: 28,
-        durations: { inhale: 4, hold: 4, exhale: 6 },
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       }),
     ).toEqual({
       id: SESSION_ID,
@@ -69,6 +74,7 @@ describe("session row mapper", () => {
       inhale_seconds: 4,
       hold_seconds: 4,
       exhale_seconds: 6,
+      rest_seconds: 2,
     });
   });
 });

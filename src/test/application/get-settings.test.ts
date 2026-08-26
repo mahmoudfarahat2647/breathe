@@ -7,7 +7,7 @@ import type { SettingsRepository } from "@/application";
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 
 function memorySettings(
-  store: Map<string, { inhale: number; hold: number; exhale: number }>,
+  store: Map<string, { inhale: number; hold: number; exhale: number; rest: number }>,
 ): SettingsRepository {
   return {
     async getByUserId(userId) {
@@ -20,24 +20,26 @@ function memorySettings(
 }
 
 describe("GetSettings", () => {
-  it("returns the recommended 4-4-6 pattern when nothing is stored", async () => {
+  it("returns the recommended 4-4-6-2 pattern when nothing is stored", async () => {
     const useCase = new GetSettings(memorySettings(new Map()));
     await expect(useCase.execute(USER_ID)).resolves.toEqual({
       inhale: 4,
       hold: 4,
       exhale: 6,
+      rest: 2,
     });
   });
 
   it("returns stored durations after domain validation", async () => {
     const store = new Map([
-      [USER_ID, { inhale: 5, hold: 2, exhale: 8 }],
+      [USER_ID, { inhale: 5, hold: 2, exhale: 8, rest: 3 }],
     ]);
     const useCase = new GetSettings(memorySettings(store));
     await expect(useCase.execute(USER_ID)).resolves.toEqual({
       inhale: 5,
       hold: 2,
       exhale: 8,
+      rest: 3,
     });
   });
 

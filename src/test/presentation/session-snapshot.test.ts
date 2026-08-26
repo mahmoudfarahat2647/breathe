@@ -39,6 +39,7 @@ describe("snapshotCompletedSession", () => {
       inhale: 5,
       hold: 2,
       exhale: 8,
+      rest: 3,
     });
     const snapshot = snapshotCompletedSession(
       SESSION_ID,
@@ -50,10 +51,10 @@ describe("snapshotCompletedSession", () => {
       id: SESSION_ID,
       cycleCount: 2,
       elapsedSeconds: 28,
-      durations: { inhale: 5, hold: 2, exhale: 8 },
+      durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
     });
 
     snapshot!.durations.inhale = 15;
-    expect(settings.toDto()).toEqual({ inhale: 5, hold: 2, exhale: 8 });
+    expect(settings.toDto()).toEqual({ inhale: 5, hold: 2, exhale: 8, rest: 3 });
   });
 });

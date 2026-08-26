@@ -5,7 +5,7 @@
 
 export { AmbientBackground } from "./ambient-background";
 export { BreatheApp } from "./breathe-app";
-export { BreathingTriangle } from "./breathing-triangle";
+export { BreathingSquare } from "./breathing-square";
 export { ControlDeck } from "./control-deck";
 export { DurationStepper } from "./duration-stepper";
 export {

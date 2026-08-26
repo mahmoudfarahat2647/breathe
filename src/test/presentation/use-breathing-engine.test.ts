@@ -113,7 +113,7 @@ describe("useBreathingEngine", () => {
     expect(frames.pendingCount).toBe(0);
   });
 
-  it("clamps duration steppers and restores recommended 4-4-6", () => {
+  it("clamps duration steppers and restores recommended 4-4-6-2", () => {
     const { result } = renderHook(() => useBreathingEngine());
 
     act(() => {
@@ -129,6 +129,7 @@ describe("useBreathingEngine", () => {
       inhale: "4s",
       hold: "4s",
       exhale: "6s",
+      rest: "2s",
     });
   });
 
@@ -198,7 +199,7 @@ function fakePersistence(
 ): BreathingPersistence {
   return {
     async initialize() {
-      return { inhale: 4, hold: 4, exhale: 6 };
+      return { inhale: 4, hold: 4, exhale: 6, rest: 2 };
     },
     async saveSettings() {},
     async saveSession() {},
@@ -224,7 +225,7 @@ function completeCycles(
 describe("useBreathingEngine persistence", () => {
   it("restores stored durations after initialize", async () => {
     const persistence = fakePersistence({
-      initialize: vi.fn(async () => ({ inhale: 5, hold: 2, exhale: 8 })),
+      initialize: vi.fn(async () => ({ inhale: 5, hold: 2, exhale: 8, rest: 3 })),
     });
     const { result } = renderHook(() => useBreathingEngine({ persistence }));
 
@@ -233,11 +234,12 @@ describe("useBreathingEngine persistence", () => {
         inhale: "5s",
         hold: "2s",
         exhale: "8s",
+        rest: "3s",
       });
     });
   });
 
-  it("keeps the exercise on 4-4-6 when initialize fails", async () => {
+  it("keeps the exercise on 4-4-6-2 when initialize fails", async () => {
     const persistence = fakePersistence({
       initialize: vi.fn(async () => {
         throw new Error("offline");
@@ -258,6 +260,7 @@ describe("useBreathingEngine persistence", () => {
       inhale: "4s",
       hold: "4s",
       exhale: "6s",
+      rest: "2s",
     });
 
     act(() => {
@@ -266,11 +269,23 @@ describe("useBreathingEngine persistence", () => {
     expect(result.current.view.showPause).toBe(true);
   });
 
+  it("loads a saved rest duration even when inhale, hold, and exhale match defaults", async () => {
+    const persistence = fakePersistence({
+      initialize: vi.fn(async () => ({ inhale: 4, hold: 4, exhale: 6, rest: 8 })),
+    });
+    const { result } = renderHook(() => useBreathingEngine({ persistence }));
+
+    await waitFor(() => {
+      expect(result.current.view.stepperValues.rest).toBe("8s");
+    });
+  });
+
   it("does not overwrite local edits that happen before initialize resolves", async () => {
     let resolveInit!: (value: {
       inhale: number;
       hold: number;
       exhale: number;
+      rest: number;
     }) => void;
     const persistence = fakePersistence({
       initialize: () =>
@@ -286,7 +301,7 @@ describe("useBreathingEngine persistence", () => {
     expect(result.current.view.stepperValues.inhale).toBe("5s");
 
     await act(async () => {
-      resolveInit({ inhale: 8, hold: 8, exhale: 8 });
+      resolveInit({ inhale: 8, hold: 8, exhale: 8, rest: 8 });
       await Promise.resolve();
     });
 
@@ -322,6 +337,7 @@ describe("useBreathingEngine persistence", () => {
       inhale: 6,
       hold: 5,
       exhale: 6,
+      rest: 2,
     });
 
     act(() => {
@@ -334,6 +350,7 @@ describe("useBreathingEngine persistence", () => {
       inhale: 4,
       hold: 4,
       exhale: 6,
+      rest: 2,
     });
   });
 
@@ -360,7 +377,7 @@ describe("useBreathingEngine persistence", () => {
 
     expect(saveSettings).toHaveBeenCalledTimes(1);
     expect(saveSettings).toHaveBeenCalledWith(
-      { inhale: 5, hold: 4, exhale: 7 },
+      { inhale: 5, hold: 4, exhale: 7, rest: 2 },
       undefined,
     );
   });
@@ -395,7 +412,7 @@ describe("useBreathingEngine persistence", () => {
       result.current.adjust("inhale", 1);
       result.current.start();
     });
-    completeCycles(frames, 15);
+    completeCycles(frames, 17);
     expect(result.current.engine.cycleCount).toBe(1);
 
     act(() => {
@@ -406,13 +423,13 @@ describe("useBreathingEngine persistence", () => {
       id: SESSION_A,
       cycleCount: 1,
       elapsedSeconds: expect.any(Number),
-      durations: { inhale: 5, hold: 4, exhale: 6 },
+      durations: { inhale: 5, hold: 4, exhale: 6, rest: 2 },
     });
 
     act(() => {
       result.current.start();
     });
-    completeCycles(frames, 15);
+    completeCycles(frames, 17);
     act(() => {
       result.current.reset();
     });
@@ -441,7 +458,7 @@ describe("useBreathingEngine persistence", () => {
     act(() => {
       result.current.start();
     });
-    completeCycles(frames, 14);
+    completeCycles(frames, 16);
     act(() => {
       result.current.reset();
     });

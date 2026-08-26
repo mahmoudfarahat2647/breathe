@@ -35,7 +35,11 @@ export function ControlDeck({
   onSoundChange,
 }: ControlDeckProps) {
   return (
-    <section className="control-deck" aria-label="Breathing exercise controls">
+    <section
+      id="controls"
+      className="control-deck"
+      aria-label="Breathing exercise controls"
+    >
       <Card className="panel gap-0 py-[clamp(12px,2vh,16px)] ring-0">
         <div className="transport-row">
           {view.showPause ? (

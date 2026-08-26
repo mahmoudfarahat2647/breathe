@@ -29,6 +29,7 @@ export function snapshotCompletedSession(
       inhale: durations.inhale,
       hold: durations.hold,
       exhale: durations.exhale,
+      rest: durations.rest,
     },
   };
 }

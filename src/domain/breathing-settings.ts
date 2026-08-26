@@ -5,23 +5,27 @@ export type BreathingSettingsDto = {
   inhale: number;
   hold: number;
   exhale: number;
+  rest: number;
 };
 
 const DEFAULT_DURATIONS: BreathingSettingsDto = {
   inhale: 4,
   hold: 4,
   exhale: 6,
+  rest: 2,
 };
 
 export class BreathingSettings {
   readonly inhale: number;
   readonly hold: number;
   readonly exhale: number;
+  readonly rest: number;
 
   private constructor(dto: BreathingSettingsDto) {
     this.inhale = dto.inhale;
     this.hold = dto.hold;
     this.exhale = dto.exhale;
+    this.rest = dto.rest;
     Object.freeze(this);
   }
 
@@ -34,6 +38,7 @@ export class BreathingSettings {
       inhale: assertDuration("inhale", dto?.inhale),
       hold: assertDuration("hold", dto?.hold),
       exhale: assertDuration("exhale", dto?.exhale),
+      rest: assertDuration("rest", dto?.rest),
     });
   }
 
@@ -42,6 +47,7 @@ export class BreathingSettings {
       inhale: this.inhale,
       hold: this.hold,
       exhale: this.exhale,
+      rest: this.rest,
     };
   }
 
