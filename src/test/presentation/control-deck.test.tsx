@@ -13,9 +13,7 @@ import { toBreathingViewModel } from "@/presentation/view-model";
 const settings = BreathingSettings.default();
 
 describe("ControlDeck", () => {
-  it(
-    "renders transport, stats, English steppers, recommended reset, and sound",
-    async () => {
+  it("renders transport, stats, English steppers, recommended reset, and sound", () => {
     const view = toBreathingViewModel(createIdleBreathingState(), settings);
     render(
       <ControlDeck
@@ -36,14 +34,6 @@ describe("ControlDeck", () => {
     expect(screen.getByText("Cycle")).toBeInTheDocument();
     expect(screen.getByText("Elapsed")).toBeInTheDocument();
     expect(screen.getByText("00:00")).toBeInTheDocument();
-    const disclosure = screen.getByRole("button", { name: "Durations" });
-    expect(disclosure).toHaveAttribute("aria-controls", "duration-panel");
-    await waitFor(
-      () => {
-        expect(disclosure).toHaveAttribute("aria-expanded", "true");
-      },
-      { timeout: 10_000 },
-    );
     expect(screen.getByLabelText("Decrease inhale duration")).toBeInTheDocument();
     expect(screen.getByLabelText("Increase hold duration")).toBeInTheDocument();
     expect(screen.getByLabelText("Decrease exhale duration")).toBeInTheDocument();
@@ -60,12 +50,13 @@ describe("ControlDeck", () => {
     expect(screen.getByText("2s")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Use 4-4-6-2" })).toBeInTheDocument();
     expect(screen.getByText(/A common calming pattern/i)).toBeInTheDocument();
+    const disclosure = screen.getByRole("button", { name: "Durations" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    expect(disclosure).toHaveAttribute("aria-controls", "duration-panel");
     expect(screen.getByText("Sound")).toBeInTheDocument();
     expect(screen.queryByText(/history/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/badge/i)).not.toBeInTheDocument();
-    },
-    15_000,
-  );
+  });
 
   it("shows Pause while running and wires control callbacks", async () => {
     const user = userEvent.setup();
@@ -102,12 +93,6 @@ describe("ControlDeck", () => {
     await user.click(screen.getByRole("button", { name: "Reset" }));
     expect(onReset).toHaveBeenCalledOnce();
 
-    await waitFor(
-      () => {
-        expect(screen.getByLabelText("Increase inhale duration")).toBeInTheDocument();
-      },
-      { timeout: 10_000 },
-    );
     await user.click(screen.getByLabelText("Increase inhale duration"));
     expect(onAdjust).toHaveBeenCalledWith("inhale", 1);
 

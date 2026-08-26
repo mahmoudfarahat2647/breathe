@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -15,7 +15,7 @@ describe("AmbientBackground", () => {
 });
 
 describe("BreatheApp", () => {
-  it("renders the wordmark, announcer, and decorative SVG", async () => {
+  it("renders the wordmark, announcer, and decorative SVG", () => {
     render(<BreatheApp />);
 
     expect(screen.getByText("Breathe")).toBeInTheDocument();
@@ -28,16 +28,13 @@ describe("BreatheApp", () => {
     expect(
       screen.getByRole("region", { name: "Breathing exercise controls" }),
     ).toBeInTheDocument();
-    const disclosure = screen.getByRole("button", { name: "Durations" });
-    await waitFor(
-      () => {
-        expect(disclosure).toHaveAttribute("aria-expanded", "true");
-      },
-      { timeout: 10_000 },
+    expect(screen.getByRole("button", { name: "Durations" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
     );
     expect(screen.getByLabelText("Decrease rest duration")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Use 4-4-6-2" })).toBeInTheDocument();
-  }, 15_000);
+  });
 
   it("moves focus to Pause on start and Start/Resume on pause", async () => {
     const user = userEvent.setup();
