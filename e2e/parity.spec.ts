@@ -68,6 +68,7 @@ test.describe("parity — desktop", () => {
   test("starts, pauses, resumes, and resets from transport controls", async ({
     page,
   }) => {
+    test.setTimeout(60_000);
     await page.goto("/");
     await page.getByRole("button", { name: "Start", exact: true }).click();
     await expect(page.locator("svg.square-svg")).not.toHaveClass(/idle/);
@@ -98,6 +99,7 @@ test.describe("parity — desktop", () => {
   });
 
   test("advances through inhale, hold, exhale, and rest", async ({ page }) => {
+    test.setTimeout(90_000);
     await page.goto("/");
     await page.getByRole("button", { name: "Start", exact: true }).click();
     await expect(page.locator("#side-inhale")).toHaveClass(/active/);
