@@ -45,6 +45,7 @@ const PHASE_TONES: Record<
     { start: 392, end: 392, duration: 0.16, delay: 0.22 },
   ],
   exhale: [{ start: 440, end: 180, duration: 0.7, delay: 0 }],
+  rest: [],
 };
 
 export function createBreathingAudio(deps: { Context?: AudioContextCtor } = {}) {

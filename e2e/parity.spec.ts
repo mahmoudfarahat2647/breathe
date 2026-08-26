@@ -1,55 +1,68 @@
 import { test, expect, type Page } from "@playwright/test";
 
-async function expectTriangleGeometry(page: Page) {
-  const svg = page.locator("svg.triangle-svg");
-  await expect(svg).toHaveAttribute("viewBox", "0 0 400 366");
+async function expectSquareGeometry(page: Page) {
+  const svg = page.locator("svg.square-svg");
+  await expect(svg).toHaveAttribute("viewBox", "0 0 400 400");
   await expect(svg).toHaveAttribute("aria-hidden", "true");
-  await expect(page.locator(".triangle-base")).toHaveAttribute(
+  await expect(page.locator(".square-base")).toHaveAttribute(
     "d",
-    "M200,39 L365,325 L35,325 Z",
+    "M40,360 L40,40 L360,40 L360,360 Z",
   );
   await expect(page.locator("#side-inhale")).toHaveAttribute(
     "d",
-    "M35,325 L200,39",
+    "M40,360 L40,40",
   );
-  await expect(page.locator("#side-hold")).toHaveAttribute(
-    "d",
-    "M200,39 L365,325",
-  );
+  await expect(page.locator("#side-hold")).toHaveAttribute("d", "M40,40 L360,40");
   await expect(page.locator("#side-exhale")).toHaveAttribute(
     "d",
-    "M365,325 L35,325",
+    "M360,40 L360,360",
+  );
+  await expect(page.locator("#side-rest")).toHaveAttribute(
+    "d",
+    "M360,360 L40,360",
   );
   const dot = page.locator("#progressDot");
   await expect(dot).toHaveAttribute("r", "7");
-  expect(Number(await dot.getAttribute("cx"))).toBe(35);
-  expect(Number(await dot.getAttribute("cy"))).toBe(325);
+  expect(Number(await dot.getAttribute("cx"))).toBe(40);
+  expect(Number(await dot.getAttribute("cy"))).toBe(360);
+}
+
+async function expectSquareAboveControls(page: Page) {
+  const square = page.locator(".square-wrap");
+  const controls = page.locator("#controls");
+  const squareBox = await square.boundingBox();
+  const controlsBox = await controls.boundingBox();
+  expect(squareBox, "square wrap should be measurable").toBeTruthy();
+  expect(controlsBox, "controls should be measurable").toBeTruthy();
+  expect(squareBox!.y + squareBox!.height).toBeLessThan(controlsBox!.y);
 }
 
 test.describe("parity — desktop", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("renders reference controls, labels, and idle triangle", async ({
-    page,
-  }) => {
+  test("renders square geometry, labels, and idle state", async ({ page }) => {
     await page.goto("/");
-    await expectTriangleGeometry(page);
-    await expect(page.locator("svg.triangle-svg")).toHaveClass(/idle/);
+    await expectSquareGeometry(page);
+    await expect(page.locator("svg.square-svg")).toHaveClass(/idle/);
     await expect(page.getByText("INHALE", { exact: true })).toBeVisible();
-    await expect(page.getByText("شهيق").first()).toBeVisible();
+    await expect(page.getByText("شهيق")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Reset", exact: true })).toBeVisible();
     await expect(page.getByText("Cycle")).toBeVisible();
     await expect(page.getByText("Elapsed")).toBeVisible();
     await expect(page.getByText("00:00")).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Reset to Recommended (4-4-6)" }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Use 4-4-6-2" })).toBeVisible();
+    await expect(page.getByLabel("Decrease rest duration")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Durations" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
     await expect(page.getByRole("switch", { name: "Sound" })).toHaveAttribute(
       "aria-checked",
       "false",
     );
     await expect(page.getByText(/history/i)).toHaveCount(0);
+    await expectSquareAboveControls(page);
   });
 
   test("starts, pauses, resumes, and resets from transport controls", async ({
@@ -57,7 +70,7 @@ test.describe("parity — desktop", () => {
   }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Start", exact: true }).click();
-    await expect(page.locator("svg.triangle-svg")).not.toHaveClass(/idle/);
+    await expect(page.locator("svg.square-svg")).not.toHaveClass(/idle/);
     await expect(page.getByRole("button", { name: "Pause" })).toBeFocused();
     await expect(page.locator("#side-inhale")).toHaveClass(/active/);
 
@@ -69,8 +82,35 @@ test.describe("parity — desktop", () => {
 
     await page.getByRole("button", { name: "Reset", exact: true }).click();
     await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible();
-    await expect(page.locator("svg.triangle-svg")).toHaveClass(/idle/);
+    await expect(page.locator("svg.square-svg")).toHaveClass(/idle/);
     await expect(page.getByText("00:00")).toBeVisible();
+  });
+
+  test("applies the 4-4-6-2 preset from the durations panel", async ({ page }) => {
+    await page.goto("/");
+    await page.getByLabel("Increase rest duration").click();
+    await expect(page.locator("#restValue")).toHaveText("3s");
+    await page.getByRole("button", { name: "Use 4-4-6-2" }).click();
+    await expect(page.locator("#inhaleValue")).toHaveText("4s");
+    await expect(page.locator("#holdValue")).toHaveText("4s");
+    await expect(page.locator("#exhaleValue")).toHaveText("6s");
+    await expect(page.locator("#restValue")).toHaveText("2s");
+  });
+
+  test("advances through inhale, hold, exhale, and rest", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Start", exact: true }).click();
+    await expect(page.locator("#side-inhale")).toHaveClass(/active/);
+    await expect(page.locator("#side-hold")).toHaveClass(/active/, {
+      timeout: 6_000,
+    });
+    await expect(page.locator("#side-exhale")).toHaveClass(/active/, {
+      timeout: 6_000,
+    });
+    await expect(page.locator("#side-rest")).toHaveClass(/active/, {
+      timeout: 8_000,
+    });
+    await expect(page.getByText("REST", { exact: true })).toBeVisible();
   });
 
   test("Space toggles transport and R resets when focus is not on a control", async ({
@@ -89,7 +129,7 @@ test.describe("parity — desktop", () => {
     await page.getByRole("button", { name: "Reset", exact: true }).focus();
     await page.keyboard.press("Space");
     await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
-    await expect(page.locator("svg.triangle-svg")).toHaveClass(/idle/);
+    await expect(page.locator("svg.square-svg")).toHaveClass(/idle/);
   });
 
   test("does not steal Space from the focused Sound switch", async ({
@@ -104,33 +144,59 @@ test.describe("parity — desktop", () => {
     await expect(
       page.getByRole("button", { name: "Start", exact: true }),
     ).toBeVisible();
-    await expect(page.locator("svg.triangle-svg")).toHaveClass(/idle/);
+    await expect(page.locator("svg.square-svg")).toHaveClass(/idle/);
   });
 });
 
 test.describe("parity — mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("keeps the bilingual exercise usable under 480px", async ({ page }) => {
+  test("keeps the exercise usable under 480px without overlap", async ({
+    page,
+  }) => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible();
     await expect(page.getByLabel("Decrease inhale duration")).toBeVisible();
-    await expectTriangleGeometry(page);
+    await expect(page.getByLabel("Decrease rest duration")).toBeVisible();
+    await expectSquareGeometry(page);
+    await expectSquareAboveControls(page);
     await page.getByRole("button", { name: "Start", exact: true }).click();
     await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
   });
 });
 
-test.describe("parity — short viewport", () => {
+test.describe("parity — short viewport 600", () => {
   test.use({ viewport: { width: 1024, height: 600 } });
 
-  test("shrinks the triangle wrap at max-height 640px", async ({ page }) => {
+  test("collapses durations and keeps the square above controls", async ({
+    page,
+  }) => {
     await page.goto("/");
-    const width = await page.locator(".triangle-wrap").evaluate((el) => {
-      return getComputedStyle(el).width;
-    });
-    expect(Number.parseFloat(width)).toBeLessThanOrEqual(480);
+    const disclosure = page.getByRole("button", { name: "Durations" });
+    await expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    await expect(page.getByLabel("Decrease inhale duration")).toBeHidden();
+    await disclosure.click();
+    await expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByLabel("Decrease rest duration")).toBeVisible();
     await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+    await expectSquareAboveControls(page);
+  });
+});
+
+test.describe("parity — short viewport 472", () => {
+  test.use({ viewport: { width: 1024, height: 472 } });
+
+  test("does not overlap the square and control deck at 1024×472", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Durations" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+    await expectSquareGeometry(page);
+    await expectSquareAboveControls(page);
   });
 });
 

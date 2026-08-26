@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { AmbientBackground } from "./ambient-background";
-import { BreathingTriangle } from "./breathing-triangle";
+import { BreathingSquare } from "./breathing-square";
 import { ControlDeck } from "./control-deck";
 import { handleBreathingKeydown } from "./keyboard";
 import {
@@ -50,16 +50,19 @@ export function BreatheApp({
 
   return (
     <div className={`breathe-root ${engine.view.phaseClass}`}>
+      <a className="skip-link" href="#controls">
+        Skip to controls
+      </a>
       <AmbientBackground />
+      <div className="grain" aria-hidden="true" />
 
       <header className="app-header">
         <span className="dot" aria-hidden="true" />
         <span>Breathe</span>
-        <span className="ar">تنفّس</span>
       </header>
 
       <main className="stage">
-        <BreathingTriangle
+        <BreathingSquare
           view={engine.view}
           pulse={engine.pulseNonce > 0}
           pulseKey={engine.pulseNonce}

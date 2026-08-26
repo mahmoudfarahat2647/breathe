@@ -6,20 +6,20 @@ import { AmbientBackground } from "@/presentation/ambient-background";
 import { BreatheApp } from "@/presentation/breathe-app";
 
 describe("AmbientBackground", () => {
-  it("renders three decorative blobs", () => {
+  it("renders four decorative blobs", () => {
     const { container } = render(<AmbientBackground />);
     const ambient = container.querySelector(".ambient");
     expect(ambient).toHaveAttribute("aria-hidden", "true");
-    expect(container.querySelectorAll(".blob")).toHaveLength(3);
+    expect(container.querySelectorAll(".blob")).toHaveLength(4);
   });
 });
 
 describe("BreatheApp", () => {
-  it("renders the bilingual wordmark, announcer, and decorative SVG", () => {
+  it("renders the wordmark, announcer, and decorative SVG", () => {
     render(<BreatheApp />);
 
     expect(screen.getByText("Breathe")).toBeInTheDocument();
-    expect(screen.getByText("تنفّس")).toBeInTheDocument();
+    expect(screen.queryByText("تنفّس")).not.toBeInTheDocument();
     expect(screen.getByRole("img", { hidden: true })).toHaveAttribute(
       "aria-hidden",
       "true",
@@ -28,6 +28,12 @@ describe("BreatheApp", () => {
     expect(
       screen.getByRole("region", { name: "Breathing exercise controls" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Durations" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(screen.getByLabelText("Decrease rest duration")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Use 4-4-6-2" })).toBeInTheDocument();
   });
 
   it("moves focus to Pause on start and Start/Resume on pause", async () => {

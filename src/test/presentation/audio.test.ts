@@ -118,6 +118,16 @@ describe("createBreathingAudio", () => {
     );
   });
 
+  it("stays silent for rest even when sound is enabled", () => {
+    const { FakeAudioContext, oscillators } = fakeAudioContext();
+    const audio = createBreathingAudio({
+      Context: FakeAudioContext as unknown as typeof AudioContext,
+    });
+    audio.ensure();
+    audio.playPhase("rest", true);
+    expect(oscillators).toHaveLength(0);
+  });
+
   it("stays silent when sound is disabled even after ensure()", () => {
     const { FakeAudioContext, oscillators } = fakeAudioContext();
     const audio = createBreathingAudio({
