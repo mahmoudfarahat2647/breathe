@@ -47,3 +47,7 @@ next-env.d.ts
 # package manager lockfiles that must not appear
 package-lock.json
 yarn.lock
+
+# agent and skills artifacts
+.agents/
+skills-lock.json

@@ -22,6 +22,8 @@ describe("toBreathingViewModel", () => {
     expect(view.elapsed).toBe("00:00");
     expect(view.primaryLabel).toBe("Start");
     expect(view.showPause).toBe(false);
+    expect(view.isCompleted).toBe(false);
+    expect(view.goalRemaining).toBeNull();
     expect(view.svgIdle).toBe(true);
     expect(view.phaseClass).toBe("phase-inhale");
     expect(view.sides.inhale.state).toBe("pending");
@@ -72,6 +74,41 @@ describe("toBreathingViewModel", () => {
 
     expect(view.phaseEn).toBe("HOLD");
     expect(view.durationHint).toBe("1 second");
+  });
+
+  it("shows remaining goal time while a minute goal is active", () => {
+    const running = {
+      ...startBreathing(createIdleBreathingState()),
+      totalElapsedSeconds: 60,
+      phaseElapsedSeconds: 0,
+      phaseIndex: 0,
+      lastFrameTimeMs: 60_000,
+      phaseDurationSeconds: 4,
+    };
+    const view = toBreathingViewModel(running, settings, { kind: "minutes", minutes: 5 });
+
+    expect(view.goalRemaining).toBe("04:00");
+    expect(view.isCompleted).toBe(false);
+  });
+
+  it("shows completed state without pause controls", () => {
+    const completed = {
+      ...startBreathing(createIdleBreathingState()),
+      status: "completed" as const,
+      cycleCount: 2,
+      totalElapsedSeconds: 120,
+      phaseElapsedSeconds: 1,
+      phaseIndex: 0,
+      lastFrameTimeMs: null,
+      phaseDurationSeconds: 4,
+    };
+    const view = toBreathingViewModel(completed, settings);
+
+    expect(view.isCompleted).toBe(true);
+    expect(view.showPause).toBe(false);
+    expect(view.primaryLabel).toBe("Start");
+    expect(view.goalRemaining).toBeNull();
+    expect(view.cycleCount).toBe("2");
   });
 
   it("formats stepper values with an s suffix", () => {

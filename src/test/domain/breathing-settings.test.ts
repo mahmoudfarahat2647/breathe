@@ -23,7 +23,7 @@ describe("BreathingSettings", () => {
       exhale: PHASE_DURATION_LIMITS.exhale.min,
       rest: PHASE_DURATION_LIMITS.rest.min,
     });
-    expect(settings.toDto()).toEqual({ inhale: 2, hold: 1, exhale: 2, rest: 1 });
+    expect(settings.toDto()).toEqual({ inhale: 2, hold: 0, exhale: 2, rest: 0 });
 
     const maxed = BreathingSettings.fromDto({
       inhale: 15,
@@ -34,6 +34,32 @@ describe("BreathingSettings", () => {
     expect(maxed.toDto()).toEqual({ inhale: 15, hold: 15, exhale: 15, rest: 15 });
   });
 
+  it("accepts zero hold and rest for presets but steppers clamp at 1", () => {
+    const zeroHoldRest = BreathingSettings.fromDto({
+      inhale: 4,
+      hold: 0,
+      exhale: 6,
+      rest: 0,
+    });
+    expect(zeroHoldRest.toDto()).toEqual({ inhale: 4, hold: 0, exhale: 6, rest: 0 });
+
+    // Decrementing a 0-second hold or rest stays at 0 (does not jump to 1)
+    expect(zeroHoldRest.adjust("hold", -1).toDto().hold).toBe(0);
+    expect(zeroHoldRest.adjust("rest", -1).toDto().rest).toBe(0);
+    // Incrementing from 0 goes to 1
+    expect(zeroHoldRest.adjust("hold", 1).toDto().hold).toBe(1);
+    expect(zeroHoldRest.adjust("rest", 1).toDto().rest).toBe(1);
+
+    const minHold = BreathingSettings.fromDto({
+      inhale: 4,
+      hold: 1,
+      exhale: 6,
+      rest: 1,
+    });
+    expect(minHold.adjust("hold", -1).toDto().hold).toBe(1);
+    expect(minHold.adjust("rest", -1).toDto().rest).toBe(1);
+  });
+
   it("rejects durations outside the reference limits", () => {
     expect(() =>
       BreathingSettings.fromDto({ inhale: 1, hold: 4, exhale: 6, rest: 2 }),
@@ -42,13 +68,13 @@ describe("BreathingSettings", () => {
       BreathingSettings.fromDto({ inhale: 16, hold: 4, exhale: 6, rest: 2 }),
     ).toThrow(DomainValidationError);
     expect(() =>
-      BreathingSettings.fromDto({ inhale: 4, hold: 0, exhale: 6, rest: 2 }),
+      BreathingSettings.fromDto({ inhale: 4, hold: -1, exhale: 6, rest: 2 }),
     ).toThrow(DomainValidationError);
     expect(() =>
       BreathingSettings.fromDto({ inhale: 4, hold: 4, exhale: 1, rest: 2 }),
     ).toThrow(DomainValidationError);
     expect(() =>
-      BreathingSettings.fromDto({ inhale: 4, hold: 4, exhale: 6, rest: 0 }),
+      BreathingSettings.fromDto({ inhale: 4, hold: 4, exhale: 6, rest: -1 }),
     ).toThrow(DomainValidationError);
     expect(() =>
       BreathingSettings.fromDto({ inhale: 4, hold: 4, exhale: 6, rest: 16 }),

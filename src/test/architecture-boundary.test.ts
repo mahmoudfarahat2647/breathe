@@ -19,6 +19,8 @@ describe("architecture boundary", () => {
     expect(typeof application.GetSettings).toBe("function");
     expect(typeof application.SaveSettings).toBe("function");
     expect(typeof application.SaveSession).toBe("function");
+    expect(typeof application.GetSessionHistory).toBe("function");
+    expect(typeof application.ApplyPreset).toBe("function");
   });
 
   it("presentation never imports infrastructure or Supabase", async () => {
@@ -39,6 +41,7 @@ describe("architecture boundary", () => {
     expect(typeof infrastructure.createSupabaseServerClient).toBe("function");
     expect(typeof infrastructure.SupabaseSettingsRepository).toBe("function");
     expect(typeof infrastructure.SupabaseSessionRepository).toBe("function");
+    expect(typeof infrastructure.SupabaseSessionHistoryRepository).toBe("function");
     expect(typeof infrastructure.userIdFromVerifiedClaims).toBe("function");
     expect(typeof infrastructure.ensureAnonymousSession).toBe("function");
   });

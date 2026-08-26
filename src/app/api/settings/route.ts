@@ -2,7 +2,7 @@ import { GetSettings, SaveSettings } from "@/application";
 import {
   SupabaseSettingsRepository,
   jsonResponse,
-  settingsFromRequestBody,
+  preferencesFromRequestBody,
   toErrorResponse,
   userIdFromVerifiedClaims,
 } from "@/infrastructure";
@@ -27,13 +27,14 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const { userId, saveSettings } = await composeSettings();
+    const { userId, getSettings, saveSettings } = await composeSettings();
     const body: unknown = await request.json();
-    const settings = await saveSettings.execute(
+    const existing = await getSettings.execute(userId);
+    const preferences = await saveSettings.execute(
       userId,
-      settingsFromRequestBody(body),
+      preferencesFromRequestBody(body, existing?.goal ?? null),
     );
-    return jsonResponse(settings);
+    return jsonResponse(preferences);
   } catch (error) {
     return toErrorResponse(error);
   }

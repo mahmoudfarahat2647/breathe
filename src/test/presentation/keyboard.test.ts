@@ -57,6 +57,22 @@ describe("handleBreathingKeydown", () => {
     expect(start).not.toHaveBeenCalled();
   });
 
+  it("starts on Space while completed", () => {
+    const start = vi.fn();
+    const pause = vi.fn();
+    const event = keyEvent({ code: "Space", key: " " });
+
+    handleBreathingKeydown(event, {
+      status: "completed",
+      start,
+      pause,
+      reset: vi.fn(),
+    });
+
+    expect(start).toHaveBeenCalledOnce();
+    expect(pause).not.toHaveBeenCalled();
+  });
+
   it("resets on r and R even when a button is focused", () => {
     const reset = vi.fn();
     handleBreathingKeydown(keyEvent({ key: "r", tagName: "BUTTON" }), {

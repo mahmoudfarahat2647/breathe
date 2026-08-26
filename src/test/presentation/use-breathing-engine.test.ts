@@ -36,6 +36,7 @@ describe("useBreathingEngine", () => {
     const audio = {
       ensure: vi.fn(),
       playPhase: vi.fn(),
+      playCompletion: vi.fn(),
       context: null,
     };
 
@@ -88,6 +89,7 @@ describe("useBreathingEngine", () => {
     const audio = {
       ensure: vi.fn(),
       playPhase: vi.fn(),
+      playCompletion: vi.fn(),
       context: null,
     };
     const { result } = renderHook(() =>
@@ -99,12 +101,18 @@ describe("useBreathingEngine", () => {
     );
 
     act(() => {
+      result.current.setGoal({ kind: "minutes", minutes: 5 });
       result.current.start();
     });
+    expect(result.current.activeGoal).toEqual({ kind: "minutes", minutes: 5 });
+    expect(result.current.view.goalRemaining).toBe("05:00");
+
     act(() => {
       result.current.reset();
     });
 
+    expect(result.current.activeGoal).toBeNull();
+    expect(result.current.view.goalRemaining).toBeNull();
     expect(result.current.view.svgIdle).toBe(true);
     expect(result.current.view.primaryLabel).toBe("Start");
     expect(result.current.view.cycleCount).toBe("0");
@@ -121,6 +129,7 @@ describe("useBreathingEngine", () => {
     });
     expect(result.current.view.stepperValues.inhale).toBe("2s");
     expect(result.current.view.countdown).toBe("2");
+    expect(result.current.activePresetId).toBe("custom");
 
     act(() => {
       result.current.recommend();
@@ -131,6 +140,29 @@ describe("useBreathingEngine", () => {
       exhale: "6s",
       rest: "2s",
     });
+    expect(result.current.activePresetId).toBe("current-calm");
+  });
+
+  it("applies presets and marks manual edits as custom", () => {
+    const { result } = renderHook(() => useBreathingEngine());
+
+    expect(result.current.activePresetId).toBe("current-calm");
+
+    act(() => {
+      result.current.applyPreset("box");
+    });
+    expect(result.current.activePresetId).toBe("box");
+    expect(result.current.view.stepperValues).toEqual({
+      inhale: "4s",
+      hold: "4s",
+      exhale: "4s",
+      rest: "4s",
+    });
+
+    act(() => {
+      result.current.adjust("inhale", 1);
+    });
+    expect(result.current.activePresetId).toBe("custom");
   });
 
   it("only plays tones after sound is enabled", () => {
@@ -138,6 +170,7 @@ describe("useBreathingEngine", () => {
     const audio = {
       ensure: vi.fn(),
       playPhase: vi.fn(),
+      playCompletion: vi.fn(),
       context: null,
     };
     const { result } = renderHook(() =>
@@ -168,6 +201,7 @@ describe("useBreathingEngine", () => {
 
 const SESSION_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const SESSION_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const SESSION_C = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 
 function createScheduleStub() {
   let nextId = 1;
@@ -199,7 +233,10 @@ function fakePersistence(
 ): BreathingPersistence {
   return {
     async initialize() {
-      return { inhale: 4, hold: 4, exhale: 6, rest: 2 };
+      return {
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+        goal: null,
+      };
     },
     async saveSettings() {},
     async saveSession() {},
@@ -225,7 +262,10 @@ function completeCycles(
 describe("useBreathingEngine persistence", () => {
   it("restores stored durations after initialize", async () => {
     const persistence = fakePersistence({
-      initialize: vi.fn(async () => ({ inhale: 5, hold: 2, exhale: 8, rest: 3 })),
+      initialize: vi.fn(async () => ({
+        durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
+        goal: { kind: "minutes" as const, minutes: 5 },
+      })),
     });
     const { result } = renderHook(() => useBreathingEngine({ persistence }));
 
@@ -236,6 +276,7 @@ describe("useBreathingEngine persistence", () => {
         exhale: "8s",
         rest: "3s",
       });
+      expect(result.current.selectedGoal).toEqual({ kind: "minutes", minutes: 5 });
     });
   });
 
@@ -248,7 +289,7 @@ describe("useBreathingEngine persistence", () => {
     const { result } = renderHook(() =>
       useBreathingEngine({
         persistence,
-        audio: { ensure: vi.fn(), playPhase: vi.fn(), context: null },
+        audio: { ensure: vi.fn(), playPhase: vi.fn(), playCompletion: vi.fn(), context: null },
       }),
     );
 
@@ -271,7 +312,10 @@ describe("useBreathingEngine persistence", () => {
 
   it("loads a saved rest duration even when inhale, hold, and exhale match defaults", async () => {
     const persistence = fakePersistence({
-      initialize: vi.fn(async () => ({ inhale: 4, hold: 4, exhale: 6, rest: 8 })),
+      initialize: vi.fn(async () => ({
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 8 },
+        goal: null,
+      })),
     });
     const { result } = renderHook(() => useBreathingEngine({ persistence }));
 
@@ -282,10 +326,8 @@ describe("useBreathingEngine persistence", () => {
 
   it("does not overwrite local edits that happen before initialize resolves", async () => {
     let resolveInit!: (value: {
-      inhale: number;
-      hold: number;
-      exhale: number;
-      rest: number;
+      durations: { inhale: number; hold: number; exhale: number; rest: number };
+      goal: null;
     }) => void;
     const persistence = fakePersistence({
       initialize: () =>
@@ -301,7 +343,10 @@ describe("useBreathingEngine persistence", () => {
     expect(result.current.view.stepperValues.inhale).toBe("5s");
 
     await act(async () => {
-      resolveInit({ inhale: 8, hold: 8, exhale: 8, rest: 8 });
+      resolveInit({
+        durations: { inhale: 8, hold: 8, exhale: 8, rest: 8 },
+        goal: null,
+      });
       await Promise.resolve();
     });
 
@@ -334,10 +379,8 @@ describe("useBreathingEngine persistence", () => {
     });
     expect(saveSettings).toHaveBeenCalledTimes(1);
     expect(saveSettings).toHaveBeenCalledWith({
-      inhale: 6,
-      hold: 5,
-      exhale: 6,
-      rest: 2,
+      durations: { inhale: 6, hold: 5, exhale: 6, rest: 2 },
+      goal: null,
     });
 
     act(() => {
@@ -347,10 +390,8 @@ describe("useBreathingEngine persistence", () => {
       clocks.advance(SETTINGS_SAVE_DEBOUNCE_MS);
     });
     expect(saveSettings).toHaveBeenLastCalledWith({
-      inhale: 4,
-      hold: 4,
-      exhale: 6,
-      rest: 2,
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      goal: null,
     });
   });
 
@@ -377,7 +418,7 @@ describe("useBreathingEngine persistence", () => {
 
     expect(saveSettings).toHaveBeenCalledTimes(1);
     expect(saveSettings).toHaveBeenCalledWith(
-      { inhale: 5, hold: 4, exhale: 7, rest: 2 },
+      { durations: { inhale: 5, hold: 4, exhale: 7, rest: 2 }, goal: null },
       undefined,
     );
   });
@@ -388,12 +429,13 @@ describe("useBreathingEngine persistence", () => {
     const createSessionId = vi
       .fn()
       .mockReturnValueOnce(SESSION_A)
-      .mockReturnValueOnce(SESSION_B);
+      .mockReturnValueOnce(SESSION_B)
+      .mockReturnValueOnce(SESSION_C);
     const { result } = renderHook(() =>
       useBreathingEngine({
         raf: frames.raf,
         caf: frames.caf,
-        audio: { ensure: vi.fn(), playPhase: vi.fn(), context: null },
+        audio: { ensure: vi.fn(), playPhase: vi.fn(), playCompletion: vi.fn(), context: null },
         persistence: fakePersistence({ saveSession }),
         createSessionId,
       }),
@@ -420,7 +462,7 @@ describe("useBreathingEngine persistence", () => {
     });
     expect(saveSession).toHaveBeenCalledTimes(1);
     expect(saveSession).toHaveBeenCalledWith({
-      id: SESSION_A,
+      id: SESSION_B,
       cycleCount: 1,
       elapsedSeconds: expect.any(Number),
       durations: { inhale: 5, hold: 4, exhale: 6, rest: 2 },
@@ -435,7 +477,7 @@ describe("useBreathingEngine persistence", () => {
     });
     expect(saveSession).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ id: SESSION_B }),
+      expect.objectContaining({ id: SESSION_C }),
     );
   });
 
@@ -445,7 +487,7 @@ describe("useBreathingEngine persistence", () => {
       useBreathingEngine({
         raf: frames.raf,
         caf: frames.caf,
-        audio: { ensure: vi.fn(), playPhase: vi.fn(), context: null },
+        audio: { ensure: vi.fn(), playPhase: vi.fn(), playCompletion: vi.fn(), context: null },
         persistence: fakePersistence({
           saveSession: vi.fn(async () => {
             throw new Error("offline");
@@ -466,5 +508,75 @@ describe("useBreathingEngine persistence", () => {
     expect(result.current.view.primaryLabel).toBe("Start");
     expect(result.current.view.elapsed).toBe("00:00");
     expect(result.current.view.svgIdle).toBe(true);
+  });
+
+  it("auto-completes a cycle goal, saves once, and does not save again on reset", () => {
+    const frames = createRafStub();
+    const saveSession = vi.fn(async () => {});
+    const playCompletion = vi.fn();
+    const { result } = renderHook(() =>
+      useBreathingEngine({
+        raf: frames.raf,
+        caf: frames.caf,
+        audio: {
+          ensure: vi.fn(),
+          playPhase: vi.fn(),
+          playCompletion,
+          context: null,
+        },
+        persistence: fakePersistence({ saveSession }),
+        createSessionId: () => SESSION_A,
+      }),
+    );
+
+    act(() => {
+      result.current.setGoal({ kind: "cycles", cycles: 1 });
+      result.current.start();
+    });
+
+    completeCycles(frames, 16);
+    expect(result.current.engine.status).toBe("completed");
+    expect(result.current.view.isCompleted).toBe(true);
+    expect(frames.pendingCount).toBe(0);
+    expect(playCompletion).toHaveBeenCalledWith(false);
+    expect(saveSession).toHaveBeenCalledTimes(1);
+    expect(saveSession).toHaveBeenCalledWith({
+      id: SESSION_A,
+      cycleCount: 1,
+      elapsedSeconds: expect.any(Number),
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+    });
+
+    act(() => {
+      result.current.reset();
+    });
+    expect(saveSession).toHaveBeenCalledTimes(1);
+    expect(result.current.view.svgIdle).toBe(true);
+  });
+
+  it("announces that a mid-session goal change applies on the next run", () => {
+    const frames = createRafStub();
+    const { result } = renderHook(() =>
+      useBreathingEngine({
+        raf: frames.raf,
+        caf: frames.caf,
+        audio: {
+          ensure: vi.fn(),
+          playPhase: vi.fn(),
+          playCompletion: vi.fn(),
+          context: null,
+        },
+      }),
+    );
+
+    act(() => {
+      result.current.start();
+    });
+    act(() => {
+      result.current.setGoal({ kind: "minutes", minutes: 5 });
+    });
+    expect(result.current.announcement).toBe(
+      "Goal will apply on your next session.",
+    );
   });
 });

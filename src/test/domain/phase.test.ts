@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  MANUAL_STEPPER_LIMITS,
   PHASE_DURATION_LIMITS,
   PHASE_LABELS,
   PHASES,
@@ -15,11 +16,13 @@ describe("Phase", () => {
     expect(PHASES).toEqual(["inhale", "hold", "exhale", "rest"]);
   });
 
-  it("matches square-cycle duration limits including rest 1–15", () => {
+  it("allows zero hold and rest in preset limits while steppers stay 1–15", () => {
     expect(PHASE_DURATION_LIMITS.inhale).toEqual({ min: 2, max: 15 });
-    expect(PHASE_DURATION_LIMITS.hold).toEqual({ min: 1, max: 15 });
+    expect(PHASE_DURATION_LIMITS.hold).toEqual({ min: 0, max: 15 });
     expect(PHASE_DURATION_LIMITS.exhale).toEqual({ min: 2, max: 15 });
-    expect(PHASE_DURATION_LIMITS.rest).toEqual({ min: 1, max: 15 });
+    expect(PHASE_DURATION_LIMITS.rest).toEqual({ min: 0, max: 15 });
+    expect(MANUAL_STEPPER_LIMITS.hold).toEqual({ min: 1, max: 15 });
+    expect(MANUAL_STEPPER_LIMITS.rest).toEqual({ min: 1, max: 15 });
   });
 
   it("exposes English phase labels including REST", () => {

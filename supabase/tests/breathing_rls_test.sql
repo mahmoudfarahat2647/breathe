@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(27);
 
 insert into auth.users (
   instance_id,
@@ -189,6 +189,27 @@ select throws_ok(
   '23514',
   null,
   'invalid inhale duration is rejected'
+);
+
+select lives_ok(
+  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds)
+    values ('11111111-1111-4111-8111-111111111111', 4, 0, 6, 0)
+    on conflict (user_id) do update set hold_seconds = 0, rest_seconds = 0$$,
+  'zero hold and rest are accepted by check constraints'
+);
+
+select throws_ok(
+  $$update public.breathing_settings set goal_type = 'minutes', goal_value = 121 where user_id = '11111111-1111-4111-8111-111111111111'$$,
+  '23514',
+  null,
+  'minutes goal above 120 is rejected'
+);
+
+select throws_ok(
+  $$update public.breathing_settings set goal_type = 'cycles', goal_value = 101 where user_id = '11111111-1111-4111-8111-111111111111'$$,
+  '23514',
+  null,
+  'cycles goal above 100 is rejected'
 );
 
 select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', true);

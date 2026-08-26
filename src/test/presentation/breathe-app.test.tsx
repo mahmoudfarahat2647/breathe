@@ -25,15 +25,19 @@ describe("BreatheApp", () => {
       "true",
     );
     expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
-    expect(
-      screen.getByRole("region", { name: "Breathing exercise controls" }),
-    ).toBeInTheDocument();
+    const controls = screen.getByRole("region", {
+      name: "Breathing exercise controls",
+    });
+    expect(controls).toBeInTheDocument();
+    expect(controls).toContainElement(
+      screen.getByRole("group", { name: "Session goal" }),
+    );
     expect(screen.getByRole("button", { name: "Durations" })).toHaveAttribute(
       "aria-expanded",
       "true",
     );
     expect(screen.getByLabelText("Decrease rest duration")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Use 4-4-6-2" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Current Calm" })).toBeInTheDocument();
   });
 
   it("moves focus to Pause on start and Start/Resume on pause", async () => {

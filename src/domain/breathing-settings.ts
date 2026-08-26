@@ -1,5 +1,9 @@
 import { DomainValidationError } from "./errors";
-import { PHASE_DURATION_LIMITS, type Phase } from "./phase";
+import {
+  MANUAL_STEPPER_LIMITS,
+  PHASE_DURATION_LIMITS,
+  type Phase,
+} from "./phase";
 
 export type BreathingSettingsDto = {
   inhale: number;
@@ -56,10 +60,12 @@ export class BreathingSettings {
   }
 
   adjust(phase: Phase, direction: number): BreathingSettings {
-    const limits = PHASE_DURATION_LIMITS[phase];
+    const limits = MANUAL_STEPPER_LIMITS[phase];
+    const current = this.durationFor(phase);
+    const min = Math.min(limits.min, current);
     const next = Math.max(
-      limits.min,
-      Math.min(limits.max, this.durationFor(phase) + direction),
+      min,
+      Math.min(limits.max, current + direction),
     );
     return BreathingSettings.fromDto({
       ...this.toDto(),

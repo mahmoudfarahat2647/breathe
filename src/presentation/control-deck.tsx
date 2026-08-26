@@ -1,7 +1,8 @@
 "use client";
 
-import type { Ref } from "react";
+import type { ReactNode, Ref } from "react";
 
+import type { BreathingPresetId } from "@/domain/breathing-preset";
 import type { Phase } from "@/domain/phase";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import type { BreathingViewModel } from "./view-model";
 
 type ControlDeckProps = {
   view: BreathingViewModel;
+  activePresetId: BreathingPresetId;
   soundEnabled: boolean;
   startRef?: Ref<HTMLButtonElement>;
   pauseRef?: Ref<HTMLButtonElement>;
@@ -18,12 +20,16 @@ type ControlDeckProps = {
   onPause: () => void;
   onReset: () => void;
   onAdjust: (phase: Phase, direction: number) => void;
-  onRecommended: () => void;
+  onSelectPreset: (presetId: BreathingPresetId) => void;
+  onAnnounce: (message: string) => void;
   onSoundChange: (enabled: boolean) => void;
+  history?: ReactNode;
+  goalPicker?: ReactNode;
 };
 
 export function ControlDeck({
   view,
+  activePresetId,
   soundEnabled,
   startRef,
   pauseRef,
@@ -31,8 +37,11 @@ export function ControlDeck({
   onPause,
   onReset,
   onAdjust,
-  onRecommended,
+  onSelectPreset,
+  onAnnounce,
   onSoundChange,
+  history,
+  goalPicker,
 }: ControlDeckProps) {
   return (
     <section
@@ -81,13 +90,21 @@ export function ControlDeck({
             <span className="stat-label">Elapsed</span>
             <span className="stat-value">{view.elapsed}</span>
           </div>
+          {view.goalRemaining !== null ? (
+            <div className="stat">
+              <span className="stat-label">Remaining</span>
+              <span className="stat-value">{view.goalRemaining}</span>
+            </div>
+          ) : null}
         </div>
       </Card>
 
       <DurationStepper
         view={view}
+        activePresetId={activePresetId}
         onAdjust={onAdjust}
-        onRecommended={onRecommended}
+        onSelectPreset={onSelectPreset}
+        onAnnounce={onAnnounce}
       />
 
       <Card className="panel aux-row gap-0 py-[clamp(12px,2vh,16px)] ring-0">
@@ -100,6 +117,10 @@ export function ControlDeck({
           Sound
         </label>
       </Card>
+
+      {goalPicker}
+
+      {history}
     </section>
   );
 }

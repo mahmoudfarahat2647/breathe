@@ -4,6 +4,8 @@ export type BreathingSettingsRow = {
   hold_seconds: number;
   exhale_seconds: number;
   rest_seconds: number;
+  goal_type: "minutes" | "cycles" | null;
+  goal_value: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -31,6 +33,8 @@ export type Database = {
           hold_seconds: number;
           exhale_seconds: number;
           rest_seconds?: number;
+          goal_type?: "minutes" | "cycles" | null;
+          goal_value?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -40,6 +44,8 @@ export type Database = {
           hold_seconds?: number;
           exhale_seconds?: number;
           rest_seconds?: number;
+          goal_type?: "minutes" | "cycles" | null;
+          goal_value?: number | null;
           created_at?: string;
           updated_at?: string;
         };

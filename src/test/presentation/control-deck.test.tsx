@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -12,21 +13,30 @@ import { toBreathingViewModel } from "@/presentation/view-model";
 
 const settings = BreathingSettings.default();
 
+function renderControlDeck(
+  overrides: Partial<ComponentProps<typeof ControlDeck>> = {},
+) {
+  const view = overrides.view ?? toBreathingViewModel(createIdleBreathingState(), settings);
+  const props = {
+    view,
+    activePresetId: "current-calm" as const,
+    soundEnabled: false,
+    onStart: vi.fn(),
+    onPause: vi.fn(),
+    onReset: vi.fn(),
+    onAdjust: vi.fn(),
+    onSelectPreset: vi.fn(),
+    onAnnounce: vi.fn(),
+    onSoundChange: vi.fn(),
+    ...overrides,
+  };
+  render(<ControlDeck {...props} />);
+  return props;
+}
+
 describe("ControlDeck", () => {
-  it("renders transport, stats, English steppers, recommended reset, and sound", () => {
-    const view = toBreathingViewModel(createIdleBreathingState(), settings);
-    render(
-      <ControlDeck
-        view={view}
-        soundEnabled={false}
-        onStart={vi.fn()}
-        onPause={vi.fn()}
-        onReset={vi.fn()}
-        onAdjust={vi.fn()}
-        onRecommended={vi.fn()}
-        onSoundChange={vi.fn()}
-      />,
-    );
+  it("renders transport, stats, preset picker, steppers, and sound", () => {
+    renderControlDeck();
 
     expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Pause" })).not.toBeInTheDocument();
@@ -42,65 +52,44 @@ describe("ControlDeck", () => {
     expect(screen.getByText("Hold")).toBeInTheDocument();
     expect(screen.getByText("Exhale")).toBeInTheDocument();
     expect(screen.getByText("Rest")).toBeInTheDocument();
-    expect(screen.queryByText("شهيق")).not.toBeInTheDocument();
-    expect(screen.queryByText("حبس")).not.toBeInTheDocument();
-    expect(screen.queryByText("زفير")).not.toBeInTheDocument();
-    expect(screen.getAllByText("4s")).toHaveLength(2);
-    expect(screen.getByText("6s")).toBeInTheDocument();
-    expect(screen.getByText("2s")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Use 4-4-6-2" })).toBeInTheDocument();
-    expect(screen.getByText(/A common calming pattern/i)).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: "Breathing pattern" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Current Calm" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("radio", { name: "Box" })).toBeInTheDocument();
     const disclosure = screen.getByRole("button", { name: "Durations" });
     expect(disclosure).toHaveAttribute("aria-expanded", "true");
     expect(disclosure).toHaveAttribute("aria-controls", "duration-panel");
     expect(screen.getByText("Sound")).toBeInTheDocument();
-    expect(screen.queryByText(/history/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/badge/i)).not.toBeInTheDocument();
   });
 
   it("shows Pause while running and wires control callbacks", async () => {
     const user = userEvent.setup();
-    const onStart = vi.fn();
-    const onPause = vi.fn();
-    const onReset = vi.fn();
-    const onAdjust = vi.fn();
-    const onRecommended = vi.fn();
-    const onSoundChange = vi.fn();
-    const view = toBreathingViewModel(
-      startBreathing(createIdleBreathingState()),
-      settings,
-    );
-
-    render(
-      <ControlDeck
-        view={view}
-        soundEnabled={false}
-        startRef={{ current: null }}
-        pauseRef={{ current: null }}
-        onStart={onStart}
-        onPause={onPause}
-        onReset={onReset}
-        onAdjust={onAdjust}
-        onRecommended={onRecommended}
-        onSoundChange={onSoundChange}
-      />,
-    );
+    const props = renderControlDeck({
+      view: toBreathingViewModel(
+        startBreathing(createIdleBreathingState()),
+        settings,
+      ),
+      startRef: { current: null },
+      pauseRef: { current: null },
+    });
 
     expect(screen.getByRole("button", { name: "Pause" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Pause" }));
-    expect(onPause).toHaveBeenCalledOnce();
+    expect(props.onPause).toHaveBeenCalledOnce();
 
     await user.click(screen.getByRole("button", { name: "Reset" }));
-    expect(onReset).toHaveBeenCalledOnce();
+    expect(props.onReset).toHaveBeenCalledOnce();
 
     await user.click(screen.getByLabelText("Increase inhale duration"));
-    expect(onAdjust).toHaveBeenCalledWith("inhale", 1);
+    expect(props.onAdjust).toHaveBeenCalledWith("inhale", 1);
 
-    await user.click(screen.getByRole("button", { name: "Use 4-4-6-2" }));
-    expect(onRecommended).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole("radio", { name: "Box" }));
+    expect(props.onSelectPreset).toHaveBeenCalledWith("box");
 
     await user.click(screen.getByRole("switch", { name: "Sound" }));
-    expect(onSoundChange).toHaveBeenCalledWith(true);
+    expect(props.onSoundChange).toHaveBeenCalledWith(true);
   });
 
   it("collapses durations on short viewports until the user toggles", async () => {
@@ -115,19 +104,7 @@ describe("ControlDeck", () => {
       dispatchEvent: vi.fn(),
       onchange: null,
     }));
-    const view = toBreathingViewModel(createIdleBreathingState(), settings);
-    render(
-      <ControlDeck
-        view={view}
-        soundEnabled={false}
-        onStart={vi.fn()}
-        onPause={vi.fn()}
-        onReset={vi.fn()}
-        onAdjust={vi.fn()}
-        onRecommended={vi.fn()}
-        onSoundChange={vi.fn()}
-      />,
-    );
+    renderControlDeck();
 
     const disclosure = screen.getByRole("button", { name: "Durations" });
     await waitFor(() => {

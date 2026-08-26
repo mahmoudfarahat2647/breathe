@@ -6,6 +6,7 @@ import {
   formatElapsed,
   phaseProgress,
 } from "@/domain/breathing-engine";
+import { goalProgress, type SessionGoal } from "@/domain/session-goal";
 import {
   PHASE_LABELS,
   PHASES,
@@ -13,7 +14,11 @@ import {
   type Phase,
   type SideState,
 } from "@/domain/phase";
-import { interpolateDot, strokeDashoffset } from "./geometry";
+import {
+  interpolateDot,
+  interpolateTriangleDot,
+  strokeDashoffset,
+} from "./geometry";
 
 export type SideView = {
   state: SideState;
@@ -27,8 +32,10 @@ export type BreathingViewModel = {
   durationHint: string;
   cycleCount: string;
   elapsed: string;
+  goalRemaining: string | null;
   primaryLabel: "Start" | "Resume";
   showPause: boolean;
+  isCompleted: boolean;
   svgIdle: boolean;
   phaseClass: `phase-${Phase}`;
   sides: Record<Phase, SideView>;
@@ -41,6 +48,7 @@ export type BreathingViewModel = {
 export function toBreathingViewModel(
   state: BreathingEngineState,
   settings: BreathingSettings,
+  activeGoal: SessionGoal | null = null,
 ): BreathingViewModel {
   const phase = currentPhase(state);
   const displayedDuration = durationForDisplay(state, settings, phase);
@@ -50,6 +58,12 @@ export function toBreathingViewModel(
       : phaseProgress(state.phaseElapsedSeconds, displayedDuration);
   const label = PHASE_LABELS[phase];
   const sides = sideStates(state.phaseIndex, state.status);
+  const progressInfo = goalProgress(state, activeGoal);
+  const triangleMode = settings.rest === 0;
+  const dotPhase =
+    triangleMode && phase === "rest" ? ("exhale" as const) : phase;
+  const dotProgress =
+    triangleMode && phase === "rest" ? 1 : progress;
 
   return {
     phase,
@@ -62,8 +76,10 @@ export function toBreathingViewModel(
     durationHint: formatDurationHint(displayedDuration),
     cycleCount: String(displayedCycleCount(state)),
     elapsed: formatElapsed(state.totalElapsedSeconds),
+    goalRemaining: formatGoalRemaining(progressInfo),
     primaryLabel: state.status === "paused" ? "Resume" : "Start",
     showPause: state.status === "running",
+    isCompleted: state.status === "completed",
     svgIdle: state.status === "idle",
     phaseClass: `phase-${phase}`,
     sides: {
@@ -72,7 +88,12 @@ export function toBreathingViewModel(
       exhale: sideView(sides.exhale, progress),
       rest: sideView(sides.rest, progress),
     },
-    dot: interpolateDot(phase, progress),
+    dot: triangleMode
+      ? interpolateTriangleDot(
+          dotPhase === "rest" ? "exhale" : dotPhase,
+          dotProgress,
+        )
+      : interpolateDot(phase, progress),
     announcement: `${label}. ${displayedDuration} seconds.`,
     stepperValues: {
       inhale: `${settings.inhale}s`,
@@ -86,6 +107,7 @@ export function toBreathingViewModel(
 
 function displayedCycleCount(state: BreathingEngineState): number {
   if (state.status === "idle") return 0;
+  if (state.status === "completed") return state.cycleCount;
   return state.cycleCount + 1;
 }
 
@@ -100,6 +122,21 @@ function durationForDisplay(
 
 function formatDurationHint(seconds: number): string {
   return seconds === 1 ? "1 second" : `${seconds} seconds`;
+}
+
+function formatGoalRemaining(
+  progressInfo: ReturnType<typeof goalProgress>,
+): string | null {
+  if (!progressInfo || progressInfo.met) {
+    return null;
+  }
+  if (progressInfo.remainingSeconds !== null) {
+    return formatElapsed(progressInfo.remainingSeconds);
+  }
+  if (progressInfo.remainingCycles !== null) {
+    return String(progressInfo.remainingCycles);
+  }
+  return null;
 }
 
 function sideView(state: SideState, progress: number): SideView {

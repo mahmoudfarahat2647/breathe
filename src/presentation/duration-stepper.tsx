@@ -3,13 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 
 import { PHASES, type Phase } from "@/domain/phase";
+import type { BreathingPresetId } from "@/domain/breathing-preset";
 import { Button } from "@/components/ui/button";
 import type { BreathingViewModel } from "./view-model";
+import { PresetPicker } from "./preset-picker";
 
 type DurationStepperProps = {
   view: BreathingViewModel;
+  activePresetId: BreathingPresetId;
   onAdjust: (phase: Phase, direction: number) => void;
-  onRecommended: () => void;
+  onSelectPreset: (presetId: BreathingPresetId) => void;
+  onAnnounce: (message: string) => void;
 };
 
 const PHASE_ROW_EN: Record<Phase, string> = {
@@ -23,8 +27,10 @@ const DURATION_PANEL_ID = "duration-panel";
 
 export function DurationStepper({
   view,
+  activePresetId,
   onAdjust,
-  onRecommended,
+  onSelectPreset,
+  onAnnounce,
 }: DurationStepperProps) {
   const [open, setOpen] = useState(true);
   const [ready, setReady] = useState(false);
@@ -72,6 +78,12 @@ export function DurationStepper({
         hidden={!open}
         data-expanded={open ? "true" : undefined}
       >
+        <PresetPicker
+          activePresetId={activePresetId}
+          onSelect={onSelectPreset}
+          onAnnounce={onAnnounce}
+        />
+
         {PHASES.map((phase) => (
           <div className="duration-row" key={phase}>
             <span className="duration-label">{PHASE_ROW_EN[phase]}</span>
@@ -105,20 +117,12 @@ export function DurationStepper({
           </div>
         ))}
 
-        <div className="default-row">
-          <Button
-            type="button"
-            variant="breatheGhost"
-            size="breathe"
-            onClick={onRecommended}
-          >
-            Use 4-4-6-2
-          </Button>
-        </div>
-        <p className="default-hint">
-          A common calming pattern: inhale 4s, hold 4s, exhale 6s, rest 2s. The
-          longer exhale supports the relaxation response. Not medical advice.
-        </p>
+        {activePresetId === "custom" ? (
+          <p className="default-hint">
+            Custom pattern — adjust each phase or pick a preset above. Not medical
+            advice.
+          </p>
+        ) : null}
       </div>
     </div>
   );

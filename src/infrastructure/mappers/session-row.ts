@@ -1,6 +1,7 @@
-import type { BreathingSessionDto } from "@/domain";
+import type { BreathingSessionDto, SessionHistoryRecordDto } from "@/domain";
 
 import type { BreathingSessionRow } from "../supabase/database.types";
+import { calendarDayFromIso } from "../time/timezone";
 
 export function sessionRowToDto(
   row: Pick<
@@ -48,5 +49,35 @@ export function sessionDtoToRow(dto: BreathingSessionDto): {
     hold_seconds: dto.durations.hold,
     exhale_seconds: dto.durations.exhale,
     rest_seconds: dto.durations.rest,
+  };
+}
+
+export type SessionHistoryRow = Pick<
+  BreathingSessionRow,
+  | "cycle_count"
+  | "elapsed_seconds"
+  | "inhale_seconds"
+  | "hold_seconds"
+  | "exhale_seconds"
+  | "rest_seconds"
+  | "created_at"
+>;
+
+export function sessionRowToHistoryRecord(
+  row: SessionHistoryRow,
+  timeZone: string,
+): SessionHistoryRecordDto {
+  const createdAtEpochMs = Date.parse(row.created_at);
+  return {
+    cycleCount: row.cycle_count,
+    elapsedSeconds: Number(row.elapsed_seconds),
+    durations: {
+      inhale: row.inhale_seconds,
+      hold: row.hold_seconds,
+      exhale: row.exhale_seconds,
+      rest: row.rest_seconds,
+    },
+    createdAtEpochMs,
+    calendarDay: calendarDayFromIso(row.created_at, timeZone),
   };
 }

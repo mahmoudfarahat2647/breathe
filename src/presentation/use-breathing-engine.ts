@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { ApplyPreset } from "@/application/apply-preset";
+import { BreathingPreferences } from "@/domain/breathing-preferences";
 import { BreathingSettings } from "@/domain/breathing-settings";
+import {
+  DEFAULT_PRESET_ID,
+  matchPresetId,
+  type BreathingPresetId,
+} from "@/domain/breathing-preset";
 import {
   advanceBreathingState,
   createIdleBreathingState,
@@ -12,6 +19,10 @@ import {
   type BreathingEngineState,
 } from "@/domain/breathing-engine";
 import type { Phase } from "@/domain/phase";
+import {
+  sessionGoalToDto,
+  type SessionGoal,
+} from "@/domain/session-goal";
 import {
   createBreathingAudio,
   type BreathingAudio,
@@ -38,12 +49,21 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     createIdleBreathingState,
   );
   const [settings, setSettings] = useState(BreathingSettings.default);
+  const [activePresetId, setActivePresetId] =
+    useState<BreathingPresetId>(DEFAULT_PRESET_ID);
+  const [selectedGoal, setSelectedGoal] = useState<SessionGoal>(null);
+  const [activeGoal, setActiveGoal] = useState<SessionGoal>(null);
   const [soundEnabled, setSoundEnabledState] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [pulseNonce, setPulseNonce] = useState(0);
 
   const engineRef = useRef(engine);
   const settingsRef = useRef(settings);
+  const activePresetIdRef = useRef(activePresetId);
+  const selectedGoalRef = useRef(selectedGoal);
+  const activeGoalRef = useRef(activeGoal);
+  const sessionIdRef = useRef<string | null>(null);
+  const sessionSavedRef = useRef(false);
   const soundRef = useRef(soundEnabled);
   const settingsDirtyRef = useRef(false);
   const persistTimerRef = useRef<number | null>(null);
@@ -72,8 +92,11 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
   useEffect(() => {
     engineRef.current = engine;
     settingsRef.current = settings;
+    activePresetIdRef.current = activePresetId;
+    selectedGoalRef.current = selectedGoal;
+    activeGoalRef.current = activeGoal;
     soundRef.current = soundEnabled;
-  }, [engine, settings, soundEnabled]);
+  }, [engine, settings, activePresetId, selectedGoal, activeGoal, soundEnabled]);
 
   useEffect(() => {
     if (adapters.audio) audioRef.current = adapters.audio;
@@ -95,6 +118,13 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     adapters.schedule,
   ]);
 
+  const currentPreferences = useCallback((): ReturnType<BreathingPreferences["toDto"]> => {
+    return {
+      durations: settingsRef.current.toDto(),
+      goal: sessionGoalToDto(selectedGoalRef.current),
+    };
+  }, []);
+
   const flushSettingsSave = useCallback((options?: { keepalive?: boolean }) => {
     const persistence = persistenceRef.current;
     if (persistTimerRef.current !== null) {
@@ -104,9 +134,9 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     if (!persistence || !settingsDirtyRef.current) return;
     settingsDirtyRef.current = false;
     void persistence
-      .saveSettings(settingsRef.current.toDto(), options)
+      .saveSettings(currentPreferences(), options)
       .catch(() => {});
-  }, []);
+  }, [currentPreferences]);
 
   const queueSettingsSave = useCallback(() => {
     const persistence = persistenceRef.current;
@@ -119,25 +149,60 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
       persistTimerRef.current = null;
       if (!settingsDirtyRef.current) return;
       settingsDirtyRef.current = false;
-      void persistence.saveSettings(settingsRef.current.toDto()).catch(() => {});
+      void persistence.saveSettings(currentPreferences()).catch(() => {});
     }, SETTINGS_SAVE_DEBOUNCE_MS);
+  }, [currentPreferences]);
+
+  const persistSession = useCallback((state: BreathingEngineState) => {
+    const persistence = persistenceRef.current;
+    const sessionId = sessionIdRef.current;
+    if (!persistence || !sessionId || sessionSavedRef.current) return;
+
+    const snapshot = snapshotCompletedSession(
+      sessionId,
+      state,
+      settingsRef.current,
+    );
+    if (!snapshot) return;
+
+    sessionSavedRef.current = true;
+    void persistence.saveSession(snapshot).catch(() => {});
   }, []);
 
   const cuePhase = useCallback((state: BreathingEngineState) => {
-    const view = toBreathingViewModel(state, settingsRef.current);
+    const view = toBreathingViewModel(
+      state,
+      settingsRef.current,
+      activeGoalRef.current,
+    );
     audioRef.current.playPhase(view.phase, soundRef.current);
     setAnnouncement(view.announcement);
     setPulseNonce((nonce) => nonce + 1);
   }, []);
 
+  const handleCompletion = useCallback((state: BreathingEngineState) => {
+    audioRef.current.playCompletion(soundRef.current);
+    setAnnouncement("Session complete.");
+    persistSession(state);
+  }, [persistSession]);
+
   const start = useCallback(() => {
     const previous = engineRef.current;
     if (previous.status === "running") return;
     audioRef.current.ensure();
+
+    if (previous.status === "idle" || previous.status === "completed") {
+      const nextActiveGoal = selectedGoalRef.current;
+      activeGoalRef.current = nextActiveGoal;
+      setActiveGoal(nextActiveGoal);
+      sessionIdRef.current = createSessionIdRef.current();
+      sessionSavedRef.current = false;
+    }
+
     const next = startBreathing(previous);
     engineRef.current = next;
     setEngine(next);
-    if (previous.status === "idle") {
+    if (previous.status === "idle" || previous.status === "completed") {
       cuePhase(next);
     }
   }, [cuePhase]);
@@ -151,10 +216,14 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
   const reset = useCallback(() => {
     const persistence = persistenceRef.current;
     const current = engineRef.current;
+    const shouldSaveOnReset =
+      current.status !== "completed" &&
+      !sessionSavedRef.current &&
+      current.cycleCount >= 1;
     const snapshot =
-      persistence && current.cycleCount >= 1
+      persistence && shouldSaveOnReset
         ? snapshotCompletedSession(
-            createSessionIdRef.current(),
+            sessionIdRef.current ?? createSessionIdRef.current(),
             current,
             settingsRef.current,
           )
@@ -163,29 +232,75 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     engineRef.current = next;
     setEngine(next);
     setPulseNonce(0);
+    activeGoalRef.current = null;
+    setActiveGoal(null);
+    sessionIdRef.current = null;
     if (snapshot && persistence) {
+      sessionSavedRef.current = true;
       void persistence.saveSession(snapshot).catch(() => {});
     }
   }, []);
 
+  const applyPreset = useCallback(
+    (presetId: BreathingPresetId) => {
+      if (presetId === "custom") return;
+      const dto = new ApplyPreset().execute(presetId);
+      const next = BreathingSettings.fromDto(dto);
+      settingsRef.current = next;
+      activePresetIdRef.current = presetId;
+      setSettings(next);
+      setActivePresetId(presetId);
+      queueSettingsSave();
+    },
+    [queueSettingsSave],
+  );
+
   const adjust = useCallback(
     (phase: Phase, direction: number) => {
-      setSettings((current) => {
-        const next = current.adjust(phase, direction);
-        settingsRef.current = next;
-        return next;
-      });
+      const next = settingsRef.current.adjust(phase, direction);
+      const nextPresetId = matchPresetId(next.toDto());
+      settingsRef.current = next;
+      activePresetIdRef.current = nextPresetId;
+      setSettings(next);
+      setActivePresetId(nextPresetId);
       queueSettingsSave();
     },
     [queueSettingsSave],
   );
 
   const recommend = useCallback(() => {
-    const next = BreathingSettings.default();
-    settingsRef.current = next;
-    setSettings(next);
-    queueSettingsSave();
-  }, [queueSettingsSave]);
+    applyPreset(DEFAULT_PRESET_ID);
+  }, [applyPreset]);
+
+  const goalsMatch = useCallback((left: SessionGoal, right: SessionGoal) => {
+    if (left === right) return true;
+    if (left === null || right === null) return false;
+    if (left.kind !== right.kind) return false;
+    if (left.kind === "minutes") {
+      return right.kind === "minutes" && left.minutes === right.minutes;
+    }
+    if (left.kind === "cycles") {
+      return right.kind === "cycles" && left.cycles === right.cycles;
+    }
+    return false;
+  }, []);
+
+  const setGoal = useCallback(
+    (goal: SessionGoal) => {
+      const previous = selectedGoalRef.current;
+      if (goalsMatch(previous, goal)) return;
+
+      selectedGoalRef.current = goal;
+      setSelectedGoal(goal);
+      queueSettingsSave();
+
+      const status = engineRef.current.status;
+      if (status === "running" || status === "paused") {
+        setAnnouncement("Goal will apply on your next session.");
+      }
+    },
+    [goalsMatch, queueSettingsSave],
+  );
 
   const setSoundEnabled = useCallback((enabled: boolean) => {
     soundRef.current = enabled;
@@ -202,24 +317,32 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
       .then((dto) => {
         if (cancelled || settingsDirtyRef.current) return;
         if (engineRef.current.status !== "idle") return;
-        const next = BreathingSettings.fromDto(dto);
+        const preferences = BreathingPreferences.fromDto(dto);
+        const nextSettings = preferences.settings;
+        const nextGoal = preferences.goal;
         const current = settingsRef.current;
-        if (
-          next.inhale === current.inhale &&
-          next.hold === current.hold &&
-          next.exhale === current.exhale &&
-          next.rest === current.rest
-        ) {
+        const currentGoal = selectedGoalRef.current;
+        const settingsUnchanged =
+          nextSettings.inhale === current.inhale &&
+          nextSettings.hold === current.hold &&
+          nextSettings.exhale === current.exhale &&
+          nextSettings.rest === current.rest;
+        const goalUnchanged = goalsMatch(nextGoal, currentGoal);
+        if (settingsUnchanged && goalUnchanged) {
           return;
         }
-        settingsRef.current = next;
-        setSettings(next);
+        settingsRef.current = nextSettings;
+        selectedGoalRef.current = nextGoal;
+        activePresetIdRef.current = matchPresetId(nextSettings.toDto());
+        setSettings(nextSettings);
+        setSelectedGoal(nextGoal);
+        setActivePresetId(activePresetIdRef.current);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [adapters.persistence]);
+  }, [adapters.persistence, goalsMatch]);
 
   useEffect(() => {
     const onPageHide = () => {
@@ -243,9 +366,14 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
         previous,
         now,
         settingsRef.current,
+        activeGoalRef.current,
       );
       engineRef.current = next;
       setEngine(next);
+      if (next.status === "completed") {
+        handleCompletion(next);
+        return;
+      }
       if (next.phaseIndex !== previous.phaseIndex) {
         cuePhase(next);
       }
@@ -256,16 +384,23 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
       cancelled = true;
       cafRef.current(frameId);
     };
-  }, [cuePhase, engine.status]);
+  }, [cuePhase, engine.status, handleCompletion]);
 
   const view = useMemo(
-    () => toBreathingViewModel(engine, settings),
-    [engine, settings],
+    () => toBreathingViewModel(engine, settings, activeGoal),
+    [engine, settings, activeGoal],
   );
+
+  const announce = useCallback((message: string) => {
+    setAnnouncement(message);
+  }, []);
 
   return {
     engine,
     settings,
+    activePresetId,
+    selectedGoal,
+    activeGoal,
     view,
     soundEnabled,
     announcement,
@@ -274,7 +409,10 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     pause,
     reset,
     adjust,
+    applyPreset,
     recommend,
+    announce,
+    setGoal,
     setSoundEnabled,
   };
 }

@@ -1,7 +1,8 @@
 import type { BreathingSettings } from "./breathing-settings";
 import { PHASES, type Phase } from "./phase";
+import { isGoalMet, type SessionGoal } from "./session-goal";
 
-export type EngineStatus = "idle" | "running" | "paused";
+export type EngineStatus = "idle" | "running" | "paused" | "completed";
 
 export type BreathingEngineState = {
   readonly status: EngineStatus;
@@ -75,6 +76,7 @@ export function advanceBreathingState(
   state: BreathingEngineState,
   nowMs: number,
   settings: BreathingSettings,
+  activeGoal?: SessionGoal | null,
 ): BreathingEngineState {
   if (state.status !== "running") {
     return state;
@@ -109,7 +111,7 @@ export function advanceBreathingState(
     guard += 1;
   }
 
-  return freezeState({
+  const next = freezeState({
     status: "running",
     phaseIndex,
     phaseElapsedSeconds,
@@ -118,6 +120,16 @@ export function advanceBreathingState(
     lastFrameTimeMs: nowMs,
     phaseDurationSeconds,
   });
+
+  if (isGoalMet(next, activeGoal)) {
+    return freezeState({
+      ...next,
+      status: "completed",
+      lastFrameTimeMs: null,
+    });
+  }
+
+  return next;
 }
 
 export function formatElapsed(totalSeconds: number): string {
