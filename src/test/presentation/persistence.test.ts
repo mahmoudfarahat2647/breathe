@@ -23,15 +23,16 @@ describe("createHttpBreathingPersistence", () => {
         if (url === "/api/auth/anonymous") {
           return jsonResponse({ userId: USER_ID });
         }
-        return jsonResponse({ inhale: 5, hold: 2, exhale: 8, rest: 3 });
+        return jsonResponse({
+          durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
+          goal: { kind: "minutes", minutes: 10 },
+        });
       }) as typeof fetch,
     });
 
     await expect(persistence.initialize()).resolves.toEqual({
-      inhale: 5,
-      hold: 2,
-      exhale: 8,
-      rest: 3,
+      durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
+      goal: { kind: "minutes", minutes: 10 },
     });
     expect(calls).toEqual([
       "POST /api/auth/anonymous",
@@ -47,10 +48,8 @@ describe("createHttpBreathingPersistence", () => {
     });
 
     await expect(persistence.initialize()).resolves.toEqual({
-      inhale: 4,
-      hold: 4,
-      exhale: 6,
-      rest: 2,
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      goal: null,
     });
   });
 
@@ -61,15 +60,16 @@ describe("createHttpBreathingPersistence", () => {
           return jsonResponse({ userId: USER_ID });
         }
         void init;
-        return jsonResponse({ inhale: 1, hold: 4, exhale: 6, rest: 2 });
+        return jsonResponse({
+          durations: { inhale: 1, hold: 4, exhale: 6, rest: 2 },
+          goal: null,
+        });
       }) as typeof fetch,
     });
 
     await expect(persistence.initialize()).resolves.toEqual({
-      inhale: 4,
-      hold: 4,
-      exhale: 6,
-      rest: 2,
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      goal: null,
     });
   });
 
@@ -83,7 +83,10 @@ describe("createHttpBreathingPersistence", () => {
         expect(url).toBe("/api/settings");
         expect(init?.method).toBe("PUT");
         const body = JSON.parse(String(init?.body));
-        expect(body).toEqual({ inhale: 7, hold: 3, exhale: 9, rest: 2 });
+        expect(body).toEqual({
+          durations: { inhale: 7, hold: 3, exhale: 9, rest: 2 },
+          goal: null,
+        });
         expect(body).not.toHaveProperty("userId");
         expect(body).not.toHaveProperty("user_id");
         throw new Error("offline");
@@ -91,7 +94,10 @@ describe("createHttpBreathingPersistence", () => {
     });
 
     await expect(
-      persistence.saveSettings({ inhale: 7, hold: 3, exhale: 9, rest: 2 }),
+      persistence.saveSettings({
+        durations: { inhale: 7, hold: 3, exhale: 9, rest: 2 },
+        goal: null,
+      }),
     ).resolves.toBeUndefined();
   });
 
@@ -115,10 +121,8 @@ describe("createHttpBreathingPersistence", () => {
     });
 
     const savePromise = persistence.saveSettings({
-      inhale: 7,
-      hold: 3,
-      exhale: 9,
-      rest: 2,
+      durations: { inhale: 7, hold: 3, exhale: 9, rest: 2 },
+      goal: null,
     });
 
     await Promise.resolve();
@@ -150,13 +154,19 @@ describe("createHttpBreathingPersistence", () => {
           }
           return jsonResponse({ ok: true });
         }
-        return jsonResponse({ inhale: 5, hold: 2, exhale: 8, rest: 3 });
+        return jsonResponse({
+          durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
+          goal: null,
+        });
       }) as typeof fetch,
     });
 
     await persistence.initialize();
     await expect(
-      persistence.saveSettings({ inhale: 5, hold: 2, exhale: 8, rest: 3 }),
+      persistence.saveSettings({
+        durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
+        goal: null,
+      }),
     ).resolves.toBeUndefined();
 
     expect(calls).toEqual([
@@ -178,7 +188,10 @@ describe("createHttpBreathingPersistence", () => {
     });
 
     await expect(
-      persistence.saveSettings({ inhale: 7, hold: 3, exhale: 9, rest: 2 }),
+      persistence.saveSettings({
+        durations: { inhale: 7, hold: 3, exhale: 9, rest: 2 },
+        goal: null,
+      }),
     ).resolves.toBeUndefined();
   });
 
@@ -195,7 +208,10 @@ describe("createHttpBreathingPersistence", () => {
     });
 
     await persistence.saveSettings(
-      { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      {
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+        goal: null,
+      },
       { keepalive: true },
     );
     expect(keepalive).toBe(true);

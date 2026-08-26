@@ -321,6 +321,51 @@ describe("elapsed formatting and countdown", () => {
     expect(phaseProgress(0, 4)).toBe(0);
     expect(phaseProgress(2, 4)).toBe(0.5);
     expect(phaseProgress(8, 4)).toBe(1);
+    expect(phaseProgress(3, 0)).toBe(1);
+  });
+
+  it("shows zero countdown for zero-duration phases without dividing by zero", () => {
+    expect(countdownSeconds(0, 0)).toBe(0);
+    expect(countdownSeconds(0.5, 0)).toBe(0);
+  });
+});
+
+describe("zero-duration phases", () => {
+  it("skips hold and rest immediately for coherence 5-0-5-0", () => {
+    const coherence = BreathingSettings.fromDto({
+      inhale: 5,
+      hold: 0,
+      exhale: 5,
+      rest: 0,
+    });
+    const started = startBreathing(createIdleBreathingState());
+    const first = advanceBreathingState(started, 0, coherence);
+    expect(first.phaseIndex).toBe(0);
+    expect(first.phaseDurationSeconds).toBe(5);
+
+    const afterInhale = play(first, 0, 5, coherence);
+    expect(afterInhale.phaseIndex).toBe(2);
+    expect(afterInhale.phaseElapsedSeconds).toBeCloseTo(0, 8);
+  });
+
+  it("overflows through consecutive zero-duration phases in one frame", () => {
+    const triangle = BreathingSettings.fromDto({
+      inhale: 2,
+      hold: 0,
+      exhale: 2,
+      rest: 0,
+    });
+    let state = startBreathing(createIdleBreathingState());
+    state = advanceBreathingState(state, 0, triangle);
+    state = advanceBreathingState(state, 1_000, triangle);
+    state = advanceBreathingState(state, 2_000, triangle);
+    expect(state.phaseIndex).toBe(2);
+    expect(state.phaseElapsedSeconds).toBeCloseTo(0, 8);
+
+    const overflowed = advanceBreathingState(state, 2_100, triangle);
+    expect(overflowed.phaseIndex).toBe(2);
+    expect(overflowed.cycleCount).toBe(0);
+    expect(overflowed.phaseElapsedSeconds).toBeCloseTo(0.1, 8);
   });
 });
 

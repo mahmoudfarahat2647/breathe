@@ -4,7 +4,10 @@ test.describe("settings persistence", () => {
   test("restores saved durations after reload and debounce-saves changes", async ({
     page,
   }) => {
-    let stored = { inhale: 5, hold: 2, exhale: 8, rest: 3 };
+    let stored = {
+      durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
+      goal: null,
+    };
     const puts: typeof stored[] = [];
 
     await page.route("**/api/auth/anonymous", async (route) => {
@@ -56,12 +59,13 @@ test.describe("settings persistence", () => {
     );
     await page.getByRole("button", { name: "Increase inhale duration" }).click();
     const request = await putRequest;
-    expect(request.postDataJSON()).toEqual({ inhale: 6, hold: 2, exhale: 8, rest: 3 });
+    expect(request.postDataJSON()).toEqual({
+      durations: { inhale: 6, hold: 2, exhale: 8, rest: 3 },
+      goal: null,
+    });
     await expect.poll(() => puts.at(-1)).toEqual({
-      inhale: 6,
-      hold: 2,
-      exhale: 8,
-      rest: 3,
+      durations: { inhale: 6, hold: 2, exhale: 8, rest: 3 },
+      goal: null,
     });
 
     await page.reload();

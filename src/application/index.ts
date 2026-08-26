@@ -5,11 +5,18 @@
  */
 
 export type {
+  BreathingPreferencesDto,
   BreathingSessionDto,
-  BreathingSettingsDto,
+  SessionHistoryRecordDto,
+  SessionHistoryRepository,
   SessionRepository,
   SettingsRepository,
 } from "./ports";
 export { GetSettings } from "./get-settings";
+export {
+  GetSessionHistory,
+  type GetSessionHistoryResult,
+} from "./get-session-history";
 export { SaveSettings } from "./save-settings";
 export { SaveSession, type SaveSessionResult } from "./save-session";
+export { ApplyPreset } from "./apply-preset";

@@ -67,6 +67,8 @@ describe("SupabaseSettingsRepository", () => {
                           hold_seconds: 2,
                           exhale_seconds: 8,
                           rest_seconds: 3,
+                          goal_type: null,
+                          goal_value: null,
                         },
                         error: null,
                       };
@@ -81,10 +83,8 @@ describe("SupabaseSettingsRepository", () => {
     );
 
     await expect(repository.getByUserId(USER_ID)).resolves.toEqual({
-      inhale: 5,
-      hold: 2,
-      exhale: 8,
-      rest: 3,
+      durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
+      goal: null,
     });
   });
 
@@ -103,13 +103,18 @@ describe("SupabaseSettingsRepository", () => {
       } as unknown as BreathingSupabaseClient,
     );
 
-    await repository.save(USER_ID, { inhale: 7, hold: 3, exhale: 9, rest: 2 });
+    await repository.save(USER_ID, {
+      durations: { inhale: 7, hold: 3, exhale: 9, rest: 2 },
+      goal: { kind: "minutes", minutes: 5 },
+    });
     expect(saved).toEqual({
       user_id: USER_ID,
       inhale_seconds: 7,
       hold_seconds: 3,
       exhale_seconds: 9,
       rest_seconds: 2,
+      goal_type: "minutes",
+      goal_value: 5,
     });
   });
 });

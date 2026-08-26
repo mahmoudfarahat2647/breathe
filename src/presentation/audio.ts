@@ -102,9 +102,16 @@ export function createBreathingAudio(deps: { Context?: AudioContextCtor } = {}) 
     }
   }
 
+  function playCompletion(soundEnabled: boolean) {
+    if (!soundEnabled || !ctx) return;
+    playTone(330, 523, 0.35, 0);
+    playTone(523, 659, 0.45, 0.18);
+  }
+
   return {
     ensure,
     playPhase,
+    playCompletion,
     get context() {
       return ctx;
     },

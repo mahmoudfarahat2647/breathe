@@ -128,6 +128,27 @@ describe("createBreathingAudio", () => {
     expect(oscillators).toHaveLength(0);
   });
 
+  it("plays a rising completion chime when sound is on", () => {
+    const { FakeAudioContext, oscillators } = fakeAudioContext();
+    const audio = createBreathingAudio({
+      Context: FakeAudioContext as unknown as typeof AudioContext,
+    });
+    audio.ensure();
+    audio.playCompletion(true);
+
+    expect(oscillators.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("stays silent for completion when sound is disabled", () => {
+    const { FakeAudioContext, oscillators } = fakeAudioContext();
+    const audio = createBreathingAudio({
+      Context: FakeAudioContext as unknown as typeof AudioContext,
+    });
+    audio.ensure();
+    audio.playCompletion(false);
+    expect(oscillators).toHaveLength(0);
+  });
+
   it("stays silent when sound is disabled even after ensure()", () => {
     const { FakeAudioContext, oscillators } = fakeAudioContext();
     const audio = createBreathingAudio({

@@ -1,5 +1,5 @@
 import { DomainValidationError } from "@/domain";
-import type { BreathingSessionDto, BreathingSettingsDto } from "@/domain";
+import type { BreathingPreferencesDto, BreathingSessionDto } from "@/domain";
 
 function asRecord(body: unknown): Record<string, unknown> {
   if (body === null || typeof body !== "object" || Array.isArray(body)) {
@@ -8,7 +8,7 @@ function asRecord(body: unknown): Record<string, unknown> {
   return body as Record<string, unknown>;
 }
 
-function asDurations(value: unknown): BreathingSettingsDto {
+function asDurations(value: unknown): BreathingPreferencesDto["durations"] {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     throw new DomainValidationError("Durations must be an object.");
   }
@@ -19,6 +19,30 @@ function asDurations(value: unknown): BreathingSettingsDto {
     exhale: asNumber(durations.exhale, "exhale"),
     rest: asNumber(durations.rest, "rest"),
   };
+}
+
+function asGoal(value: unknown): BreathingPreferencesDto["goal"] {
+  if (value === null) {
+    return null;
+  }
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new DomainValidationError("Goal must be an object or null.");
+  }
+  const goal = value as Record<string, unknown>;
+  const kind = goal.kind;
+  if (kind === "minutes") {
+    return {
+      kind: "minutes",
+      minutes: asNumber(goal.minutes, "minutes"),
+    };
+  }
+  if (kind === "cycles") {
+    return {
+      kind: "cycles",
+      cycles: asNumber(goal.cycles, "cycles"),
+    };
+  }
+  throw new DomainValidationError("Goal kind must be minutes or cycles.");
 }
 
 function asNumber(value: unknown, label: string): number {
@@ -35,14 +59,34 @@ function asString(value: unknown, label: string): string {
   return value;
 }
 
-export function settingsFromRequestBody(body: unknown): BreathingSettingsDto {
+export function preferencesFromRequestBody(
+  body: unknown,
+  fallbackGoal: BreathingPreferencesDto["goal"] = null,
+): BreathingPreferencesDto {
   const raw = asRecord(body);
+  if ("durations" in raw) {
+    return {
+      durations: asDurations(raw.durations),
+      goal: "goal" in raw && raw.goal !== undefined ? asGoal(raw.goal) : fallbackGoal,
+    };
+  }
+
   return {
-    inhale: asNumber(raw.inhale, "inhale"),
-    hold: asNumber(raw.hold, "hold"),
-    exhale: asNumber(raw.exhale, "exhale"),
-    rest: asNumber(raw.rest, "rest"),
+    durations: {
+      inhale: asNumber(raw.inhale, "inhale"),
+      hold: asNumber(raw.hold, "hold"),
+      exhale: asNumber(raw.exhale, "exhale"),
+      rest: asNumber(raw.rest, "rest"),
+    },
+    goal: "goal" in raw && raw.goal !== undefined ? asGoal(raw.goal) : fallbackGoal,
   };
+}
+
+/** @deprecated Use preferencesFromRequestBody for the aggregate settings payload. */
+export function settingsFromRequestBody(
+  body: unknown,
+): BreathingPreferencesDto["durations"] {
+  return preferencesFromRequestBody(body).durations;
 }
 
 export function sessionFromRequestBody(

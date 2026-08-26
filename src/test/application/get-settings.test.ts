@@ -2,19 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import { GetSettings } from "@/application";
 import { DomainValidationError } from "@/domain";
-import type { SettingsRepository } from "@/application";
+import type { BreathingPreferencesDto, SettingsRepository } from "@/application";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 
 function memorySettings(
-  store: Map<string, { inhale: number; hold: number; exhale: number; rest: number }>,
+  store: Map<string, BreathingPreferencesDto>,
 ): SettingsRepository {
   return {
     async getByUserId(userId) {
       return store.get(userId) ?? null;
     },
-    async save(userId, settings) {
-      store.set(userId, { ...settings });
+    async save(userId, preferences) {
+      store.set(userId, structuredClone(preferences));
     },
   };
 }
@@ -23,23 +23,25 @@ describe("GetSettings", () => {
   it("returns the recommended 4-4-6-2 pattern when nothing is stored", async () => {
     const useCase = new GetSettings(memorySettings(new Map()));
     await expect(useCase.execute(USER_ID)).resolves.toEqual({
-      inhale: 4,
-      hold: 4,
-      exhale: 6,
-      rest: 2,
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      goal: null,
     });
   });
 
-  it("returns stored durations after domain validation", async () => {
-    const store = new Map([
-      [USER_ID, { inhale: 5, hold: 2, exhale: 8, rest: 3 }],
+  it("returns stored durations and goal after domain validation", async () => {
+    const store = new Map<string, BreathingPreferencesDto>([
+      [
+        USER_ID,
+        {
+          durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
+          goal: { kind: "minutes", minutes: 10 },
+        },
+      ],
     ]);
     const useCase = new GetSettings(memorySettings(store));
     await expect(useCase.execute(USER_ID)).resolves.toEqual({
-      inhale: 5,
-      hold: 2,
-      exhale: 8,
-      rest: 3,
+      durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
+      goal: { kind: "minutes", minutes: 10 },
     });
   });
 

@@ -19,10 +19,12 @@ describe("schema contract", () => {
 
   it("enforces duration and session checks plus the history index", () => {
     expect(migration).toMatch(/inhale_seconds between 2 and 15/);
-    expect(migration).toMatch(/hold_seconds between 1 and 15/);
+    expect(migration).toMatch(/hold_seconds between 0 and 15/);
     expect(migration).toMatch(/exhale_seconds between 2 and 15/);
-    expect(migration).toMatch(/rest_seconds between 1 and 15/);
-    expect(migration).toMatch(/rest_seconds >= 0/);
+    expect(migration).toMatch(/rest_seconds between 0 and 15/);
+    expect(migration).toMatch(/goal_type = 'minutes' and goal_value between 1 and 120/);
+    expect(migration).toMatch(/goal_type = 'cycles' and goal_value between 1 and 100/);
+    expect(migration).toMatch(/breathing_settings_goal_pair_check/);
     expect(migration).toMatch(/cycle_count >= 1/);
     expect(migration).toMatch(/elapsed_seconds >= 0/);
     expect(migration).toMatch(

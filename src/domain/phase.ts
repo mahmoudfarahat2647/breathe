@@ -4,7 +4,19 @@ export type Phase = (typeof PHASES)[number];
 
 export type SideState = "pending" | "active" | "completed";
 
+/** Full validation range — presets may use 0 for hold and rest. */
 export const PHASE_DURATION_LIMITS: Record<
+  Phase,
+  { readonly min: number; readonly max: number }
+> = {
+  inhale: { min: 2, max: 15 },
+  hold: { min: 0, max: 15 },
+  exhale: { min: 2, max: 15 },
+  rest: { min: 0, max: 15 },
+};
+
+/** Manual stepper clamps — hold and rest stay at 1–15 when adjusting by hand. */
+export const MANUAL_STEPPER_LIMITS: Record<
   Phase,
   { readonly min: number; readonly max: number }
 > = {
@@ -40,7 +52,7 @@ export function nextPhase(phase: Phase): Phase {
 
 export function sideStates(
   currentPhaseIndex: number,
-  status: "idle" | "running" | "paused" = "running",
+  status: "idle" | "running" | "paused" | "completed" = "running",
 ): Record<Phase, SideState> {
   if (status === "idle") {
     return {

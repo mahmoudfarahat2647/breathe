@@ -17,13 +17,22 @@ export {
 } from "./auth/claims";
 export { jsonResponse, toErrorResponse } from "./http/error-response";
 export {
+  preferencesFromRequestBody,
   sessionFromRequestBody,
   settingsFromRequestBody,
 } from "./http/request-body";
-export { sessionDtoToRow, sessionRowToDto } from "./mappers/session-row";
+export { sessionDtoToRow, sessionRowToDto, sessionRowToHistoryRecord, type SessionHistoryRow } from "./mappers/session-row";
 export { settingsDtoToRow, settingsRowToDto } from "./mappers/settings-row";
+export { SupabaseSessionHistoryRepository } from "./repositories/supabase-session-history-repository";
 export { SupabaseSessionRepository } from "./repositories/supabase-session-repository";
 export { SupabaseSettingsRepository } from "./repositories/supabase-settings-repository";
+export {
+  assertIanaTimeZone,
+  calendarDayFromIso,
+  isValidIanaTimeZone,
+  resolveTimeZoneFromRequest,
+  todayInTimeZone,
+} from "./time/timezone";
 export {
   createSupabaseServerClient,
   type BreathingSupabaseClient,

@@ -1,7 +1,7 @@
 import {
-  BreathingSettings,
-  type BreathingSettingsDto,
-} from "@/domain/breathing-settings";
+  BreathingPreferences,
+  type BreathingPreferencesDto,
+} from "@/domain/breathing-preferences";
 
 import type { ClientSessionSnapshot } from "./session-snapshot";
 
@@ -12,15 +12,16 @@ export type SaveSettingsOptions = {
 };
 
 export type BreathingPersistence = {
-  initialize(): Promise<BreathingSettingsDto>;
+  initialize(): Promise<BreathingPreferencesDto>;
   saveSettings(
-    settings: BreathingSettingsDto,
+    preferences: BreathingPreferencesDto,
     options?: SaveSettingsOptions,
   ): Promise<void>;
   saveSession(session: ClientSessionSnapshot): Promise<void>;
 };
 
-const DEFAULT_SETTINGS: BreathingSettingsDto = BreathingSettings.default().toDto();
+const DEFAULT_PREFERENCES: BreathingPreferencesDto =
+  BreathingPreferences.default().toDto();
 
 type FetchLike = typeof fetch;
 
@@ -74,29 +75,29 @@ export function createHttpBreathingPersistence(options?: {
         await trackAuth(authTask);
         const authResponse = await authTask;
         if (!authResponse?.ok) {
-          return { ...DEFAULT_SETTINGS };
+          return { ...DEFAULT_PREFERENCES, durations: { ...DEFAULT_PREFERENCES.durations } };
         }
 
         const settingsResponse = await request("/api/settings");
         if (!settingsResponse.ok) {
-          return { ...DEFAULT_SETTINGS };
+          return { ...DEFAULT_PREFERENCES, durations: { ...DEFAULT_PREFERENCES.durations } };
         }
 
         const body: unknown = await settingsResponse.json();
-        return BreathingSettings.fromDto(body as BreathingSettingsDto).toDto();
+        return BreathingPreferences.fromDto(body as BreathingPreferencesDto).toDto();
       } catch {
-        return { ...DEFAULT_SETTINGS };
+        return { ...DEFAULT_PREFERENCES, durations: { ...DEFAULT_PREFERENCES.durations } };
       }
     },
 
-    async saveSettings(settings, saveOptions) {
+    async saveSettings(preferences, saveOptions) {
       try {
         await awaitAuthReady();
 
         const putOnce = () =>
           request("/api/settings", {
             method: "PUT",
-            body: JSON.stringify(settings),
+            body: JSON.stringify(preferences),
             ...(saveOptions?.keepalive ? { keepalive: true } : {}),
           });
 

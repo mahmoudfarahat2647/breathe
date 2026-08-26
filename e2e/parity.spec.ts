@@ -51,7 +51,7 @@ test.describe("parity — desktop", () => {
     await expect(page.getByText("Cycle")).toBeVisible();
     await expect(page.getByText("Elapsed")).toBeVisible();
     await expect(page.getByText("00:00")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Use 4-4-6-2" })).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Current Calm" })).toBeVisible();
     await expect(page.getByLabel("Decrease rest duration")).toBeVisible();
     await expect(page.getByRole("button", { name: "Durations" })).toHaveAttribute(
       "aria-expanded",
@@ -61,7 +61,7 @@ test.describe("parity — desktop", () => {
       "aria-checked",
       "false",
     );
-    await expect(page.getByText(/history/i)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "History" })).toBeVisible();
     await expectSquareAboveControls(page);
   });
 
@@ -87,11 +87,11 @@ test.describe("parity — desktop", () => {
     await expect(page.getByText("00:00")).toBeVisible();
   });
 
-  test("applies the 4-4-6-2 preset from the durations panel", async ({ page }) => {
+  test("applies the Current Calm preset from the durations panel", async ({ page }) => {
     await page.goto("/");
     await page.getByLabel("Increase rest duration").click();
     await expect(page.locator("#restValue")).toHaveText("3s");
-    await page.getByRole("button", { name: "Use 4-4-6-2" }).click();
+    await page.getByRole("radio", { name: "Current Calm" }).click();
     await expect(page.locator("#inhaleValue")).toHaveText("4s");
     await expect(page.locator("#holdValue")).toHaveText("4s");
     await expect(page.locator("#exhaleValue")).toHaveText("6s");
