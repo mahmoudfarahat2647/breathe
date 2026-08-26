@@ -671,6 +671,11 @@ svg.square-svg.idle .progress-dot {
 .duration-fields[hidden] {
   display: none;
 }
+@media (max-height: 640px) {
+  .duration-fields:not([data-expanded="true"]) {
+    display: none;
+  }
+}
 @media (min-width: 900px) {
   .duration-fields {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -809,11 +814,21 @@ svg.square-svg.idle .progress-dot {
   }
 }
 @media (max-height: 640px) {
+  .breathe-root {
+    grid-template-rows: auto minmax(140px, 1fr) minmax(0, auto);
+  }
+  .stage {
+    min-height: 140px;
+  }
   .app-header {
     height: 48px;
     padding-top: 0;
   }
+  .control-deck {
+    max-height: calc(100dvh - 48px - 140px);
+  }
   .square-wrap {
+    overflow: hidden;
     filter: drop-shadow(0 12px 22px rgb(6 18 14 / 0.35));
   }
   .square-side.active {

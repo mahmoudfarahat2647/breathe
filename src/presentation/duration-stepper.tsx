@@ -27,19 +27,25 @@ export function DurationStepper({
   onRecommended,
 }: DurationStepperProps) {
   const [open, setOpen] = useState(true);
+  const [ready, setReady] = useState(false);
   const userToggledRef = useRef(false);
 
   useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const media = window.matchMedia("(max-height: 640px)");
+    const media =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(max-height: 640px)")
+        : null;
     const apply = () => {
       if (userToggledRef.current) return;
-      setOpen(!media.matches);
+      setOpen(media ? !media.matches : true);
     };
-    media.addEventListener("change", apply);
-    const frame = window.requestAnimationFrame(apply);
+    media?.addEventListener("change", apply);
+    const frame = window.requestAnimationFrame(() => {
+      apply();
+      setReady(true);
+    });
     return () => {
-      media.removeEventListener("change", apply);
+      media?.removeEventListener("change", apply);
       window.cancelAnimationFrame(frame);
     };
   }, []);
@@ -50,7 +56,7 @@ export function DurationStepper({
   }
 
   return (
-    <div className="panel durations">
+    <div className="panel durations" data-ready={ready ? "true" : undefined}>
       <button
         type="button"
         className="durations-toggle"
@@ -60,7 +66,12 @@ export function DurationStepper({
       >
         Durations
       </button>
-      <div id={DURATION_PANEL_ID} className="duration-fields" hidden={!open}>
+      <div
+        id={DURATION_PANEL_ID}
+        className="duration-fields"
+        hidden={!open}
+        data-expanded={open ? "true" : undefined}
+      >
         {PHASES.map((phase) => (
           <div className="duration-row" key={phase}>
             <span className="duration-label">{PHASE_ROW_EN[phase]}</span>

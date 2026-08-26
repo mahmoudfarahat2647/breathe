@@ -72,8 +72,8 @@ test.describe("parity — desktop", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Start", exact: true }).click();
     await expect(page.locator("svg.square-svg")).not.toHaveClass(/idle/);
-    await expect(page.getByRole("button", { name: "Pause" })).toBeFocused();
     await expect(page.locator("#side-inhale")).toHaveClass(/active/);
+    await expect(page.getByRole("button", { name: "Pause" })).toBeFocused();
 
     await page.getByRole("button", { name: "Pause" }).click();
     await expect(page.getByRole("button", { name: "Resume" })).toBeFocused();
@@ -204,6 +204,10 @@ test.describe("parity — short viewport 472", () => {
     );
     await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
     await expectSquareGeometry(page);
+    await expectSquareAboveControls(page);
+
+    await page.getByRole("button", { name: "Durations" }).click();
+    await expect(page.getByLabel("Decrease rest duration")).toBeVisible();
     await expectSquareAboveControls(page);
   });
 });
