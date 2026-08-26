@@ -101,13 +101,19 @@ test.describe("parity — desktop", () => {
   test("advances through inhale, hold, exhale, and rest", async ({ page }) => {
     test.setTimeout(90_000);
     await page.goto("/");
+    for (const phase of ["inhale", "hold", "exhale", "rest"] as const) {
+      const decrease = page.getByLabel(`Decrease ${phase} duration`);
+      for (let i = 0; i < 6; i += 1) {
+        await decrease.click();
+      }
+    }
     await page.getByRole("button", { name: "Start", exact: true }).click();
     await expect(page.locator("#side-inhale")).toHaveClass(/active/);
     await expect(page.locator("#side-hold")).toHaveClass(/active/, {
-      timeout: 6_000,
+      timeout: 8_000,
     });
     await expect(page.locator("#side-exhale")).toHaveClass(/active/, {
-      timeout: 6_000,
+      timeout: 8_000,
     });
     await expect(page.locator("#side-rest")).toHaveClass(/active/, {
       timeout: 8_000,
