@@ -672,8 +672,11 @@ svg.square-svg.idle .progress-dot {
   display: none;
 }
 @media (max-height: 640px) {
-  .duration-fields:not([data-expanded="true"]) {
+  .duration-fields {
     display: none;
+  }
+  .durations[data-ready] .duration-fields[data-expanded="true"] {
+    display: grid;
   }
 }
 @media (min-width: 900px) {
