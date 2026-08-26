@@ -1,4 +1,4 @@
-export const PHASES = ["inhale", "hold", "exhale"] as const;
+export const PHASES = ["inhale", "hold", "exhale", "rest"] as const;
 
 export type Phase = (typeof PHASES)[number];
 
@@ -11,19 +11,23 @@ export const PHASE_DURATION_LIMITS: Record<
   inhale: { min: 2, max: 15 },
   hold: { min: 1, max: 15 },
   exhale: { min: 2, max: 15 },
+  rest: { min: 1, max: 15 },
 };
 
-export const PHASE_LABELS: Record<
-  Phase,
-  { readonly en: string; readonly ar: string }
-> = {
-  inhale: { en: "INHALE", ar: "شهيق" },
-  hold: { en: "HOLD", ar: "حبس" },
-  exhale: { en: "EXHALE", ar: "زفير" },
+export const PHASE_LABELS: Record<Phase, string> = {
+  inhale: "INHALE",
+  hold: "HOLD",
+  exhale: "EXHALE",
+  rest: "REST",
 };
 
 export function isPhase(value: unknown): value is Phase {
-  return value === "inhale" || value === "hold" || value === "exhale";
+  return (
+    value === "inhale" ||
+    value === "hold" ||
+    value === "exhale" ||
+    value === "rest"
+  );
 }
 
 export function phaseIndex(phase: Phase): number {
@@ -39,13 +43,19 @@ export function sideStates(
   status: "idle" | "running" | "paused" = "running",
 ): Record<Phase, SideState> {
   if (status === "idle") {
-    return { inhale: "pending", hold: "pending", exhale: "pending" };
+    return {
+      inhale: "pending",
+      hold: "pending",
+      exhale: "pending",
+      rest: "pending",
+    };
   }
 
   return {
     inhale: sideStateFor(0, currentPhaseIndex),
     hold: sideStateFor(1, currentPhaseIndex),
     exhale: sideStateFor(2, currentPhaseIndex),
+    rest: sideStateFor(3, currentPhaseIndex),
   };
 }
 

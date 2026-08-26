@@ -66,6 +66,7 @@ export class BreathingSession {
         inhale: dto.durations?.inhale,
         hold: dto.durations?.hold,
         exhale: dto.durations?.exhale,
+        rest: dto.durations?.rest,
       }),
     });
   }

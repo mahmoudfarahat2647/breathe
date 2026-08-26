@@ -23,7 +23,7 @@ describe("createHttpBreathingPersistence", () => {
         if (url === "/api/auth/anonymous") {
           return jsonResponse({ userId: USER_ID });
         }
-        return jsonResponse({ inhale: 5, hold: 2, exhale: 8 });
+        return jsonResponse({ inhale: 5, hold: 2, exhale: 8, rest: 3 });
       }) as typeof fetch,
     });
 
@@ -31,6 +31,7 @@ describe("createHttpBreathingPersistence", () => {
       inhale: 5,
       hold: 2,
       exhale: 8,
+      rest: 3,
     });
     expect(calls).toEqual([
       "POST /api/auth/anonymous",
@@ -49,6 +50,7 @@ describe("createHttpBreathingPersistence", () => {
       inhale: 4,
       hold: 4,
       exhale: 6,
+      rest: 2,
     });
   });
 
@@ -59,7 +61,7 @@ describe("createHttpBreathingPersistence", () => {
           return jsonResponse({ userId: USER_ID });
         }
         void init;
-        return jsonResponse({ inhale: 1, hold: 4, exhale: 6 });
+        return jsonResponse({ inhale: 1, hold: 4, exhale: 6, rest: 2 });
       }) as typeof fetch,
     });
 
@@ -67,6 +69,7 @@ describe("createHttpBreathingPersistence", () => {
       inhale: 4,
       hold: 4,
       exhale: 6,
+      rest: 2,
     });
   });
 
@@ -80,7 +83,7 @@ describe("createHttpBreathingPersistence", () => {
         expect(url).toBe("/api/settings");
         expect(init?.method).toBe("PUT");
         const body = JSON.parse(String(init?.body));
-        expect(body).toEqual({ inhale: 7, hold: 3, exhale: 9 });
+        expect(body).toEqual({ inhale: 7, hold: 3, exhale: 9, rest: 2 });
         expect(body).not.toHaveProperty("userId");
         expect(body).not.toHaveProperty("user_id");
         throw new Error("offline");
@@ -88,7 +91,7 @@ describe("createHttpBreathingPersistence", () => {
     });
 
     await expect(
-      persistence.saveSettings({ inhale: 7, hold: 3, exhale: 9 }),
+      persistence.saveSettings({ inhale: 7, hold: 3, exhale: 9, rest: 2 }),
     ).resolves.toBeUndefined();
   });
 
@@ -115,6 +118,7 @@ describe("createHttpBreathingPersistence", () => {
       inhale: 7,
       hold: 3,
       exhale: 9,
+      rest: 2,
     });
 
     await Promise.resolve();
@@ -146,13 +150,13 @@ describe("createHttpBreathingPersistence", () => {
           }
           return jsonResponse({ ok: true });
         }
-        return jsonResponse({ inhale: 5, hold: 2, exhale: 8 });
+        return jsonResponse({ inhale: 5, hold: 2, exhale: 8, rest: 3 });
       }) as typeof fetch,
     });
 
     await persistence.initialize();
     await expect(
-      persistence.saveSettings({ inhale: 5, hold: 2, exhale: 8 }),
+      persistence.saveSettings({ inhale: 5, hold: 2, exhale: 8, rest: 3 }),
     ).resolves.toBeUndefined();
 
     expect(calls).toEqual([
@@ -174,7 +178,7 @@ describe("createHttpBreathingPersistence", () => {
     });
 
     await expect(
-      persistence.saveSettings({ inhale: 7, hold: 3, exhale: 9 }),
+      persistence.saveSettings({ inhale: 7, hold: 3, exhale: 9, rest: 2 }),
     ).resolves.toBeUndefined();
   });
 
@@ -191,7 +195,7 @@ describe("createHttpBreathingPersistence", () => {
     });
 
     await persistence.saveSettings(
-      { inhale: 4, hold: 4, exhale: 6 },
+      { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       { keepalive: true },
     );
     expect(keepalive).toBe(true);
@@ -219,7 +223,7 @@ describe("createHttpBreathingPersistence", () => {
       id: SESSION_ID,
       cycleCount: 2,
       elapsedSeconds: 28,
-      durations: { inhale: 4, hold: 4, exhale: 6 },
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     };
 
     await persistence.saveSession(snapshot);
@@ -249,7 +253,7 @@ describe("createHttpBreathingPersistence", () => {
       id: SESSION_ID,
       cycleCount: 2,
       elapsedSeconds: 28,
-      durations: { inhale: 4, hold: 4, exhale: 6 },
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     };
 
     await persistence.saveSession(snapshot);
@@ -277,7 +281,7 @@ describe("createHttpBreathingPersistence", () => {
       id: SESSION_ID,
       cycleCount: 1,
       elapsedSeconds: 14,
-      durations: { inhale: 4, hold: 4, exhale: 6 },
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     });
     expect(sessionAttempts).toBe(1);
   });
@@ -292,7 +296,7 @@ describe("createHttpBreathingPersistence", () => {
         id: SESSION_ID,
         cycleCount: 1,
         elapsedSeconds: 14,
-        durations: { inhale: 4, hold: 4, exhale: 6 },
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       }),
     ).resolves.toBeUndefined();
   });

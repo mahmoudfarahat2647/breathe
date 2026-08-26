@@ -207,7 +207,8 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
         if (
           next.inhale === current.inhale &&
           next.hold === current.hold &&
-          next.exhale === current.exhale
+          next.exhale === current.exhale &&
+          next.rest === current.rest
         ) {
           return;
         }

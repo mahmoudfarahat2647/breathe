@@ -66,6 +66,7 @@ describe("SupabaseSettingsRepository", () => {
                           inhale_seconds: 5,
                           hold_seconds: 2,
                           exhale_seconds: 8,
+                          rest_seconds: 3,
                         },
                         error: null,
                       };
@@ -83,6 +84,7 @@ describe("SupabaseSettingsRepository", () => {
       inhale: 5,
       hold: 2,
       exhale: 8,
+      rest: 3,
     });
   });
 
@@ -101,12 +103,13 @@ describe("SupabaseSettingsRepository", () => {
       } as unknown as BreathingSupabaseClient,
     );
 
-    await repository.save(USER_ID, { inhale: 7, hold: 3, exhale: 9 });
+    await repository.save(USER_ID, { inhale: 7, hold: 3, exhale: 9, rest: 2 });
     expect(saved).toEqual({
       user_id: USER_ID,
       inhale_seconds: 7,
       hold_seconds: 3,
       exhale_seconds: 9,
+      rest_seconds: 2,
     });
   });
 });
@@ -132,7 +135,7 @@ describe("SupabaseSessionRepository", () => {
       userId: USER_ID,
       cycleCount: 2,
       elapsedSeconds: 28,
-      durations: { inhale: 4, hold: 4, exhale: 6 },
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     });
 
     expect(options).toEqual({ onConflict: "id", ignoreDuplicates: true });
@@ -157,7 +160,7 @@ describe("SupabaseSessionRepository", () => {
         userId: USER_ID,
         cycleCount: 1,
         elapsedSeconds: 14,
-        durations: { inhale: 4, hold: 4, exhale: 6 },
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       }),
     ).rejects.toBeInstanceOf(PersistenceError);
   });

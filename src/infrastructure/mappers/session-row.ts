@@ -12,6 +12,7 @@ export function sessionRowToDto(
     | "inhale_seconds"
     | "hold_seconds"
     | "exhale_seconds"
+    | "rest_seconds"
   >,
 ): BreathingSessionDto {
   return {
@@ -23,6 +24,7 @@ export function sessionRowToDto(
       inhale: row.inhale_seconds,
       hold: row.hold_seconds,
       exhale: row.exhale_seconds,
+      rest: row.rest_seconds,
     },
   };
 }
@@ -35,6 +37,7 @@ export function sessionDtoToRow(dto: BreathingSessionDto): {
   inhale_seconds: number;
   hold_seconds: number;
   exhale_seconds: number;
+  rest_seconds: number;
 } {
   return {
     id: dto.id,
@@ -44,5 +47,6 @@ export function sessionDtoToRow(dto: BreathingSessionDto): {
     inhale_seconds: dto.durations.inhale,
     hold_seconds: dto.durations.hold,
     exhale_seconds: dto.durations.exhale,
+    rest_seconds: dto.durations.rest,
   };
 }

@@ -17,6 +17,7 @@ function asDurations(value: unknown): BreathingSettingsDto {
     inhale: asNumber(durations.inhale, "inhale"),
     hold: asNumber(durations.hold, "hold"),
     exhale: asNumber(durations.exhale, "exhale"),
+    rest: asNumber(durations.rest, "rest"),
   };
 }
 
@@ -40,6 +41,7 @@ export function settingsFromRequestBody(body: unknown): BreathingSettingsDto {
     inhale: asNumber(raw.inhale, "inhale"),
     hold: asNumber(raw.hold, "hold"),
     exhale: asNumber(raw.exhale, "exhale"),
+    rest: asNumber(raw.rest, "rest"),
   };
 }
 

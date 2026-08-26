@@ -16,7 +16,7 @@ describe("BreathingSession", () => {
       userId: USER_ID,
       cycleCount: 3,
       elapsedSeconds: 42.5,
-      durations: { inhale: 4, hold: 4, exhale: 6 },
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     });
 
     expect(session.toDto()).toEqual({
@@ -24,7 +24,7 @@ describe("BreathingSession", () => {
       userId: USER_ID,
       cycleCount: 3,
       elapsedSeconds: 42.5,
-      durations: { inhale: 4, hold: 4, exhale: 6 },
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     });
   });
 
@@ -34,13 +34,18 @@ describe("BreathingSession", () => {
       userId: USER_ID,
       cycleCount: 1,
       elapsedSeconds: 14,
-      durations: { inhale: 4, hold: 4, exhale: 6 },
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     };
     const session = BreathingSession.fromDto(dto);
     dto.durations.inhale = 12;
     dto.cycleCount = 99;
 
-    expect(session.toDto().durations).toEqual({ inhale: 4, hold: 4, exhale: 6 });
+    expect(session.toDto().durations).toEqual({
+      inhale: 4,
+      hold: 4,
+      exhale: 6,
+      rest: 2,
+    });
     expect(session.toDto().cycleCount).toBe(1);
     expect(session.durations).toBeInstanceOf(BreathingSettings);
   });
@@ -51,7 +56,7 @@ describe("BreathingSession", () => {
       userId: USER_ID,
       cycleCount: 1,
       elapsedSeconds: 10,
-      durations: { inhale: 4, hold: 4, exhale: 6 },
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     };
 
     expect(() => BreathingSession.fromDto({ ...valid, id: "bad" })).toThrow(
@@ -72,7 +77,7 @@ describe("BreathingSession", () => {
     expect(() =>
       BreathingSession.fromDto({
         ...valid,
-        durations: { inhale: 1, hold: 4, exhale: 6 },
+        durations: { inhale: 1, hold: 4, exhale: 6, rest: 2 },
       }),
     ).toThrow(DomainValidationError);
   });
@@ -83,7 +88,7 @@ describe("BreathingSession", () => {
       userId: USER_ID,
       cycleCount: 0,
       elapsedSeconds: 2,
-      durations: { inhale: 4, hold: 4, exhale: 6 },
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     });
     expect(session.toDto().cycleCount).toBe(0);
     expect(session.hasCompletedCycle()).toBe(false);

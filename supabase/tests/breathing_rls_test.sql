@@ -82,8 +82,8 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds)
-    values ('11111111-1111-4111-8111-111111111111', 4, 4, 6)$$,
+  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds)
+    values ('11111111-1111-4111-8111-111111111111', 4, 4, 6, 2)$$,
   '42501',
   null,
   'anon cannot insert settings'
@@ -105,11 +105,11 @@ select throws_ok(
 
 select throws_ok(
   $$insert into public.breathing_sessions (
-      id, user_id, cycle_count, elapsed_seconds, inhale_seconds, hold_seconds, exhale_seconds
+      id, user_id, cycle_count, elapsed_seconds, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds
     ) values (
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       '11111111-1111-4111-8111-111111111111',
-      1, 14, 4, 4, 6
+      1, 14, 4, 4, 6, 2
     )$$,
   '42501',
   null,
@@ -129,8 +129,8 @@ select set_config(
 );
 
 select results_eq(
-  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds)
-    values ('11111111-1111-4111-8111-111111111111', 4, 4, 6)
+  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds)
+    values ('11111111-1111-4111-8111-111111111111', 4, 4, 6, 2)
     returning inhale_seconds$$,
   array[4],
   'the owner creates their own settings'
@@ -153,11 +153,11 @@ select results_eq(
 
 select results_eq(
   $$insert into public.breathing_sessions (
-      id, user_id, cycle_count, elapsed_seconds, inhale_seconds, hold_seconds, exhale_seconds
+      id, user_id, cycle_count, elapsed_seconds, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds
     ) values (
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       '11111111-1111-4111-8111-111111111111',
-      2, 28, 4, 4, 6
+      2, 28, 4, 4, 6, 2
     )
     returning cycle_count$$,
   array[2],
@@ -172,11 +172,11 @@ select results_eq(
 
 select throws_ok(
   $$insert into public.breathing_sessions (
-      id, user_id, cycle_count, elapsed_seconds, inhale_seconds, hold_seconds, exhale_seconds
+      id, user_id, cycle_count, elapsed_seconds, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds
     ) values (
       'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
       '11111111-1111-4111-8111-111111111111',
-      0, 1, 4, 4, 6
+      0, 1, 4, 4, 6, 2
     )$$,
   '23514',
   null,
@@ -184,8 +184,8 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds)
-    values ('11111111-1111-4111-8111-111111111111', 1, 4, 6)$$,
+  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds)
+    values ('11111111-1111-4111-8111-111111111111', 1, 4, 6, 2)$$,
   '23514',
   null,
   'invalid inhale duration is rejected'
@@ -202,8 +202,8 @@ select set_config(
 );
 
 select throws_ok(
-  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds)
-    values ('11111111-1111-4111-8111-111111111111', 5, 5, 5)$$,
+  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds)
+    values ('11111111-1111-4111-8111-111111111111', 5, 5, 5, 2)$$,
   '42501',
   null,
   'another user cannot create settings for the owner'
@@ -221,11 +221,11 @@ select is_empty(
 
 select throws_ok(
   $$insert into public.breathing_sessions (
-      id, user_id, cycle_count, elapsed_seconds, inhale_seconds, hold_seconds, exhale_seconds
+      id, user_id, cycle_count, elapsed_seconds, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds
     ) values (
       'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
       '11111111-1111-4111-8111-111111111111',
-      3, 30, 4, 4, 6
+      3, 30, 4, 4, 6, 2
     )$$,
   '42501',
   null,
@@ -238,8 +238,8 @@ select is_empty(
 );
 
 select results_eq(
-  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds)
-    values ('22222222-2222-4222-8222-222222222222', 5, 2, 8)
+  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds)
+    values ('22222222-2222-4222-8222-222222222222', 5, 2, 8, 2)
     returning inhale_seconds$$,
   array[5],
   'another user can create their own settings'

@@ -44,10 +44,11 @@ describe("request body ownership", () => {
         inhale: 5,
         hold: 2,
         exhale: 8,
+        rest: 3,
         userId: BODY_USER,
         user_id: BODY_USER,
       }),
-    ).toEqual({ inhale: 5, hold: 2, exhale: 8 });
+    ).toEqual({ inhale: 5, hold: 2, exhale: 8, rest: 3 });
   });
 
   it("stamps the claim-derived user id onto sessions and ignores payload ownership", () => {
@@ -59,7 +60,7 @@ describe("request body ownership", () => {
           user_id: BODY_USER,
           cycleCount: 2,
           elapsedSeconds: 28,
-          durations: { inhale: 4, hold: 4, exhale: 6 },
+          durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
         },
         CLAIM_USER,
       ),
@@ -68,7 +69,7 @@ describe("request body ownership", () => {
       userId: CLAIM_USER,
       cycleCount: 2,
       elapsedSeconds: 28,
-      durations: { inhale: 4, hold: 4, exhale: 6 },
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
     });
   });
 
