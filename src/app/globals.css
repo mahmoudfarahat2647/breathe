@@ -863,12 +863,41 @@ svg.square-svg.idle .progress-dot {
   line-height: 1.45;
 }
 
-.aux-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 22px;
+/* Control Deck: one unified panel, sections separated by dividers instead
+   of each section being its own separate boxed panel (wayfinder issue #16;
+   prototype variant C: see prototype/control-deck-composition branch). */
+.control-deck-unified {
+  max-width: 880px;
 }
+.control-deck-unified .panel {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+  max-width: none;
+}
+.control-deck-row {
+  padding: 14px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.control-deck-row-primary {
+  padding-top: 2px;
+}
+.control-deck-row-sound {
+  flex-direction: row;
+  justify-content: center;
+}
+.control-deck-divider {
+  height: 1px;
+  width: 100%;
+  background: var(--panel-border-quiet);
+}
+
 .switch-field {
   display: flex;
   align-items: center;

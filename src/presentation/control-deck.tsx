@@ -50,82 +50,98 @@ export function ControlDeck({
       className="control-deck"
       aria-label="Breathing exercise controls"
     >
-      <Card className="panel panel-elevated gap-0 py-[clamp(12px,2vh,16px)] ring-0">
-        <div className="transport-row">
-          {view.showPause ? (
+      <Card className="panel panel-elevated control-deck-unified gap-0 ring-0">
+        <div className="control-deck-row control-deck-row-primary">
+          <div className="transport-row">
+            {view.showPause ? (
+              <Button
+                ref={pauseRef}
+                type="button"
+                variant="breathePrimary"
+                size="breathe"
+                onClick={onPause}
+              >
+                Pause
+              </Button>
+            ) : (
+              <Button
+                ref={startRef}
+                type="button"
+                variant="breathePrimary"
+                size="breathe"
+                onClick={onStart}
+              >
+                {view.primaryLabel}
+              </Button>
+            )}
             <Button
-              ref={pauseRef}
               type="button"
-              variant="breathePrimary"
+              variant="breatheSecondary"
               size="breathe"
-              onClick={onPause}
+              onClick={onReset}
             >
-              Pause
+              Reset
             </Button>
-          ) : (
-            <Button
-              ref={startRef}
-              type="button"
-              variant="breathePrimary"
-              size="breathe"
-              onClick={onStart}
-            >
-              {view.primaryLabel}
-            </Button>
-          )}
-          <Button
-            type="button"
-            variant="breatheSecondary"
-            size="breathe"
-            onClick={onReset}
-          >
-            Reset
-          </Button>
-        </div>
-        <div className="stats-row">
-          <div className="stat">
-            <span className="stat-label label-tier">Cycle</span>
-            <span className="stat-value">{view.cycleCount}</span>
           </div>
-          <div className="stat">
-            <span className="stat-label label-tier">Elapsed</span>
-            <span className="stat-value">{view.elapsed}</span>
-          </div>
-          {view.goalRemaining !== null ? (
+          <div className="stats-row">
             <div className="stat">
-              <span className="stat-label label-tier">Remaining</span>
-              <span className="stat-value">{view.goalRemaining}</span>
+              <span className="stat-label label-tier">Cycle</span>
+              <span className="stat-value">{view.cycleCount}</span>
             </div>
-          ) : null}
+            <div className="stat">
+              <span className="stat-label label-tier">Elapsed</span>
+              <span className="stat-value">{view.elapsed}</span>
+            </div>
+            {view.goalRemaining !== null ? (
+              <div className="stat">
+                <span className="stat-label label-tier">Remaining</span>
+                <span className="stat-value">{view.goalRemaining}</span>
+              </div>
+            ) : null}
+          </div>
         </div>
-      </Card>
 
-      <PresetPicker
-        activePresetId={activePresetId}
-        onSelect={onSelectPreset}
-        onAnnounce={onAnnounce}
-      />
+        <div className="control-deck-divider" role="separator" aria-hidden="true" />
 
-      <DurationStepper
-        view={view}
-        activePresetId={activePresetId}
-        onAdjust={onAdjust}
-      />
-
-      <Card className="panel panel-quiet aux-row gap-0 py-[clamp(12px,2vh,16px)] ring-0">
-        <label className="switch-field">
-          <Switch
-            className="breathe-switch"
-            checked={soundEnabled}
-            onCheckedChange={(checked) => onSoundChange(checked)}
+        <div className="control-deck-row">
+          <PresetPicker
+            activePresetId={activePresetId}
+            onSelect={onSelectPreset}
+            onAnnounce={onAnnounce}
           />
-          Sound
-        </label>
+        </div>
+
+        <div className="control-deck-divider" role="separator" aria-hidden="true" />
+
+        <div className="control-deck-row">
+          <DurationStepper
+            view={view}
+            activePresetId={activePresetId}
+            onAdjust={onAdjust}
+          />
+        </div>
+
+        <div className="control-deck-divider" role="separator" aria-hidden="true" />
+
+        <div className="control-deck-row">{goalPicker}</div>
+
+        <div className="control-deck-divider" role="separator" aria-hidden="true" />
+
+        <div className="control-deck-row control-deck-row-sound">
+          <label className="switch-field">
+            <Switch
+              className="breathe-switch"
+              checked={soundEnabled}
+              onCheckedChange={(checked) => onSoundChange(checked)}
+            />
+            Sound
+          </label>
+        </div>
+
+        <div className="control-deck-divider" role="separator" aria-hidden="true" />
+
+        <div className="control-deck-row">{history}</div>
       </Card>
-
-      {goalPicker}
-
-      {history}
     </section>
   );
 }

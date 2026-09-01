@@ -84,7 +84,7 @@ export function DurationStepper({
 
         {activePresetId === "custom" ? (
           <p className="default-hint">
-            Custom pattern — adjust each phase or pick a preset above. Not medical
+            Custom preset — adjust each phase or pick a preset above. Not medical
             advice.
           </p>
         ) : null}
