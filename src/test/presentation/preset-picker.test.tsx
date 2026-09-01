@@ -16,7 +16,7 @@ describe("PresetPicker", () => {
       />,
     );
 
-    const group = screen.getByRole("radiogroup", { name: "Breathing pattern" });
+    const group = screen.getByRole("radiogroup", { name: "Breathing preset" });
     expect(group).toBeInTheDocument();
     const currentCalm = screen.getByRole("radio", { name: "Current Calm" });
     const triangle = screen.getByRole("radio", { name: "Triangle" });

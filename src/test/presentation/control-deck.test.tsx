@@ -46,7 +46,7 @@ describe("ControlDeck", () => {
     expect(screen.getByText("00:00")).toBeInTheDocument();
     expect(screen.getByText("Sound")).toBeInTheDocument();
 
-    expect(screen.getByRole("radiogroup", { name: "Breathing pattern" })).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: "Breathing preset" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Current Calm" })).toHaveAttribute(
       "aria-checked",
       "true",
