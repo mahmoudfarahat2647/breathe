@@ -1,6 +1,6 @@
 # Breathe
 
-A single-page breathing exercise app: a user picks a pattern, watches a synchronized visual guide, and breathes along with it while phases advance automatically.
+A single-page breathing exercise app: a user picks a preset, watches a synchronized visual guide, and breathes along with it while phases advance automatically.
 
 ## Language
 
@@ -9,8 +9,8 @@ One of the four beats of a breath cycle: Inhale, Hold, Exhale, Rest. Phases adva
 _Avoid_: Step, stage (see Stage below — different concept, same word collides), side.
 
 **Preset**:
-A named set of phase durations a user can select as a starting point (Current Calm, Triangle, Box, 4-7-8 Relaxation, Coherence), or Custom once durations are hand-adjusted. Defined in `BREATHING_PRESET_CATALOG`.
-_Avoid_: Pattern, breathing pattern — the UI currently labels the preset picker "BREATHING PATTERN," which drifts from this term; worth reconciling.
+A named set of phase durations a user can select as a starting point (Current Calm, Triangle, Box, 4-7-8 Relaxation, Coherence), or Custom once durations are hand-adjusted.
+_Avoid_: Pattern, breathing pattern.
 
 **Stage**:
 The area of the screen holding the live breathing visual (the Square or Triangle) that the user watches and breathes along with. Distinct from Phase.
@@ -30,6 +30,3 @@ An optional target for the current Session, expressed as either a minute count o
 The count of consecutive calendar days (through today or yesterday) containing at least one saved Session, computed from session history.
 _Avoid_: Consistency, days active.
 
-## Known issue affecting the Language
-
-The Stage is a fixed grid row (`minmax(0, 1fr)`) that gets whatever height is left after the header and the control deck below it. Control deck content has grown (presets, durations, sound toggle, session goal, history) without the Stage's minimum being protected, so on shorter viewports the Stage collapses to near-zero height — the Square/Triangle shape disappears, and only its centered text overlay (phase label, countdown, duration hint) remains visible, floating above the control deck. This was observed live at 1568×724. Worth a decision on how the layout budget should be reallocated (collapse more of the control deck by default, give Stage a protected minimum, etc.) rather than a cosmetic tweak.
