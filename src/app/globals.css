@@ -194,7 +194,7 @@
   --ease-breath: var(--ease-breathe);
   height: 100dvh;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(min(320px, 34dvh), 1fr) auto;
   grid-template-areas:
     "header"
     "stage"
@@ -514,6 +514,7 @@ svg.square-svg.idle .progress-dot {
 .control-deck {
   grid-area: controls;
   min-height: 0;
+  max-height: calc(100dvh - 64px - min(320px, 34dvh));
   overflow-y: auto;
   width: 100%;
   display: flex;
@@ -622,17 +623,21 @@ svg.square-svg.idle .progress-dot {
 .stat {
   text-align: center;
 }
+.label-tier {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-300);
+}
 .stat-label {
   display: block;
-  font-size: 0.66rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-700);
   margin-bottom: 2px;
 }
 .stat-value {
   font-family: var(--font-display);
   font-size: 1.25rem;
+  font-weight: 500;
   color: var(--ink-100);
   font-variant-numeric: tabular-nums;
 }
@@ -642,14 +647,6 @@ svg.square-svg.idle .progress-dot {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-.goal-picker-label {
-  font-family: var(--font-label);
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-300);
 }
 .goal-options {
   display: flex;
@@ -668,12 +665,6 @@ svg.square-svg.idle .progress-dot {
   width: 100%;
   border: 0;
   background: transparent;
-  color: var(--ink-300);
-  font-family: var(--font-label);
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
   text-align: left;
   cursor: pointer;
   padding: 0 0 2px;
@@ -690,14 +681,6 @@ svg.square-svg.idle .progress-dot {
 }
 .duration-fields[hidden] {
   display: none;
-}
-@media (max-height: 640px) {
-  .duration-fields {
-    display: none;
-  }
-  .durations[data-ready] .duration-fields[data-expanded="true"] {
-    display: grid;
-  }
 }
 @media (min-width: 900px) {
   .duration-fields {
@@ -719,9 +702,9 @@ svg.square-svg.idle .progress-dot {
 .duration-label {
   display: flex;
   flex-direction: column;
-  line-height: 1.2;
+  line-height: 1.45;
   font-size: 0.82rem;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--ink-300);
 }
 .stepper {
@@ -736,7 +719,8 @@ svg.square-svg.idle .progress-dot {
   border: 1px solid var(--panel-border);
   background: rgb(232 240 235 / 0.04);
   color: var(--ink-100);
-  font-size: 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -757,7 +741,8 @@ svg.square-svg.idle .progress-dot {
   min-width: 2.6em;
   text-align: center;
   font-variant-numeric: tabular-nums;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
   color: var(--ink-100);
 }
 
@@ -773,34 +758,27 @@ svg.square-svg.idle .progress-dot {
   width: 100%;
   max-width: 65ch;
   text-align: center;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
+  font-weight: 400;
   line-height: 1.45;
   color: var(--ink-700);
   margin: 8px auto 0;
 }
 
 .preset-picker {
-  width: 100%;
-  border: 0;
-  margin: 0 0 12px;
-  padding: 0;
+  margin: 0;
+  min-width: 0;
 }
 
 .preset-legend {
-  width: 100%;
-  text-align: center;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-700);
-  margin-bottom: 8px;
+  display: block;
+  margin-bottom: 10px;
 }
 
 .preset-options {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 8px;
-  justify-content: center;
 }
 
 .history-panel {
@@ -813,12 +791,6 @@ svg.square-svg.idle .progress-dot {
   width: 100%;
   border: 0;
   background: transparent;
-  color: var(--ink-300);
-  font-family: var(--font-label);
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
   text-align: left;
   cursor: pointer;
   padding: 0 0 2px;
@@ -843,6 +815,7 @@ svg.square-svg.idle .progress-dot {
 }
 .history-status {
   font-size: 0.82rem;
+  font-weight: 400;
   line-height: 1.45;
   color: var(--ink-700);
   margin: 0;
@@ -863,6 +836,8 @@ svg.square-svg.idle .progress-dot {
   justify-content: space-between;
   gap: 4px 12px;
   font-size: 0.82rem;
+  font-weight: 400;
+  line-height: 1.45;
 }
 .history-item-date {
   color: var(--ink-100);
@@ -870,6 +845,7 @@ svg.square-svg.idle .progress-dot {
 }
 .history-item-meta {
   color: var(--ink-700);
+  line-height: 1.45;
 }
 
 .aux-row {

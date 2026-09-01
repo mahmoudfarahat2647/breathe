@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -35,7 +35,7 @@ function renderControlDeck(
 }
 
 describe("ControlDeck", () => {
-  it("renders transport, stats, preset picker, steppers, and sound", () => {
+  it("renders transport, stats, sound, and an always-visible preset picker; durations panel starts collapsed", () => {
     renderControlDeck();
 
     expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
@@ -44,6 +44,29 @@ describe("ControlDeck", () => {
     expect(screen.getByText("Cycle")).toBeInTheDocument();
     expect(screen.getByText("Elapsed")).toBeInTheDocument();
     expect(screen.getByText("00:00")).toBeInTheDocument();
+    expect(screen.getByText("Sound")).toBeInTheDocument();
+
+    expect(screen.getByRole("radiogroup", { name: "Breathing pattern" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Current Calm" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("radio", { name: "Box" })).toBeInTheDocument();
+
+    const disclosure = screen.getByRole("button", { name: "Durations" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(disclosure).toHaveAttribute("aria-controls", "duration-panel");
+    expect(screen.getByLabelText("Decrease inhale duration")).not.toBeVisible();
+  });
+
+  it("expands the durations panel on toggle, revealing the phase steppers", async () => {
+    const user = userEvent.setup();
+    renderControlDeck();
+
+    const disclosure = screen.getByRole("button", { name: "Durations" });
+    await user.click(disclosure);
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+
     expect(screen.getByLabelText("Decrease inhale duration")).toBeInTheDocument();
     expect(screen.getByLabelText("Increase hold duration")).toBeInTheDocument();
     expect(screen.getByLabelText("Decrease exhale duration")).toBeInTheDocument();
@@ -52,16 +75,6 @@ describe("ControlDeck", () => {
     expect(screen.getByText("Hold")).toBeInTheDocument();
     expect(screen.getByText("Exhale")).toBeInTheDocument();
     expect(screen.getByText("Rest")).toBeInTheDocument();
-    expect(screen.getByRole("radiogroup", { name: "Breathing pattern" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Current Calm" })).toHaveAttribute(
-      "aria-checked",
-      "true",
-    );
-    expect(screen.getByRole("radio", { name: "Box" })).toBeInTheDocument();
-    const disclosure = screen.getByRole("button", { name: "Durations" });
-    expect(disclosure).toHaveAttribute("aria-expanded", "true");
-    expect(disclosure).toHaveAttribute("aria-controls", "duration-panel");
-    expect(screen.getByText("Sound")).toBeInTheDocument();
   });
 
   it("shows Pause while running and wires control callbacks", async () => {
@@ -82,6 +95,7 @@ describe("ControlDeck", () => {
     await user.click(screen.getByRole("button", { name: "Reset" }));
     expect(props.onReset).toHaveBeenCalledOnce();
 
+    await user.click(screen.getByRole("button", { name: "Durations" }));
     await user.click(screen.getByLabelText("Increase inhale duration"));
     expect(props.onAdjust).toHaveBeenCalledWith("inhale", 1);
 
@@ -90,32 +104,5 @@ describe("ControlDeck", () => {
 
     await user.click(screen.getByRole("switch", { name: "Sound" }));
     expect(props.onSoundChange).toHaveBeenCalledWith(true);
-  });
-
-  it("collapses durations on short viewports until the user toggles", async () => {
-    const user = userEvent.setup();
-    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-      matches: query.includes("max-height: 640px"),
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-      onchange: null,
-    }));
-    renderControlDeck();
-
-    const disclosure = screen.getByRole("button", { name: "Durations" });
-    await waitFor(() => {
-      expect(disclosure).toHaveAttribute("aria-expanded", "false");
-    });
-    expect(
-      screen.queryByRole("button", { name: "Decrease inhale duration" }),
-    ).not.toBeInTheDocument();
-
-    await user.click(disclosure);
-    expect(disclosure).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByLabelText("Decrease rest duration")).toBeInTheDocument();
   });
 });

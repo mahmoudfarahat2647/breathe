@@ -95,7 +95,7 @@ export function HistoryPanel({
       <button
         ref={triggerRef}
         type="button"
-        className="history-toggle"
+        className="history-toggle label-tier"
         aria-expanded={open}
         aria-controls={panelDomId}
         onClick={toggle}
@@ -118,19 +118,19 @@ export function HistoryPanel({
           <>
             <div className="history-stats">
               <div className="stat">
-                <span className="stat-label">Streak</span>
+                <span className="stat-label label-tier">Streak</span>
                 <span className="stat-value">{summary.currentStreak}</span>
               </div>
               <div className="stat">
-                <span className="stat-label">This week</span>
+                <span className="stat-label label-tier">This week</span>
                 <span className="stat-value">{summary.sessionsThisWeek}</span>
               </div>
               <div className="stat">
-                <span className="stat-label">Total</span>
+                <span className="stat-label label-tier">Total</span>
                 <span className="stat-value">{summary.totalSessions}</span>
               </div>
               <div className="stat">
-                <span className="stat-label">Time</span>
+                <span className="stat-label label-tier">Time</span>
                 <span className="stat-value">
                   {formatElapsed(summary.totalElapsedSeconds)}
                 </span>

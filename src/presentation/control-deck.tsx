@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { DurationStepper } from "./duration-stepper";
+import { PresetPicker } from "./preset-picker";
 import type { BreathingViewModel } from "./view-model";
 
 type ControlDeckProps = {
@@ -83,28 +84,32 @@ export function ControlDeck({
         </div>
         <div className="stats-row">
           <div className="stat">
-            <span className="stat-label">Cycle</span>
+            <span className="stat-label label-tier">Cycle</span>
             <span className="stat-value">{view.cycleCount}</span>
           </div>
           <div className="stat">
-            <span className="stat-label">Elapsed</span>
+            <span className="stat-label label-tier">Elapsed</span>
             <span className="stat-value">{view.elapsed}</span>
           </div>
           {view.goalRemaining !== null ? (
             <div className="stat">
-              <span className="stat-label">Remaining</span>
+              <span className="stat-label label-tier">Remaining</span>
               <span className="stat-value">{view.goalRemaining}</span>
             </div>
           ) : null}
         </div>
       </Card>
 
+      <PresetPicker
+        activePresetId={activePresetId}
+        onSelect={onSelectPreset}
+        onAnnounce={onAnnounce}
+      />
+
       <DurationStepper
         view={view}
         activePresetId={activePresetId}
         onAdjust={onAdjust}
-        onSelectPreset={onSelectPreset}
-        onAnnounce={onAnnounce}
       />
 
       <Card className="panel aux-row gap-0 py-[clamp(12px,2vh,16px)] ring-0">

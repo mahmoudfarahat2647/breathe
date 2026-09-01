@@ -56,8 +56,8 @@ export function PresetPicker({
   }
 
   return (
-    <fieldset className="preset-picker">
-      <legend className="preset-legend">Breathing pattern</legend>
+    <fieldset className="panel preset-picker">
+      <legend className="preset-legend label-tier">Breathing pattern</legend>
       <div className="preset-options" role="radiogroup" aria-label="Breathing pattern">
         {BREATHING_PRESET_CATALOG.map((preset, index) => {
           const checked = activePresetId === preset.id;

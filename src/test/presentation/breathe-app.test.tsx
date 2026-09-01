@@ -15,7 +15,8 @@ describe("AmbientBackground", () => {
 });
 
 describe("BreatheApp", () => {
-  it("renders the wordmark, announcer, and decorative SVG", () => {
+  it("renders the wordmark, announcer, and decorative SVG", async () => {
+    const user = userEvent.setup();
     render(<BreatheApp />);
 
     expect(screen.getByText("Breathe")).toBeInTheDocument();
@@ -32,12 +33,13 @@ describe("BreatheApp", () => {
     expect(controls).toContainElement(
       screen.getByRole("group", { name: "Session goal" }),
     );
-    expect(screen.getByRole("button", { name: "Durations" })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
-    expect(screen.getByLabelText("Decrease rest duration")).toBeInTheDocument();
+
     expect(screen.getByRole("radio", { name: "Current Calm" })).toBeInTheDocument();
+
+    const disclosure = screen.getByRole("button", { name: "Durations" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    await user.click(disclosure);
+    expect(screen.getByLabelText("Decrease rest duration")).toBeInTheDocument();
   });
 
   it("moves focus to Pause on start and Start/Resume on pause", async () => {

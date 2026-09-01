@@ -48,15 +48,14 @@ test.describe("parity — desktop", () => {
     await expect(page.getByText("شهيق")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Reset", exact: true })).toBeVisible();
-    await expect(page.getByText("Cycle")).toBeVisible();
+    await expect(page.getByText("Cycle", { exact: true })).toBeVisible();
     await expect(page.getByText("Elapsed")).toBeVisible();
     await expect(page.getByText("00:00")).toBeVisible();
     await expect(page.getByRole("radio", { name: "Current Calm" })).toBeVisible();
+    const disclosure = page.getByRole("button", { name: "Durations" });
+    await expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    await disclosure.click();
     await expect(page.getByLabel("Decrease rest duration")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Durations" })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
     await expect(page.getByRole("switch", { name: "Sound" })).toHaveAttribute(
       "aria-checked",
       "false",
@@ -87,8 +86,9 @@ test.describe("parity — desktop", () => {
     await expect(page.getByText("00:00")).toBeVisible();
   });
 
-  test("applies the Current Calm preset from the durations panel", async ({ page }) => {
+  test("applies the Current Calm preset from the preset picker", async ({ page }) => {
     await page.goto("/");
+    await page.getByRole("button", { name: "Durations" }).click();
     await page.getByLabel("Increase rest duration").click();
     await expect(page.locator("#restValue")).toHaveText("3s");
     await page.getByRole("radio", { name: "Current Calm" }).click();
@@ -101,6 +101,7 @@ test.describe("parity — desktop", () => {
   test("advances through inhale, hold, exhale, and rest", async ({ page }) => {
     test.setTimeout(90_000);
     await page.goto("/");
+    await page.getByRole("button", { name: "Durations" }).click();
     for (const phase of ["inhale", "hold", "exhale", "rest"] as const) {
       const decrease = page.getByLabel(`Decrease ${phase} duration`);
       for (let i = 0; i < 6; i += 1) {
@@ -164,6 +165,7 @@ test.describe("parity — mobile", () => {
   }) => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Durations" }).click();
     await expect(page.getByLabel("Decrease inhale duration")).toBeVisible();
     await expect(page.getByLabel("Decrease rest duration")).toBeVisible();
     await expectSquareGeometry(page);

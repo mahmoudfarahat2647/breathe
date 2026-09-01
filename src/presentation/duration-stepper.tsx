@@ -1,19 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { PHASES, type Phase } from "@/domain/phase";
 import type { BreathingPresetId } from "@/domain/breathing-preset";
 import { Button } from "@/components/ui/button";
 import type { BreathingViewModel } from "./view-model";
-import { PresetPicker } from "./preset-picker";
 
 type DurationStepperProps = {
   view: BreathingViewModel;
   activePresetId: BreathingPresetId;
   onAdjust: (phase: Phase, direction: number) => void;
-  onSelectPreset: (presetId: BreathingPresetId) => void;
-  onAnnounce: (message: string) => void;
 };
 
 const PHASE_ROW_EN: Record<Phase, string> = {
@@ -29,43 +26,18 @@ export function DurationStepper({
   view,
   activePresetId,
   onAdjust,
-  onSelectPreset,
-  onAnnounce,
 }: DurationStepperProps) {
-  const [open, setOpen] = useState(true);
-  const [ready, setReady] = useState(false);
-  const userToggledRef = useRef(false);
-
-  useEffect(() => {
-    const media =
-      typeof window.matchMedia === "function"
-        ? window.matchMedia("(max-height: 640px)")
-        : null;
-    const apply = () => {
-      if (userToggledRef.current) return;
-      setOpen(media ? !media.matches : true);
-    };
-    media?.addEventListener("change", apply);
-    const frame = window.requestAnimationFrame(() => {
-      apply();
-      setReady(true);
-    });
-    return () => {
-      media?.removeEventListener("change", apply);
-      window.cancelAnimationFrame(frame);
-    };
-  }, []);
+  const [open, setOpen] = useState(false);
 
   function toggle() {
-    userToggledRef.current = true;
     setOpen((current) => !current);
   }
 
   return (
-    <div className="panel durations" data-ready={ready ? "true" : undefined}>
+    <div className="panel durations">
       <button
         type="button"
-        className="durations-toggle"
+        className="durations-toggle label-tier"
         aria-expanded={open}
         aria-controls={DURATION_PANEL_ID}
         onClick={toggle}
@@ -76,14 +48,7 @@ export function DurationStepper({
         id={DURATION_PANEL_ID}
         className="duration-fields"
         hidden={!open}
-        data-expanded={open ? "true" : undefined}
       >
-        <PresetPicker
-          activePresetId={activePresetId}
-          onSelect={onSelectPreset}
-          onAnnounce={onAnnounce}
-        />
-
         {PHASES.map((phase) => (
           <div className="duration-row" key={phase}>
             <span className="duration-label">{PHASE_ROW_EN[phase]}</span>
