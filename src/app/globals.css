@@ -13,8 +13,7 @@
   --color-breathe-blob-rest: #5a7a78;
   --color-breathe-ink-100: #e8f0eb;
   --color-breathe-ink-300: #b4c4bb;
-  --color-breathe-ink-500: #7d8f86;
-  --color-breathe-ink-700: #4a5c54;
+  --color-breathe-ink-500: #91a39a;
   --color-breathe-phase-inhale: #6ec9b8;
   --color-breathe-phase-hold: #8fbf9a;
   --color-breathe-phase-exhale: #d4a06a;
@@ -173,7 +172,6 @@
   --ink-100: var(--color-breathe-ink-100);
   --ink-300: var(--color-breathe-ink-300);
   --ink-500: var(--color-breathe-ink-500);
-  --ink-700: var(--color-breathe-ink-700);
   --panel-bg: linear-gradient(
       165deg,
       rgb(232 240 235 / 0.08),
@@ -181,7 +179,12 @@
     ),
     rgb(232 240 235 / 0.04);
   --panel-border: rgb(232 240 235 / 0.12);
-  --panel-bg-strong: rgb(232 240 235 / 0.07);
+  --panel-bg-strong: rgb(232 240 235 / 0.12);
+  --panel-bg-quiet: rgb(232 240 235 / 0.02);
+  --panel-border-strong: rgb(232 240 235 / 0.2);
+  --panel-border-quiet: rgb(232 240 235 / 0.08);
+  --panel-shadow-elevated: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 22px 48px rgb(6 18 14 / 0.34);
+  --panel-shadow-quiet: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 10px 22px rgb(6 18 14 / 0.14);
   --square-idle: rgb(232 240 235 / 0.16);
   --square-base: rgb(232 240 235 / 0.08);
   --phase-inhale: var(--color-breathe-phase-inhale);
@@ -490,7 +493,7 @@ svg.square-svg.idle .progress-dot {
 .duration-hint {
   font-family: var(--font-label);
   font-size: clamp(0.68rem, 3.6cqi, 0.85rem);
-  color: var(--ink-700);
+  color: var(--ink-500);
   letter-spacing: 0.04em;
 }
 
@@ -537,19 +540,31 @@ svg.square-svg.idle .progress-dot {
     0 18px 40px rgb(6 18 14 / 0.22);
   padding: clamp(12px, 2vh, 16px) clamp(14px, 2.5vw, 20px);
 }
+.panel-elevated {
+  background: var(--panel-bg-strong);
+  border-color: var(--panel-border-strong);
+  box-shadow: var(--panel-shadow-elevated);
+}
+.panel-quiet {
+  background: var(--panel-bg-quiet);
+  border-color: var(--panel-border-quiet);
+  box-shadow: var(--panel-shadow-quiet);
+}
 @media (prefers-reduced-transparency: reduce) {
   .panel {
     background: #10241c;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+  .panel-elevated {
+    background: #16301f;
+  }
+  .panel-quiet {
+    background: #0b1a14;
+  }
 }
 .panel[data-slot="card"] {
-  background: var(--panel-bg);
   color: inherit;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.12),
-    0 18px 40px rgb(6 18 14 / 0.22);
 }
 
 .transport-row {
@@ -761,7 +776,7 @@ svg.square-svg.idle .progress-dot {
   font-size: 0.82rem;
   font-weight: 400;
   line-height: 1.45;
-  color: var(--ink-700);
+  color: var(--ink-500);
   margin: 8px auto 0;
 }
 
@@ -817,7 +832,7 @@ svg.square-svg.idle .progress-dot {
   font-size: 0.82rem;
   font-weight: 400;
   line-height: 1.45;
-  color: var(--ink-700);
+  color: var(--ink-500);
   margin: 0;
 }
 .history-list {
@@ -844,7 +859,7 @@ svg.square-svg.idle .progress-dot {
   font-variant-numeric: tabular-nums;
 }
 .history-item-meta {
-  color: var(--ink-700);
+  color: var(--ink-500);
   line-height: 1.45;
 }
 

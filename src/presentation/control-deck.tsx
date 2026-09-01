@@ -50,7 +50,7 @@ export function ControlDeck({
       className="control-deck"
       aria-label="Breathing exercise controls"
     >
-      <Card className="panel gap-0 py-[clamp(12px,2vh,16px)] ring-0">
+      <Card className="panel panel-elevated gap-0 py-[clamp(12px,2vh,16px)] ring-0">
         <div className="transport-row">
           {view.showPause ? (
             <Button
@@ -112,7 +112,7 @@ export function ControlDeck({
         onAdjust={onAdjust}
       />
 
-      <Card className="panel aux-row gap-0 py-[clamp(12px,2vh,16px)] ring-0">
+      <Card className="panel panel-quiet aux-row gap-0 py-[clamp(12px,2vh,16px)] ring-0">
         <label className="switch-field">
           <Switch
             className="breathe-switch"

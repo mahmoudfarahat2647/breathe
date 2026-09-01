@@ -91,7 +91,7 @@ export function HistoryPanel({
   const recentRecords = data?.records.slice(0, 5) ?? [];
 
   return (
-    <div className="panel history-panel">
+    <div className="panel panel-quiet history-panel">
       <button
         ref={triggerRef}
         type="button"

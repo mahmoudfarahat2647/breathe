@@ -34,7 +34,7 @@ export function DurationStepper({
   }
 
   return (
-    <div className="panel durations">
+    <div className="panel panel-quiet durations">
       <button
         type="button"
         className="durations-toggle label-tier"
