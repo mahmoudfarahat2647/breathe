@@ -45,8 +45,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Phase labels: INHALE, HOLD, EXHALE, REST | A |
 | Duration steppers ± with aria-labels for inhale, hold, exhale, and rest | A |
 | Preset button `Use 4-4-6-2` + hint copy for the four-phase pattern | A / V |
-| Durations panel is a disclosure (`aria-expanded`, `aria-controls`); open by default | A |
-| On mount, if `matchMedia("(max-height: 640px)")` matches, the disclosure starts collapsed; user toggle wins thereafter | A |
+| Durations panel is a disclosure (`aria-expanded`, `aria-controls`); closed by default, no viewport-based auto-collapse | A |
 | Transport: Start / Pause / Resume / Reset | A |
 | Stats: Cycle + Elapsed | A |
 | Sound switch opt-in (default off) | A |
@@ -82,14 +81,14 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 
 | Behavior | Check |
 | --- | --- |
-| Root layout is `height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto` so the square and control deck never overlap | A / V |
+| Root layout is `height: 100dvh; display: grid; grid-template-rows: auto minmax(min(320px, 34dvh), 1fr) auto` so the Stage keeps a protected minimum and the square and control deck never overlap | A / V |
 | Stage is a size container (`container-type: size; min-height: 0; overflow: hidden`) | A / V |
 | Square wrap sizes from container queries; countdown uses `cqi` clamp, not `14vmin` | A / V |
 | Duration rows: 2×2 under 900px, four-column above; durations panel max-width allows four steppers | A / V |
 | Control deck `min-height: 0; overflow-y: auto` as a fallback when content is taller than the viewport | A / V |
 | `.square-wrap` bottom is strictly above `#controls` top at 1280×800, 1024×600, 1024×472, and 390×844 | A |
 | `@media (max-width: 480px)` tighter transport/buttons | V |
-| `@media (max-height: 640px)` smaller square, reduced glow, and collapsed durations disclosure | A / V |
+| `@media (max-height: 640px)` smaller square and reduced glow | A / V |
 
 ## Reduced motion
 
