@@ -532,7 +532,7 @@ svg.square-svg.idle .progress-dot {
   max-width: 640px;
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   backdrop-filter: blur(22px) saturate(160%);
   -webkit-backdrop-filter: blur(22px) saturate(160%);
   box-shadow:
@@ -580,7 +580,7 @@ svg.square-svg.idle .progress-dot {
   font-size: 0.92rem;
   font-weight: 600;
   letter-spacing: 0.03em;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   padding: 0.78em 1.7em;
   cursor: pointer;
@@ -658,6 +658,7 @@ svg.square-svg.idle .progress-dot {
 }
 
 .goal-picker {
+  width: 100%;
   max-width: 880px;
   display: flex;
   flex-direction: column;
@@ -670,6 +671,7 @@ svg.square-svg.idle .progress-dot {
 }
 
 .durations {
+  width: 100%;
   max-width: 880px;
   display: flex;
   flex-direction: column;
@@ -781,6 +783,7 @@ svg.square-svg.idle .progress-dot {
 }
 
 .preset-picker {
+  width: 100%;
   margin: 0;
   min-width: 0;
 }
@@ -797,6 +800,7 @@ svg.square-svg.idle .progress-dot {
 }
 
 .history-panel {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -865,7 +869,10 @@ svg.square-svg.idle .progress-dot {
 
 /* Control Deck: one unified panel, sections separated by dividers instead
    of each section being its own separate boxed panel (wayfinder issue #16;
-   prototype variant C: see prototype/control-deck-composition branch). */
+   prototype variant C: see prototype/control-deck-composition branch).
+   Visual language/density (issue #17, "Grouped Chips" variant B: see
+   prototype/control-deck-visual-language branch) — Sound folded into the
+   primary row, tightened row padding, smaller button radius. */
 .control-deck-unified {
   max-width: 880px;
 }
@@ -879,18 +886,19 @@ svg.square-svg.idle .progress-dot {
   max-width: none;
 }
 .control-deck-row {
-  padding: 14px 0;
+  padding: 10px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
 }
 .control-deck-row-primary {
-  padding-top: 2px;
-}
-.control-deck-row-sound {
   flex-direction: row;
+  flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
+  gap: 12px 20px;
+  padding-top: 2px;
 }
 .control-deck-divider {
   height: 1px;
@@ -898,6 +906,10 @@ svg.square-svg.idle .progress-dot {
   background: var(--panel-border-quiet);
 }
 
+.switch-field-compact {
+  gap: 6px;
+  font-size: 0.78rem;
+}
 .switch-field {
   display: flex;
   align-items: center;

@@ -28,7 +28,7 @@ function isSelected(
 
 export function GoalPicker({ selectedGoal, onSelect }: GoalPickerProps) {
   return (
-    <div className="panel goal-picker gap-0 py-[clamp(12px,2vh,16px)] ring-0">
+    <div className="goal-picker gap-0 py-[clamp(12px,2vh,16px)]">
       <span className="goal-picker-label label-tier">Session goal</span>
       <div className="goal-options" role="group" aria-label="Session goal">
         <Button

@@ -107,7 +107,7 @@ describe("ControlDeck", () => {
     expect(props.onSoundChange).toHaveBeenCalledWith(true);
   });
 
-  it("maintains sequential tab order where Session Goal controls receive focus before the Sound switch in running state", async () => {
+  it("maintains sequential tab order where the Sound switch (now in the primary row) receives focus right after Reset, before Preset Picker and Session Goal", async () => {
     const user = userEvent.setup();
     renderControlDeck({
       view: toBreathingViewModel(
@@ -119,6 +119,7 @@ describe("ControlDeck", () => {
 
     const pauseButton = screen.getByRole("button", { name: "Pause" });
     const resetButton = screen.getByRole("button", { name: "Reset" });
+    const soundSwitch = screen.getByRole("switch", { name: "Sound" });
     const activePreset = screen.getByRole("radio", { name: "Current Calm" });
     const durationsToggle = screen.getByRole("button", { name: "Durations" });
     const goalNone = screen.getByRole("button", { name: "None" });
@@ -127,13 +128,15 @@ describe("ControlDeck", () => {
     const goal10Min = screen.getByRole("button", { name: "10 min" });
     const goal5Cycles = screen.getByRole("button", { name: "5 cycles" });
     const goal10Cycles = screen.getByRole("button", { name: "10 cycles" });
-    const soundSwitch = screen.getByRole("switch", { name: "Sound" });
 
     await user.tab();
     expect(document.activeElement).toBe(pauseButton);
 
     await user.tab();
     expect(document.activeElement).toBe(resetButton);
+
+    await user.tab();
+    expect(document.activeElement).toBe(soundSwitch);
 
     await user.tab();
     expect(document.activeElement).toBe(activePreset);
@@ -158,9 +161,6 @@ describe("ControlDeck", () => {
 
     await user.tab();
     expect(document.activeElement).toBe(goal10Cycles);
-
-    await user.tab();
-    expect(document.activeElement).toBe(soundSwitch);
   });
 
   it("confirms the durations disclosure aria-controls resolves to a real element present in the rendered DOM", () => {
@@ -200,11 +200,11 @@ describe("ControlDeck", () => {
     const dividersWithoutGoal = withoutGoal.container.querySelectorAll(".control-deck-divider");
     const rowsWithoutGoal = withoutGoal.container.querySelectorAll(".control-deck-row");
 
-    expect(dividersWithGoal).toHaveLength(4);
-    expect(dividersWithoutGoal).toHaveLength(3);
+    expect(dividersWithGoal).toHaveLength(3);
+    expect(dividersWithoutGoal).toHaveLength(2);
     expect(dividersWithGoal.length - dividersWithoutGoal.length).toBe(1);
 
-    expect(rowsWithoutGoal).toHaveLength(4);
+    expect(rowsWithoutGoal).toHaveLength(3);
     rowsWithoutGoal.forEach((row) => {
       expect(row.children.length).toBeGreaterThan(0);
     });
@@ -221,18 +221,18 @@ describe("ControlDeck", () => {
     const dividersWithoutHistory = withoutHistory.container.querySelectorAll(".control-deck-divider");
     const rowsWithoutHistory = withoutHistory.container.querySelectorAll(".control-deck-row");
 
-    expect(dividersWithHistory).toHaveLength(4);
-    expect(dividersWithoutHistory).toHaveLength(3);
+    expect(dividersWithHistory).toHaveLength(3);
+    expect(dividersWithoutHistory).toHaveLength(2);
     expect(dividersWithHistory.length - dividersWithoutHistory.length).toBe(1);
 
-    expect(rowsWithoutHistory).toHaveLength(4);
+    expect(rowsWithoutHistory).toHaveLength(3);
     rowsWithoutHistory.forEach((row) => {
       expect(row.children.length).toBeGreaterThan(0);
     });
     expect(withoutHistory.container.textContent).not.toContain("History");
   });
 
-  it("renders all six sections and exactly five dividers in fixed order when both goalPicker and history are supplied", () => {
+  it("renders all five sections and exactly four dividers in fixed order when both goalPicker and history are supplied", () => {
     const { container } = renderControlDeck({
       goalPicker: <GoalPicker selectedGoal={null} onSelect={vi.fn()} />,
       history: <div>History content</div>,
@@ -242,13 +242,16 @@ describe("ControlDeck", () => {
     expect(unifiedPanel).toBeInTheDocument();
     const children = Array.from(unifiedPanel?.children ?? []);
 
-    // 6 rows + 5 dividers = 11 direct child elements in exact fixed order
-    expect(children).toHaveLength(11);
+    // 5 rows + 4 dividers = 9 direct child elements in exact fixed order.
+    // Sound now lives inside the primary row (folded in as part of #17's
+    // "Grouped Chips" variant) rather than being its own row/divider.
+    expect(children).toHaveLength(9);
 
-    // 1. Transport + Stats
+    // 1. Transport + Stats + Sound
     expect(children[0]).toHaveClass("control-deck-row", "control-deck-row-primary");
     expect(children[0]).toContainElement(screen.getByRole("button", { name: "Start" }));
     expect(children[0]).toContainElement(screen.getByText("Cycle"));
+    expect(children[0]).toContainElement(screen.getByRole("switch", { name: "Sound" }));
 
     // Divider 1
     expect(children[1]).toHaveClass("control-deck-divider");
@@ -288,22 +291,11 @@ describe("ControlDeck", () => {
     expect(children[7]).toHaveAttribute("role", "separator");
     expect(children[7]).toHaveAttribute("aria-hidden", "true");
 
-    // 5. Sound
-    expect(children[8]).toHaveClass("control-deck-row", "control-deck-row-sound");
-    expect(children[8]).toContainElement(
-      screen.getByRole("switch", { name: "Sound" }),
-    );
-
-    // Divider 5
-    expect(children[9]).toHaveClass("control-deck-divider");
-    expect(children[9]).toHaveAttribute("role", "separator");
-    expect(children[9]).toHaveAttribute("aria-hidden", "true");
-
-    // 6. History
-    expect(children[10]).toHaveClass("control-deck-row");
-    expect(children[10]).toContainElement(screen.getByText("History content"));
+    // 5. History
+    expect(children[8]).toHaveClass("control-deck-row");
+    expect(children[8]).toContainElement(screen.getByText("History content"));
 
     const dividers = container.querySelectorAll(".control-deck-divider");
-    expect(dividers).toHaveLength(5);
+    expect(dividers).toHaveLength(4);
   });
 });

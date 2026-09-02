@@ -96,6 +96,15 @@ export function ControlDeck({
               </div>
             ) : null}
           </div>
+          <label className="switch-field switch-field-compact">
+            <Switch
+              className="breathe-switch"
+              size="sm"
+              checked={soundEnabled}
+              onCheckedChange={(checked) => onSoundChange(checked)}
+            />
+            Sound
+          </label>
         </div>
       ),
     },
@@ -131,21 +140,6 @@ export function ControlDeck({
           },
         ]
       : []),
-    {
-      id: "sound",
-      content: (
-        <div className="control-deck-row control-deck-row-sound">
-          <label className="switch-field">
-            <Switch
-              className="breathe-switch"
-              checked={soundEnabled}
-              onCheckedChange={(checked) => onSoundChange(checked)}
-            />
-            Sound
-          </label>
-        </div>
-      ),
-    },
     ...(history
       ? [
           {
