@@ -198,7 +198,7 @@ export function BreatheAppMockup({
               type="button"
               variant="breathePrimary"
               size="breathe"
-              className="mv-start"
+              className="mv-start is-pause"
               onClick={engine.pause}
             >
               Pause

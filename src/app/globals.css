@@ -1167,28 +1167,56 @@ svg.square-svg.idle .progress-dot {
   backdrop-filter: blur(3px);
 }
 /* the real SVG sits on top for the animated tracer + dot; hide its base
-   outline and idle text, we render our own centre content */
+   outline and idle text, we render our own centre content. The SVG path is
+   inset 10% inside its viewBox, so scale it up to run the tracer along the
+   frosted frame's straight edges (corners tuck just inside the radius). */
 .mockup-variant .mv-square-frame .square-wrap {
   position: absolute;
   inset: 0;
   width: 100%;
   filter: none;
+  overflow: visible;
+}
+.mockup-variant .mv-square-frame .square-svg {
+  overflow: visible;
+  transform: scale(1.205);
 }
 .mockup-variant .mv-square-frame .square-base {
   stroke: transparent;
 }
 .mockup-variant .mv-square-frame .square-side {
-  stroke-width: 4;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition:
+    stroke 0.5s var(--ease-breath),
+    filter 0.5s var(--ease-breath);
 }
 .mockup-variant .mv-square-frame .square-side.pending {
-  stroke: rgb(232 240 235 / 0.1);
+  stroke: rgb(232 240 235 / 0.06);
+  filter: none;
+}
+.mockup-variant .mv-square-frame .square-side.completed {
+  stroke: rgb(166 219 187 / 0.55);
+  filter: drop-shadow(0 0 4px rgb(166 219 187 / 0.35));
+}
+.mockup-variant .mv-square-frame .square-side.active {
+  stroke: var(--mv-teal);
+  filter:
+    drop-shadow(0 0 6px rgb(166 219 187 / 0.85))
+    drop-shadow(0 0 16px rgb(130 205 175 / 0.5));
 }
 .mockup-variant .mv-square-frame .square-content {
   display: none;
 }
 .mockup-variant .mv-square-frame .progress-dot {
-  fill: var(--mv-teal);
-  filter: drop-shadow(0 0 6px rgb(166 219 187 / 0.9));
+  fill: #f4fbf6;
+  r: 6;
+  filter:
+    drop-shadow(0 0 6px rgb(166 219 187 / 0.95))
+    drop-shadow(0 0 14px rgb(130 205 175 / 0.7));
+}
+.mockup-variant .mv-square-frame .square-svg.idle .progress-dot {
+  opacity: 0;
 }
 
 .mockup-variant .mv-square-content {
@@ -1229,8 +1257,10 @@ svg.square-svg.idle .progress-dot {
   white-space: nowrap;
 }
 .mockup-variant .mv-edge[data-active="true"] {
-  color: var(--mv-teal);
-  text-shadow: 0 0 12px rgb(166 219 187 / 0.4);
+  color: #d6f2e2;
+  text-shadow:
+    0 0 10px rgb(166 219 187 / 0.65),
+    0 0 22px rgb(130 205 175 / 0.4);
 }
 .mockup-variant .mv-edge-inhale {
   bottom: calc(100% + 20px);
@@ -1276,21 +1306,50 @@ svg.square-svg.idle .progress-dot {
   gap: 0.55em;
   background: var(--mv-start);
   color: #10130f;
+  border: 1px solid transparent;
   border-radius: 999px;
-  padding: 0.95em 2.4em;
+  padding: 0.9em 2.3em;
   font-size: 1rem;
   font-weight: 600;
   min-width: 200px;
   justify-content: center;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.4) inset,
+    0 10px 30px rgb(0 0 0 / 0.35),
+    0 0 24px rgb(233 230 218 / 0.12);
+  transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+}
+.mockup-variant .mv-start.breathe-btn:hover {
+  background: #f2efe4;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.5) inset,
+    0 12px 34px rgb(0 0 0 / 0.4),
+    0 0 30px rgb(233 230 218 / 0.18);
+}
+/* running: Pause reads as the same primary pill but a touch calmer */
+.mockup-variant .mv-start.breathe-btn.is-pause {
+  background: rgb(233 230 218 / 0.9);
 }
 .mockup-variant .mv-reset.breathe-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.45em;
+  gap: 0.5em;
   border-radius: 999px;
-  border-color: rgb(232 240 235 / 0.16);
+  padding: 0.85em 1.7em;
+  border: 1px solid rgb(232 240 235 / 0.22);
+  background: rgb(232 240 235 / 0.02);
   color: var(--mv-ink-dim);
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.mockup-variant .mv-reset.breathe-btn:hover {
+  border-color: rgb(232 240 235 / 0.34);
+  color: var(--mv-ink);
+  background: rgb(232 240 235 / 0.05);
+}
+.mockup-variant .mv-reset.breathe-btn svg {
+  color: var(--mv-ink-faint);
 }
 
 /* stat row */
