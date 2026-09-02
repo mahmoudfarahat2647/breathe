@@ -28,7 +28,7 @@ import {
 } from "@/components/mockup-icons";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { BreathingStageMockup } from "./breathing-stage.mockup";
+import { BreathingStage } from "./breathing-stage";
 import { BreathingTriangle } from "./breathing-triangle";
 import { DurationStepper } from "./duration-stepper";
 import { GoalPicker } from "./goal-picker";
@@ -166,7 +166,7 @@ export function BreatheAppMockup({
                 pulseKey={engine.pulseNonce}
               />
             ) : (
-              <BreathingStageMockup view={view} />
+              <BreathingStage view={view} />
             )}
             <div className="mv-square-content" key={engine.pulseNonce}>
               <span className="mv-count">{view.countdown}</span>

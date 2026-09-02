@@ -1047,6 +1047,12 @@ svg.square-svg.idle .progress-dot {
       stroke 0.01s linear,
       filter 0.01s linear;
   }
+  .mockup-variant .mv-square-frame .square-side {
+    transition: none !important;
+  }
+  .mockup-variant .progress-dot {
+    display: none !important;
+  }
 }
 
 /* ==========================================================================
@@ -1201,7 +1207,6 @@ svg.square-svg.idle .progress-dot {
       rgb(150 168 158 / 0.18),
       rgb(120 140 130 / 0.07)
     );
-  border: 1px solid rgb(178 226 200 / 0.62);
   box-shadow:
     0 0 0 1px rgb(166 219 187 / 0.1),
     0 0 16px rgb(130 205 175 / 0.22),
@@ -1222,6 +1227,11 @@ svg.square-svg.idle .progress-dot {
 }
 .mockup-variant .mv-square-frame .square-base {
   stroke: transparent;
+}
+.mockup-variant .mv-square-frame .square-frame-border {
+  fill: none;
+  stroke: rgb(178 226 200 / 0.5);
+  stroke-width: 1.5;
 }
 .mockup-variant .mv-square-frame .square-side {
   stroke-width: 3;
