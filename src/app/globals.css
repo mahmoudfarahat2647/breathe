@@ -172,6 +172,7 @@
   --ink-100: var(--color-breathe-ink-100);
   --ink-300: var(--color-breathe-ink-300);
   --ink-500: var(--color-breathe-ink-500);
+  --panel: #0e1914;
   --panel-bg: linear-gradient(
       165deg,
       rgb(232 240 235 / 0.08),
@@ -800,6 +801,8 @@ svg.square-svg.idle .progress-dot {
 }
 
 .history-panel {
+  --panel: #0e1914;
+  position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -818,8 +821,46 @@ svg.square-svg.idle .progress-dot {
   outline: 2px solid var(--phase-inhale);
   outline-offset: 3px;
 }
+.history-fields {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(100vw - 32px, 380px);
+  max-block-size: min(70vh, 32rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 50;
+  background: var(--panel, #0e1914);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: 0 16px 36px rgb(0 0 0 / 0.45);
+  box-sizing: border-box;
+}
 .history-fields[hidden] {
   display: none;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .history-fields {
+    background: #0e1914;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+@media (max-width: 480px) {
+  .history-fields {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-width: 100%;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-inline: none;
+    border-bottom: none;
+    padding: 16px calc(16px + env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) calc(16px + env(safe-area-inset-left, 0px));
+    box-shadow: 0 -8px 32px rgb(0 0 0 / 0.5);
+  }
 }
 .history-stats {
   display: grid;

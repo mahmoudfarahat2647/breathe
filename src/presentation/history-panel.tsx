@@ -14,11 +14,13 @@ const HISTORY_PANEL_ID = "history-panel";
 const DEFAULT_HISTORY_SOURCE = createHttpSessionHistorySource();
 
 type HistoryPanelProps = {
+  className?: string;
   source?: SessionHistorySource;
   sessionSavedRevision?: number;
 };
 
 export function HistoryPanel({
+  className,
   source = DEFAULT_HISTORY_SOURCE,
   sessionSavedRevision = 0,
 }: HistoryPanelProps) {
@@ -27,6 +29,7 @@ export function HistoryPanel({
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<SessionHistoryPayload | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId().replace(/:/g, "");
   const panelDomId = `${HISTORY_PANEL_ID}-${panelId}`;
 
@@ -87,11 +90,28 @@ export function HistoryPanel({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (
+        panelRef.current?.contains(target) ||
+        triggerRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
   const summary = data?.summary;
   const recentRecords = data?.records.slice(0, 5) ?? [];
 
   return (
-    <div className="history-panel">
+    <div className={className ? `history-panel ${className}` : "history-panel"}>
       <button
         ref={triggerRef}
         type="button"
@@ -104,6 +124,7 @@ export function HistoryPanel({
       </button>
       <div
         id={panelDomId}
+        ref={panelRef}
         className="history-fields"
         hidden={!open}
         data-expanded={open ? "true" : undefined}
