@@ -38,9 +38,7 @@ import {
   createHttpBreathingPersistence,
   type BreathingPersistence,
 } from "./persistence";
-import { PresetPicker } from "./preset-picker";
 import { useBreathingEngine } from "./use-breathing-engine";
-import { BREATHING_PRESET_CATALOG } from "@/domain/breathing-preset";
 import type { Phase } from "@/domain/phase";
 
 const httpPersistence = createHttpBreathingPersistence();
@@ -110,7 +108,6 @@ export function BreatheAppMockup({
   const { view } = engine;
   const triangleMode = engine.settings.rest === 0;
   const isIdle = engine.engine.status === "idle";
-  const [presetsOpen, setPresetsOpen] = useState(false);
 
   const cycleText = useMemo(() => {
     if (engine.selectedGoal?.kind === "cycles") {
@@ -118,10 +115,6 @@ export function BreatheAppMockup({
     }
     return view.cycleCount;
   }, [engine.selectedGoal, view.cycleCount]);
-
-  const activePresetName =
-    BREATHING_PRESET_CATALOG.find((p) => p.id === engine.activePresetId)?.name ??
-    "Custom";
 
   return (
     <div className={`breathe-root mockup-variant ${view.phaseClass}`}>
@@ -271,29 +264,7 @@ export function BreatheAppMockup({
         </div>
 
         <div className="mv-deck">
-          <div className="mv-deck-col mv-preset-col" data-open={presetsOpen}>
-            <button
-              type="button"
-              className="mv-preset-summary"
-              aria-expanded={presetsOpen}
-              aria-controls="mv-preset-expand"
-              onClick={() => setPresetsOpen((open) => !open)}
-            >
-              <span className="mv-deck-heading">Breathing preset</span>
-              <span className="mv-preset-current">
-                {activePresetName}
-                <span className="mv-preset-caret" aria-hidden="true" />
-              </span>
-            </button>
-            <div id="mv-preset-expand" className="mv-preset-expand" hidden={!presetsOpen}>
-              <PresetPicker
-                activePresetId={engine.activePresetId}
-                onSelect={engine.applyPreset}
-                onAnnounce={engine.announce}
-              />
-            </div>
-          </div>
-          <div className="mv-deck-col">
+          <div className="mv-deck-col mv-deck-goal">
             <GoalPicker
               selectedGoal={engine.selectedGoal}
               onSelect={engine.setGoal}

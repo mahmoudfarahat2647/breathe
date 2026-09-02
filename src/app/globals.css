@@ -1354,10 +1354,8 @@ svg.square-svg.idle .progress-dot {
 
 /* deck panel: two columns */
 .mockup-variant .mv-deck {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: clamp(18px, 3vw, 40px);
-  align-items: center;
+  display: flex;
+  justify-content: center;
   width: auto;
   max-width: none;
   margin-inline: clamp(8px, 2vw, 24px);
@@ -1373,73 +1371,24 @@ svg.square-svg.idle .progress-dot {
 .mockup-variant .mv-deck-col {
   min-width: 0;
 }
-.mockup-variant .mv-deck > .mv-deck-col + .mv-deck-col {
-  border-left: 1px solid rgb(232 240 235 / 0.08);
-  padding-left: clamp(18px, 3vw, 40px);
-}
-.mockup-variant .mv-deck-heading {
-  font-size: 0.64rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--mv-ink-faint);
-}
-
-/* compact preset: summary chip that expands the full picker */
-.mockup-variant .mv-preset-summary {
+.mockup-variant .mv-deck-goal {
   display: flex;
   flex-direction: column;
-  gap: 0.35em;
-  align-items: flex-start;
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-}
-.mockup-variant .mv-preset-current {
-  display: inline-flex;
   align-items: center;
-  gap: 0.5em;
-  padding: 0.5em 0.9em;
-  border-radius: 12px;
-  background: var(--mv-chip-sel);
-  border: 1px solid rgb(166 219 187 / 0.35);
-  color: var(--mv-ink);
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-.mockup-variant .mv-preset-caret {
-  width: 6px;
-  height: 6px;
-  border-right: 1.5px solid var(--mv-ink-dim);
-  border-bottom: 1.5px solid var(--mv-ink-dim);
-  transform: translateY(-1px) rotate(45deg);
-  transition: transform 0.2s;
-}
-.mockup-variant .mv-preset-col[data-open="true"] .mv-preset-caret {
-  transform: translateY(2px) rotate(225deg);
-}
-.mockup-variant .mv-preset-expand {
-  margin-top: 10px;
-}
-.mockup-variant .mv-preset-expand .preset-legend {
-  display: none;
+  gap: 0.6em;
 }
 
-/* chips inside the columns */
-.mockup-variant .mv-deck .preset-legend,
+/* goal chips */
 .mockup-variant .mv-deck .goal-picker-label,
 .mockup-variant .mv-deck .goal-picker span:first-child {
   font-size: 0.68rem;
   letter-spacing: 0.2em;
   color: var(--mv-ink-faint);
 }
-.mockup-variant .mv-deck .preset-options,
 .mockup-variant .mv-deck .goal-options {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
 }
 .mockup-variant .mv-deck .breathe-btn {
