@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
 
 import { render } from "@testing-library/react";
@@ -10,7 +10,7 @@ import {
   createIdleBreathingState,
   startBreathing,
 } from "@/domain";
-import { BreatheAppMockup } from "@/presentation/breathe-app.mockup";
+import { BreatheApp } from "@/presentation/breathe-app";
 import { BreathingStage } from "@/presentation/breathing-stage";
 import {
   DOT_RADIUS,
@@ -144,8 +144,8 @@ describe("BreathingStage", () => {
     expect(stageCode).not.toContain("useLayoutEffect");
   });
 
-  it("renders correctly within BreatheAppMockup", () => {
-    const { container } = render(<BreatheAppMockup />);
+  it("renders correctly within BreatheApp", () => {
+    const { container } = render(<BreatheApp />);
     const stage = container.querySelector(".mv-square-frame .square-wrap .square-svg");
     expect(stage).not.toBeNull();
     expect(container.querySelector(".square-frame-border")).not.toBeNull();

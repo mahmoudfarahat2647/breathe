@@ -87,8 +87,7 @@ export function DurationStepper({
 
         {activePresetId === "custom" ? (
           <p className="default-hint">
-            Custom preset — adjust each phase or pick a preset above. Not medical
-            advice.
+            Custom preset — adjust each phase. Not medical advice.
           </p>
         ) : null}
       </div>

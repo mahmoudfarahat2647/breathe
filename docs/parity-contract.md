@@ -1,6 +1,6 @@
 # Reference parity contract
 
-Full parity has been verified against the original reference specification, then extended to a four-phase square cycle. Next.js is the sole implementation in the repository.
+Full parity has been verified against the approved redesign mockup (spec #23), extending the original reference to a four-phase rounded-perimeter cycle with commercial side bands and header History disclosure. Next.js is the sole implementation in the repository.
 
 Every observable behavior below is verified via automated tests (unit, component, Playwright e2e) and explicit visual/accessibility checks.
 
@@ -11,15 +11,15 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Behavior | Check |
 | --- | --- |
 | SVG `viewBox="0 0 400 400"` | A |
-| Base path `M40,360 L40,40 L360,40 L360,360 Z` | A |
-| Inhale side `M40,360 L40,40`; hold `M40,40 L360,40`; exhale `M360,40 L360,360`; rest `M360,360 L40,360` | A |
-| Progress dot radius `7`, starts at inhale origin `(40,360)` when idle | A |
-| Dot interpolates linearly along the active side by phase progress | A |
+| Shared `.square-frame-border` rounded-perimeter path | A |
+| Four rounded-perimeter segments (inhale, hold, exhale, rest) with `pathLength="1"` | A |
+| Frame border and tracer share one geometry (coincident at every size) | A |
+| Dot computed via `pointOnRoundedSegment` along the active rounded segment; hidden when idle and under reduced motion | A |
 | Active side uses `stroke-dashoffset` from `1 → 0` with `pathLength="1"` | A |
 | Side states: `pending` / `active` / `completed` match phase index for four sides | A |
-| Square wrap uses `aspect-ratio: 1/1` and `width: min(100cqw, 100cqh, 560px)` | A / V |
-| CSS/component names use `square-*` (not `triangle-*`); progress dot id remains `#progressDot` | A |
-| Drop shadow and side glow match the forest glass language; glow reduces at short heights | V |
+| Stage sizing `.mv-square` uses `aspect-ratio: 1/1` and `width: min(88cqh, 26cqw, 400px)`, preserving Stage rendered width ≥ 280px at 1280×800 with side bands | A / V |
+| CSS/component names use `square-*` / `mv-*`; progress dot id remains `#progressDot` | A |
+| Frosted frame border, glow, and tracer match redesign palette; glow reduces at short heights | V |
 
 ## Phase rules and engine
 
@@ -41,15 +41,14 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 
 | Behavior | Check |
 | --- | --- |
-| Header wordmark `Breathe` (English only) | V / A |
-| Phase labels: INHALE, HOLD, EXHALE, REST | A |
+| Header wordmark `Breathe` (English only) with MarkIcon | V / A |
+| Four outside edge labels (Inhale top / Hold right / Exhale bottom / Rest left), active one highlighted, plus a coaching line | A |
 | Duration steppers ± with aria-labels for inhale, hold, exhale, and rest | A |
-| Preset button `Use 4-4-6-2` + hint copy for the four-phase pattern | A / V |
-| Durations panel is a disclosure (`aria-expanded`, `aria-controls`); closed by default, no viewport-based auto-collapse | A |
-| Transport: Start / Pause / Resume / Reset | A |
-| Stats: Cycle + Elapsed | A |
-| Sound switch opt-in (default off) | A |
-| No history sheet, badge, or extra chrome absent from reference | V |
+| Advanced options panel is a disclosure (`aria-expanded`, `aria-controls`) labelled "Show advanced options"; closed by default | A |
+| Transport: Start / Pause / Resume, and conditional Reset (idle → hidden) | A |
+| Stats: Cycle (goal-aware: "n / N" for a cycles goal) + Elapsed | A |
+| Sound switch opt-in (default off) with visible On/Off word | A |
+| History is a header disclosure opening a non-modal overlay | A / V |
 
 ## Audio
 
@@ -81,29 +80,31 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 
 | Behavior | Check |
 | --- | --- |
-| Root layout is `height: 100dvh; display: grid; grid-template-rows: auto minmax(min(320px, 34dvh), 1fr) auto` so the Stage keeps a protected minimum and the square and control deck never overlap | A / V |
-| Stage is a size container (`container-type: size; min-height: 0; overflow: hidden`) | A / V |
-| Square wrap sizes from container queries; countdown uses `cqi` clamp, not `14vmin` | A / V |
-| Duration rows: 2×2 under 900px, four-column above; durations panel max-width allows four steppers | A / V |
-| Control deck `min-height: 0; overflow-y: auto` as a fallback when content is taller than the viewport | A / V |
-| `.square-wrap` bottom is strictly above `#controls` top at 1280×800, 1024×600, 1024×472, and 390×844 | A |
-| `@media (max-width: 480px)` tighter transport/buttons | V |
-| `@media (max-height: 640px)` smaller square and reduced glow | A / V |
+| Root layout is `height: 100dvh; display: grid; grid-template-rows: auto minmax(260px, 1fr) auto` | A / V |
+| Side bands: at ≥1200px viewport, `--mv-ad-w` reserves padding-inline; at <1200px, side bands are absent (0px) | A / V |
+| Stage is a size container (`container-type: size; min-height: 0; overflow: visible`) | A / V |
+| Stage sizes from container queries: `.mv-square` uses `min(88cqh, 26cqw, 400px)` | A / V |
+| Duration rows: 2×2 under 900px, four-column above | A / V |
+| Control deck `min-height: 0; overflow: visible` (fallback `max-height` and `overflow-y: auto` under 640px height) | A / V |
+| Labelled `.mv-square` extent bottom is strictly above `#controls` top at 1280×800, 1024×600, 1024×472, and 390×844 (advanced options open and closed) | A |
+| `@media (max-width: 480px)` tighter transport/buttons and bottom-sheet History overlay | V |
+| `@media (max-height: 640px)` compact stage sizing and tighter edge-label offsets | A / V |
+| History overlay opens as a non-modal panel within viewport; scrollable within max-height without obscuring controls | A / V |
 
 ## Reduced motion
 
 | Behavior | Check |
 | --- | --- |
-| `prefers-reduced-motion: reduce` disables blob drift and phase pulse | A / V |
-| Control transitions minimized; side stroke transition near-instant | A / V |
+| `prefers-reduced-motion: reduce` neutralizes transitions; JS-driven tracer updates without transition; moving dot hidden; edge-label, chevron, button, and History transitions neutralised | A / V |
+| Control transitions minimized | A / V |
 
 ## Design tokens (visual)
 
 | Token group | Check |
 | --- | --- |
-| Background forest ink, phase colors (including rest), ink scale, panel glass | V |
+| Deep ground (`#0b0f0e`), mint accent (`#a6dbbb`), warm ink (`#e8e4d8`), opaque panel (`#131a16`), cream primary button (`#e9e6da`) | V |
 | Display / label font stacks (Outfit) | V |
-| Ambient blobs tint by `phase-*` body class, including `phase-rest` | V |
+| Static background photo stand-in gradient and vignette with subtle grain overlay | V |
 
 ## Persistence
 
@@ -116,6 +117,5 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 
 ## Out of scope for parity
 
-- Login UI, history lists, badges, marketing chrome, or any control not present in the four-phase square product
 - Changing reference HTML behavior “for improvement” without documented approval
-- Restyling away from the existing dark forest glass visual language
+- Redesigned to the approved mockup — reviewed and approved 2026-09-02 (spec #23).

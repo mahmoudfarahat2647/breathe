@@ -2,10 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { AmbientBackground } from "./ambient-background";
-import { BreathingSquare } from "./breathing-square";
+import {
+  CycleIcon,
+  ElapsedIcon,
+  MarkIcon,
+  PlayIcon,
+  ResetIcon,
+  SoundIcon,
+} from "@/components/app-icons";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { BreathingStage } from "./breathing-stage";
 import { BreathingTriangle } from "./breathing-triangle";
-import { ControlDeck } from "./control-deck";
+import { DurationStepper } from "./duration-stepper";
 import { GoalPicker } from "./goal-picker";
 import { HistoryPanel } from "./history-panel";
 import { handleBreathingKeydown } from "./keyboard";
@@ -14,8 +23,23 @@ import {
   type BreathingPersistence,
 } from "./persistence";
 import { useBreathingEngine } from "./use-breathing-engine";
+import type { Phase } from "@/domain/phase";
 
 const httpPersistence = createHttpBreathingPersistence();
+
+const COACH: Record<Phase, string> = {
+  inhale: "Breathe in slowly",
+  hold: "Hold gently",
+  exhale: "Breathe out slowly",
+  rest: "Rest",
+};
+
+const EDGES: { phase: Phase; label: string }[] = [
+  { phase: "inhale", label: "Inhale" },
+  { phase: "hold", label: "Hold" },
+  { phase: "exhale", label: "Exhale" },
+  { phase: "rest", label: "Rest" },
+];
 
 export function BreatheApp({
   persistence = httpPersistence,
@@ -65,60 +89,165 @@ export function BreatheApp({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [engine.engine.status, engine.pause, engine.reset, engine.start]);
 
+  const { view } = engine;
+  const triangleMode = engine.settings.rest === 0;
+  const isIdle = engine.engine.status === "idle";
+
+  const cycleText = useMemo(() => {
+    if (engine.selectedGoal?.kind === "cycles") {
+      return `${view.cycleCount} / ${engine.selectedGoal.cycles}`;
+    }
+    return view.cycleCount;
+  }, [engine.selectedGoal, view.cycleCount]);
+
   return (
-    <div className={`breathe-root ${engine.view.phaseClass}`}>
+    <div className={`breathe-root ${view.phaseClass}`}>
       <a className="skip-link" href="#controls">
         Skip to controls
       </a>
-      <AmbientBackground />
+      <div className="mv-bg" aria-hidden="true" />
       <div className="grain" aria-hidden="true" />
 
       <header className="app-header">
-        <span className="dot" aria-hidden="true" />
-        <span>Breathe</span>
+        <span className="mv-mark">
+          <MarkIcon className="mv-mark-icon" strokeWidth={1.5} aria-hidden="true" />
+          <span>Breathe</span>
+        </span>
+        <HistoryPanel sessionSavedRevision={sessionSavedRevision} />
       </header>
 
       <main className="stage">
-        {engine.settings.rest === 0 ? (
-          <BreathingTriangle
-            view={engine.view}
-            pulse={engine.pulseNonce > 0}
-            pulseKey={engine.pulseNonce}
-          />
-        ) : (
-          <BreathingSquare
-            view={engine.view}
-            pulse={engine.pulseNonce > 0}
-            pulseKey={engine.pulseNonce}
-          />
-        )}
+        <div className="mv-square" data-phase={view.phase}>
+          {EDGES.filter((edge) => !(triangleMode && edge.phase === "rest")).map(
+            (edge) => (
+              <span
+                key={edge.phase}
+                className={`mv-edge mv-edge-${edge.phase}`}
+                data-active={view.phase === edge.phase}
+              >
+                {edge.label}
+              </span>
+            ),
+          )}
+          <div className="mv-square-frame">
+            {triangleMode ? (
+              <BreathingTriangle
+                view={view}
+                pulse={engine.pulseNonce > 0}
+                pulseKey={engine.pulseNonce}
+              />
+            ) : (
+              <BreathingStage view={view} />
+            )}
+            <div className="mv-square-content" key={engine.pulseNonce}>
+              <span className="mv-count">{view.countdown}</span>
+              <span className="mv-coach">
+                {isIdle ? COACH.inhale : COACH[view.phase]}
+              </span>
+            </div>
+          </div>
+        </div>
       </main>
 
       <div className="sr-only" role="status" aria-live="polite">
         {engine.announcement}
       </div>
 
-      <ControlDeck
-        view={engine.view}
-        activePresetId={engine.activePresetId}
-        soundEnabled={engine.soundEnabled}
-        startRef={startRef}
-        pauseRef={pauseRef}
-        onStart={engine.start}
-        onPause={engine.pause}
-        onReset={engine.reset}
-        onAdjust={engine.adjust}
-        onSelectPreset={engine.applyPreset}
-        onAnnounce={engine.announce}
-        onSoundChange={engine.setSoundEnabled}
-        goalPicker={
-          <GoalPicker
-            selectedGoal={engine.selectedGoal}
-            onSelect={engine.setGoal}
+      <section
+        id="controls"
+        className="control-deck"
+        aria-label="Breathing exercise controls"
+      >
+        <div className="mv-transport">
+          {view.showPause ? (
+            <Button
+              ref={pauseRef}
+              type="button"
+              variant="breathePrimary"
+              size="breathe"
+              className="mv-start is-pause"
+              onClick={engine.pause}
+            >
+              Pause
+            </Button>
+          ) : (
+            <Button
+              ref={startRef}
+              type="button"
+              variant="breathePrimary"
+              size="breathe"
+              className="mv-start"
+              onClick={engine.start}
+            >
+              <PlayIcon size={18} strokeWidth={0} fill="currentColor" aria-hidden="true" />
+              {view.primaryLabel}
+            </Button>
+          )}
+          {!isIdle && (
+            <Button
+              type="button"
+              variant="breatheSecondary"
+              size="breathe"
+              className="mv-reset"
+              onClick={engine.reset}
+            >
+              <ResetIcon size={16} strokeWidth={2} aria-hidden="true" />
+              Reset
+            </Button>
+          )}
+        </div>
+
+        <div className="mv-stats">
+          <div className="mv-stat">
+            <CycleIcon size={18} strokeWidth={1.75} aria-hidden="true" />
+            <span className="mv-stat-body">
+              <span className="mv-stat-label">Cycle</span>
+              <span className="mv-stat-value">{cycleText}</span>
+            </span>
+          </div>
+          <div className="mv-stat">
+            <ElapsedIcon size={18} strokeWidth={1.75} aria-hidden="true" />
+            <span className="mv-stat-body">
+              <span className="mv-stat-label">Elapsed</span>
+              <span className="mv-stat-value">{view.elapsed}</span>
+            </span>
+          </div>
+          <div className="mv-stat mv-stat-divider">
+            <SoundIcon size={18} strokeWidth={1.75} aria-hidden="true" />
+            <span className="mv-stat-body">
+              <span className="mv-stat-label">Sound</span>
+              <span className="mv-sound-toggle">
+                <span>{engine.soundEnabled ? "On" : "Off"}</span>
+                <Switch
+                  className="breathe-switch"
+                  size="sm"
+                  checked={engine.soundEnabled}
+                  onCheckedChange={engine.setSoundEnabled}
+                  aria-label="Sound"
+                />
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <div className="mv-deck">
+          <div className="mv-deck-col mv-deck-goal">
+            <GoalPicker
+              selectedGoal={engine.selectedGoal}
+              onSelect={engine.setGoal}
+            />
+          </div>
+        </div>
+
+        <div className="mv-advanced">
+          <DurationStepper
+            view={view}
+            activePresetId={engine.activePresetId}
+            onAdjust={engine.adjust}
+            label="Show advanced options"
           />
-        }
-        history={<HistoryPanel sessionSavedRevision={sessionSavedRevision} />}
-      />
+        </div>
+      </section>
     </div>
   );
 }
