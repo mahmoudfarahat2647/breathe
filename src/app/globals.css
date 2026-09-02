@@ -1007,3 +1007,14 @@ svg.square-svg.idle .progress-dot {
       filter 0.01s linear;
   }
 }
+
+/* ==========================================================================
+   PROTOTYPE (mockup restyle) — all redesign-candidate styling goes here,
+   scoped to `.breathe-root.mockup-variant` so the production screen at `/`
+   is byte-for-byte untouched during convergence. Rendered only at
+   `/?variant=mockup`. Remove this whole block when the approved design is
+   folded into the real rules above.
+   ========================================================================== */
+.breathe-root.mockup-variant {
+  /* candidate tokens / overrides land here */
+}
