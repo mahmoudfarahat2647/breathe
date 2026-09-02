@@ -105,7 +105,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | --- | --- |
 | Deep ground (`#0b0f0e`), mint accent (`#a6dbbb`), warm ink (`#e8e4d8`), opaque panel (`#131a16`), cream primary button (`#e9e6da`) | V |
 | Display / label font stacks (Outfit) | V |
-| Static background photo stand-in gradient and vignette with subtle grain overlay | V |
+| Static dim forest photo (`/forest-ground.webp`) under a vignette + darkening wash, with subtle grain overlay; composited ground luminance matches the former gradient-only ground, so text over `.mv-bg` keeps its contrast. Falls back to the gradient-only ground under `prefers-reduced-data: reduce` or if the image fails to load | V |
 
 ## Persistence
 
@@ -120,3 +120,4 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 
 - Changing reference HTML behavior “for improvement” without documented approval
 - Redesigned to the approved mockup — reviewed and approved 2026-09-02 (spec #23).
+- Forest-photo ground added over the gradient — approved 2026-09-02 (supersedes #23's "gradient ground, not forest photo" departure; contrast, reduced-motion and reduced-transparency re-verified).
