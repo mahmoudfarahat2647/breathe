@@ -249,21 +249,32 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
 }
 
-/* Background: dim forest photo stand-in + vignette */
+/* Background: dim forest photo under a vignette + darkening wash.
+   The gradient layers stay ON TOP of the photo so composited ground
+   luminance (and therefore contrast for the edge labels and coach line
+   that sit directly over .mv-bg) is essentially unchanged from the
+   gradient-only ground; the photo only adds low-frequency texture.
+   background-color is the graceful fallback if the image fails to load. */
 .mv-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background:
-    radial-gradient(
-      90% 60% at 50% -10%,
-      rgb(38 54 47 / 0.42),
-      transparent 62%
-    ),
-    radial-gradient(70% 55% at 12% 55%, rgb(18 28 24 / 0.7), transparent 60%),
-    radial-gradient(70% 55% at 88% 55%, rgb(18 28 24 / 0.7), transparent 60%),
+  background-color: var(--mv-ground);
+  background-image:
+    radial-gradient(90% 60% at 50% -10%, rgb(38 54 47 / 0.3), transparent 62%),
+    radial-gradient(70% 55% at 12% 55%, rgb(18 28 24 / 0.72), transparent 60%),
+    radial-gradient(70% 55% at 88% 55%, rgb(18 28 24 / 0.72), transparent 60%),
     radial-gradient(150% 120% at 50% 130%, #040605, transparent 55%),
-    linear-gradient(180deg, #0c1310, #090c0b 55%, #060908);
+    linear-gradient(
+      180deg,
+      rgb(12 19 16 / 0.55),
+      rgb(9 12 11 / 0.68) 55%,
+      rgb(6 9 8 / 0.8)
+    ),
+    url("/forest-ground.webp");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
 }
 
 .breathe-root.phase-inhale {
@@ -1133,5 +1144,18 @@
     background: var(--mv-panel);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+}
+
+/* Skip the forest photo download on metered / data-saver connections;
+   fall back to the gradient-only ground. */
+@media (prefers-reduced-data: reduce) {
+  .mv-bg {
+    background-image:
+      radial-gradient(90% 60% at 50% -10%, rgb(38 54 47 / 0.42), transparent 62%),
+      radial-gradient(70% 55% at 12% 55%, rgb(18 28 24 / 0.7), transparent 60%),
+      radial-gradient(70% 55% at 88% 55%, rgb(18 28 24 / 0.7), transparent 60%),
+      radial-gradient(150% 120% at 50% 130%, #040605, transparent 55%),
+      linear-gradient(180deg, #0c1310, #090c0b 55%, #060908);
   }
 }
