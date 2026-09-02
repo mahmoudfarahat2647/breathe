@@ -30,7 +30,7 @@ describe("toBreathingViewModel", () => {
     expect(view.sides.hold.state).toBe("pending");
     expect(view.sides.exhale.state).toBe("pending");
     expect(view.sides.rest.state).toBe("pending");
-    expect(view.dot).toEqual({ x: 40, y: 360 });
+    expect(view.dot).toEqual({ x: 0, y: 0 });
     expect(view.announcement).toBe("INHALE. 4 seconds.");
   });
 
