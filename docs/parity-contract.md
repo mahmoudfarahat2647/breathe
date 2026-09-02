@@ -14,6 +14,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Shared `.square-frame-border` rounded-perimeter path | A |
 | Four rounded-perimeter segments (inhale, hold, exhale, rest) with `pathLength="1"` | A |
 | Frame border and tracer share one geometry (coincident at every size) | A |
+| Frame border and tracer are the same rounded-perimeter geometry; the frame's CSS border-radius (8%) and the SVG corner radius (32 of the 400 viewBox) are a coupled pair — changing one requires changing the other | A / V |
 | Dot computed via `pointOnRoundedSegment` along the active rounded segment; hidden when idle and under reduced motion | A |
 | Active side uses `stroke-dashoffset` from `1 → 0` with `pathLength="1"` | A |
 | Side states: `pending` / `active` / `completed` match phase index for four sides | A |
@@ -89,7 +90,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Labelled `.mv-square` extent bottom is strictly above `#controls` top at 1280×800, 1024×600, 1024×472, and 390×844 (advanced options open and closed) | A |
 | `@media (max-width: 480px)` tighter transport/buttons and bottom-sheet History overlay | V |
 | `@media (max-height: 640px)` compact stage sizing and tighter edge-label offsets | A / V |
-| History overlay opens as a non-modal panel within viewport; scrollable within max-height without obscuring controls | A / V |
+| History is a non-modal disclosure (Escape / outside-click dismiss, focus restored to trigger); scrollable within its max-height; on ≤480px it is a bottom sheet that may cover controls while open but never leaves one unreachable | A / V |
 
 ## Reduced motion
 

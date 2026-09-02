@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { PHASES } from "@/domain/phase";
 import { cn } from "@/lib/utils";

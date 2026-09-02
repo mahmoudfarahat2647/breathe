@@ -295,5 +295,15 @@ test.describe("parity — reduced motion", () => {
       return getComputedStyle(el).transitionDuration;
     });
     expect(edgeTransition === "0s" || edgeTransition === "" || parseFloat(edgeTransition) === 0).toBeTruthy();
+
+    const historyTransition = await page.locator(".history-toggle").first().evaluate((el) => {
+      return getComputedStyle(el).transitionDuration;
+    });
+    expect(historyTransition === "0s" || historyTransition === "" || parseFloat(historyTransition) === 0).toBeTruthy();
+
+    const chevronTransition = await page.locator(".durations-toggle").first().evaluate((el) => {
+      return getComputedStyle(el, "::before").transitionDuration;
+    });
+    expect(chevronTransition === "0s" || chevronTransition === "" || parseFloat(chevronTransition) === 0).toBeTruthy();
   });
 });

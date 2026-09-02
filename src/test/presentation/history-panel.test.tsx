@@ -324,9 +324,4 @@ describe("HistoryPanel", () => {
       /@media\s*\([^)]*max-width:\s*480px\)[^{]*\{[\s\S]*?\.history-fields\s*\{[\s\S]*?env\(safe-area-inset-bottom/,
     );
   });
-
-  it("forwards optional className to the root container", () => {
-    const { container } = render(<HistoryPanel className="header-history-overlay" />);
-    expect(container.firstElementChild).toHaveClass("history-panel", "header-history-overlay");
-  });
 });

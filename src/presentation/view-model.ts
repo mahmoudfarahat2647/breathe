@@ -92,6 +92,7 @@ export function toBreathingViewModel(
           dotPhase === "rest" ? "exhale" : dotPhase,
           dotProgress,
         )
+      // Only read by BreathingTriangle (rest === 0); the square Stage positions its own dot.
       : { x: 0, y: 0 },
     announcement: `${label}. ${displayedDuration} seconds.`,
     stepperValues: {

@@ -14,13 +14,11 @@ const HISTORY_PANEL_ID = "history-panel";
 const DEFAULT_HISTORY_SOURCE = createHttpSessionHistorySource();
 
 type HistoryPanelProps = {
-  className?: string;
   source?: SessionHistorySource;
   sessionSavedRevision?: number;
 };
 
 export function HistoryPanel({
-  className,
   source = DEFAULT_HISTORY_SOURCE,
   sessionSavedRevision = 0,
 }: HistoryPanelProps) {
@@ -111,7 +109,7 @@ export function HistoryPanel({
   const recentRecords = data?.records.slice(0, 5) ?? [];
 
   return (
-    <div className={className ? `history-panel ${className}` : "history-panel"}>
+    <div className="history-panel">
       <button
         ref={triggerRef}
         type="button"

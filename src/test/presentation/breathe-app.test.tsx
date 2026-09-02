@@ -32,7 +32,7 @@ describe("BreatheApp", () => {
 
   it("handles advanced options disclosure and reveals phase steppers", async () => {
     const user = userEvent.setup();
-    render(<BreatheApp />);
+    const { container } = render(<BreatheApp />);
 
     const disclosure = screen.getByRole("button", {
       name: "Show advanced options",
@@ -50,6 +50,20 @@ describe("BreatheApp", () => {
     expect(screen.getByLabelText("Increase exhale duration")).toBeVisible();
     expect(screen.getByLabelText("Decrease rest duration")).toBeVisible();
     expect(screen.getByLabelText("Increase rest duration")).toBeVisible();
+
+    expect(container.querySelector("#inhaleValue")).toHaveTextContent("4s");
+    await user.click(screen.getByLabelText("Increase inhale duration"));
+    expect(container.querySelector("#inhaleValue")).toHaveTextContent("5s");
+  });
+
+  it("links advanced options aria-controls to the rendered duration panel", () => {
+    const { container } = render(<BreatheApp />);
+    const btn = screen.getByRole("button", {
+      name: "Show advanced options",
+    });
+    const target = container.querySelector("#" + btn.getAttribute("aria-controls"));
+    expect(target).not.toBeNull();
+    expect(target?.id).toBe("duration-panel");
   });
 
   it("renders exactly one History button which opens and closes with Escape", async () => {
