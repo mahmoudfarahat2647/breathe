@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode, Ref } from "react";
+import { Fragment, type ReactNode, type Ref } from "react";
 
 import type { BreathingPresetId } from "@/domain/breathing-preset";
 import type { Phase } from "@/domain/phase";
@@ -44,13 +44,10 @@ export function ControlDeck({
   history,
   goalPicker,
 }: ControlDeckProps) {
-  return (
-    <section
-      id="controls"
-      className="control-deck"
-      aria-label="Breathing exercise controls"
-    >
-      <Card className="panel panel-elevated control-deck-unified gap-0 ring-0">
+  const sections: { id: string; content: ReactNode }[] = [
+    {
+      id: "primary",
+      content: (
         <div className="control-deck-row control-deck-row-primary">
           <div className="transport-row">
             {view.showPause ? (
@@ -100,9 +97,11 @@ export function ControlDeck({
             ) : null}
           </div>
         </div>
-
-        <div className="control-deck-divider" role="separator" aria-hidden="true" />
-
+      ),
+    },
+    {
+      id: "preset-picker",
+      content: (
         <div className="control-deck-row">
           <PresetPicker
             activePresetId={activePresetId}
@@ -110,9 +109,11 @@ export function ControlDeck({
             onAnnounce={onAnnounce}
           />
         </div>
-
-        <div className="control-deck-divider" role="separator" aria-hidden="true" />
-
+      ),
+    },
+    {
+      id: "durations",
+      content: (
         <div className="control-deck-row">
           <DurationStepper
             view={view}
@@ -120,13 +121,19 @@ export function ControlDeck({
             onAdjust={onAdjust}
           />
         </div>
-
-        <div className="control-deck-divider" role="separator" aria-hidden="true" />
-
-        <div className="control-deck-row">{goalPicker}</div>
-
-        <div className="control-deck-divider" role="separator" aria-hidden="true" />
-
+      ),
+    },
+    ...(goalPicker
+      ? [
+          {
+            id: "goal-picker",
+            content: <div className="control-deck-row">{goalPicker}</div>,
+          },
+        ]
+      : []),
+    {
+      id: "sound",
+      content: (
         <div className="control-deck-row control-deck-row-sound">
           <label className="switch-field">
             <Switch
@@ -137,10 +144,37 @@ export function ControlDeck({
             Sound
           </label>
         </div>
+      ),
+    },
+    ...(history
+      ? [
+          {
+            id: "history",
+            content: <div className="control-deck-row">{history}</div>,
+          },
+        ]
+      : []),
+  ];
 
-        <div className="control-deck-divider" role="separator" aria-hidden="true" />
-
-        <div className="control-deck-row">{history}</div>
+  return (
+    <section
+      id="controls"
+      className="control-deck"
+      aria-label="Breathing exercise controls"
+    >
+      <Card className="panel panel-elevated control-deck-unified gap-0 ring-0">
+        {sections.map((section, index) => (
+          <Fragment key={section.id}>
+            {index > 0 && (
+              <div
+                className="control-deck-divider"
+                role="separator"
+                aria-hidden="true"
+              />
+            )}
+            {section.content}
+          </Fragment>
+        ))}
       </Card>
     </section>
   );

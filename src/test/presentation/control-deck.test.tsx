@@ -189,4 +189,121 @@ describe("ControlDeck", () => {
     expect(screen.queryByRole("separator")).not.toBeInTheDocument();
     expect(screen.queryAllByRole("separator")).toHaveLength(0);
   });
+
+  it("omits the goalPicker row and adjacent duplicate divider when goalPicker is not supplied", () => {
+    const withGoal = renderControlDeck({
+      goalPicker: <GoalPicker selectedGoal={null} onSelect={vi.fn()} />,
+    });
+    const withoutGoal = renderControlDeck();
+
+    const dividersWithGoal = withGoal.container.querySelectorAll(".control-deck-divider");
+    const dividersWithoutGoal = withoutGoal.container.querySelectorAll(".control-deck-divider");
+    const rowsWithoutGoal = withoutGoal.container.querySelectorAll(".control-deck-row");
+
+    expect(dividersWithGoal).toHaveLength(4);
+    expect(dividersWithoutGoal).toHaveLength(3);
+    expect(dividersWithGoal.length - dividersWithoutGoal.length).toBe(1);
+
+    expect(rowsWithoutGoal).toHaveLength(4);
+    rowsWithoutGoal.forEach((row) => {
+      expect(row.children.length).toBeGreaterThan(0);
+    });
+    expect(withoutGoal.container.querySelector(".goal-picker")).not.toBeInTheDocument();
+  });
+
+  it("omits the history row and trailing divider when history is not supplied", () => {
+    const withHistory = renderControlDeck({
+      history: <div>History</div>,
+    });
+    const withoutHistory = renderControlDeck();
+
+    const dividersWithHistory = withHistory.container.querySelectorAll(".control-deck-divider");
+    const dividersWithoutHistory = withoutHistory.container.querySelectorAll(".control-deck-divider");
+    const rowsWithoutHistory = withoutHistory.container.querySelectorAll(".control-deck-row");
+
+    expect(dividersWithHistory).toHaveLength(4);
+    expect(dividersWithoutHistory).toHaveLength(3);
+    expect(dividersWithHistory.length - dividersWithoutHistory.length).toBe(1);
+
+    expect(rowsWithoutHistory).toHaveLength(4);
+    rowsWithoutHistory.forEach((row) => {
+      expect(row.children.length).toBeGreaterThan(0);
+    });
+    expect(withoutHistory.container.textContent).not.toContain("History");
+  });
+
+  it("renders all six sections and exactly five dividers in fixed order when both goalPicker and history are supplied", () => {
+    const { container } = renderControlDeck({
+      goalPicker: <GoalPicker selectedGoal={null} onSelect={vi.fn()} />,
+      history: <div>History content</div>,
+    });
+
+    const unifiedPanel = container.querySelector(".control-deck-unified");
+    expect(unifiedPanel).toBeInTheDocument();
+    const children = Array.from(unifiedPanel?.children ?? []);
+
+    // 6 rows + 5 dividers = 11 direct child elements in exact fixed order
+    expect(children).toHaveLength(11);
+
+    // 1. Transport + Stats
+    expect(children[0]).toHaveClass("control-deck-row", "control-deck-row-primary");
+    expect(children[0]).toContainElement(screen.getByRole("button", { name: "Start" }));
+    expect(children[0]).toContainElement(screen.getByText("Cycle"));
+
+    // Divider 1
+    expect(children[1]).toHaveClass("control-deck-divider");
+    expect(children[1]).toHaveAttribute("role", "separator");
+    expect(children[1]).toHaveAttribute("aria-hidden", "true");
+
+    // 2. Preset Picker
+    expect(children[2]).toHaveClass("control-deck-row");
+    expect(children[2]).toContainElement(
+      screen.getByRole("radiogroup", { name: "Breathing preset" }),
+    );
+
+    // Divider 2
+    expect(children[3]).toHaveClass("control-deck-divider");
+    expect(children[3]).toHaveAttribute("role", "separator");
+    expect(children[3]).toHaveAttribute("aria-hidden", "true");
+
+    // 3. Durations
+    expect(children[4]).toHaveClass("control-deck-row");
+    expect(children[4]).toContainElement(
+      screen.getByRole("button", { name: "Durations" }),
+    );
+
+    // Divider 3
+    expect(children[5]).toHaveClass("control-deck-divider");
+    expect(children[5]).toHaveAttribute("role", "separator");
+    expect(children[5]).toHaveAttribute("aria-hidden", "true");
+
+    // 4. Session Goal
+    expect(children[6]).toHaveClass("control-deck-row");
+    expect(children[6]).toContainElement(
+      screen.getByRole("group", { name: "Session goal" }),
+    );
+
+    // Divider 4
+    expect(children[7]).toHaveClass("control-deck-divider");
+    expect(children[7]).toHaveAttribute("role", "separator");
+    expect(children[7]).toHaveAttribute("aria-hidden", "true");
+
+    // 5. Sound
+    expect(children[8]).toHaveClass("control-deck-row", "control-deck-row-sound");
+    expect(children[8]).toContainElement(
+      screen.getByRole("switch", { name: "Sound" }),
+    );
+
+    // Divider 5
+    expect(children[9]).toHaveClass("control-deck-divider");
+    expect(children[9]).toHaveAttribute("role", "separator");
+    expect(children[9]).toHaveAttribute("aria-hidden", "true");
+
+    // 6. History
+    expect(children[10]).toHaveClass("control-deck-row");
+    expect(children[10]).toContainElement(screen.getByText("History content"));
+
+    const dividers = container.querySelectorAll(".control-deck-divider");
+    expect(dividers).toHaveLength(5);
+  });
 });
