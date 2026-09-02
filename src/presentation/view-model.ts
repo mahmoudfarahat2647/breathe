@@ -15,7 +15,6 @@ import {
   type SideState,
 } from "@/domain/phase";
 import {
-  interpolateDot,
   interpolateTriangleDot,
   strokeDashoffset,
 } from "./geometry";
@@ -93,7 +92,8 @@ export function toBreathingViewModel(
           dotPhase === "rest" ? "exhale" : dotPhase,
           dotProgress,
         )
-      : interpolateDot(phase, progress),
+      // Only read by BreathingTriangle (rest === 0); the square Stage positions its own dot.
+      : { x: 0, y: 0 },
     announcement: `${label}. ${displayedDuration} seconds.`,
     stepperValues: {
       inhale: `${settings.inhale}s`,

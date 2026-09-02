@@ -48,7 +48,7 @@ test.describe("settings persistence", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Durations" }).click();
+    await page.getByRole("button", { name: "Show advanced options" }).click();
     await expect(page.locator("#inhaleValue")).toHaveText("5s");
     await expect(page.locator("#holdValue")).toHaveText("2s");
     await expect(page.locator("#exhaleValue")).toHaveText("8s");

@@ -11,6 +11,8 @@ type DurationStepperProps = {
   view: BreathingViewModel;
   activePresetId: BreathingPresetId;
   onAdjust: (phase: Phase, direction: number) => void;
+  /** Toggle copy. Defaults to "Durations" (the parity-locked label). */
+  label?: string;
 };
 
 const PHASE_ROW_EN: Record<Phase, string> = {
@@ -26,6 +28,7 @@ export function DurationStepper({
   view,
   activePresetId,
   onAdjust,
+  label = "Durations",
 }: DurationStepperProps) {
   const [open, setOpen] = useState(false);
 
@@ -42,7 +45,7 @@ export function DurationStepper({
         aria-controls={DURATION_PANEL_ID}
         onClick={toggle}
       >
-        Durations
+        {label}
       </button>
       <div
         id={DURATION_PANEL_ID}
@@ -84,8 +87,7 @@ export function DurationStepper({
 
         {activePresetId === "custom" ? (
           <p className="default-hint">
-            Custom preset — adjust each phase or pick a preset above. Not medical
-            advice.
+            Custom preset — adjust each phase. Not medical advice.
           </p>
         ) : null}
       </div>

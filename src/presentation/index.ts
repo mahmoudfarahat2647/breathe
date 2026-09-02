@@ -3,13 +3,10 @@
  * Depends on domain/application ports; does not import infrastructure.
  */
 
-export { AmbientBackground } from "./ambient-background";
 export { BreatheApp } from "./breathe-app";
-export { BreathingSquare } from "./breathing-square";
+export { BreathingStage } from "./breathing-stage";
 export { BreathingTriangle } from "./breathing-triangle";
-export { ControlDeck } from "./control-deck";
 export { DurationStepper } from "./duration-stepper";
-export { PresetPicker } from "./preset-picker";
 export { GoalPicker } from "./goal-picker";
 export { HistoryPanel } from "./history-panel";
 export {

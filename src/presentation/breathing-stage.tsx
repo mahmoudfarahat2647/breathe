@@ -1,24 +1,32 @@
+"use client";
+
 import { PHASES } from "@/domain/phase";
+import { cn } from "@/lib/utils";
 import {
   DOT_RADIUS,
-  SIDE_PATHS,
-  SQUARE_BASE_PATH,
+  pointOnRoundedSegment,
+  roundedPerimeterSegments,
   SQUARE_VIEWBOX,
 } from "./geometry";
 import type { BreathingViewModel } from "./view-model";
-import { cn } from "@/lib/utils";
 
-type BreathingSquareProps = {
-  view: BreathingViewModel;
-  pulse?: boolean;
-  pulseKey?: number;
-};
+const INSET = -0.5;
+const RADIUS = 32;
 
-export function BreathingSquare({
-  view,
-  pulse = false,
-  pulseKey = 0,
-}: BreathingSquareProps) {
+const SEGMENTS = roundedPerimeterSegments(INSET, RADIUS);
+const BORDER_PATH = `${SEGMENTS.inhale} ${SEGMENTS.hold} ${SEGMENTS.exhale} ${SEGMENTS.rest}`;
+
+export function BreathingStage({ view }: { view: BreathingViewModel }) {
+  const rawProgress = 1 - Number(view.sides[view.phase].dashoffset);
+  const progress = Math.min(
+    1,
+    Math.max(0, Number.isFinite(rawProgress) ? rawProgress : 0),
+  );
+
+  const { x, y } = view.svgIdle
+    ? pointOnRoundedSegment("inhale", 0, INSET, RADIUS)
+    : pointOnRoundedSegment(view.phase, progress, INSET, RADIUS);
+
   return (
     <div className="square-wrap">
       <svg
@@ -28,7 +36,7 @@ export function BreathingSquare({
         role="img"
         aria-hidden="true"
       >
-        <path className="square-base" d={SQUARE_BASE_PATH} />
+        <path className="square-frame-border" d={BORDER_PATH} fill="none" />
         {PHASES.map((phase) => {
           const side = view.sides[phase];
           return (
@@ -38,7 +46,7 @@ export function BreathingSquare({
               className={cn("square-side", side.state)}
               data-phase={phase}
               pathLength={1}
-              d={SIDE_PATHS[phase]}
+              d={SEGMENTS[phase]}
               style={{ strokeDashoffset: side.dashoffset }}
             />
           );
@@ -47,20 +55,10 @@ export function BreathingSquare({
           id="progressDot"
           className="progress-dot"
           r={DOT_RADIUS}
-          cx={view.dot.x}
-          cy={view.dot.y}
+          cx={x}
+          cy={y}
         />
       </svg>
-
-      <div
-        key={pulseKey}
-        className={cn("square-content", pulse && "pulse")}
-        id="squareContent"
-      >
-        <span className="phase-en">{view.phaseEn}</span>
-        <span className="countdown">{view.countdown}</span>
-        <span className="duration-hint">{view.durationHint}</span>
-      </div>
     </div>
   );
 }

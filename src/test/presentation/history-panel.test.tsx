@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -189,5 +192,136 @@ describe("HistoryPanel", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it("closes when clicking outside the panel and sets aria-expanded to false", async () => {
+    const user = userEvent.setup();
+    render(<HistoryPanel source={createSource(vi.fn().mockResolvedValue(SAMPLE))} />);
+
+    const trigger = screen.getByRole("button", { name: "History" });
+    await user.click(trigger);
+    await waitFor(() => {
+      expect(screen.getByText("Streak")).toBeInTheDocument();
+    });
+
+    const panelDomId = trigger.getAttribute("aria-controls")!;
+    const panel = document.getElementById(panelDomId)!;
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(panel).not.toHaveAttribute("hidden");
+
+    // Click outside on document.body
+    await user.click(document.body);
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(panel).toHaveAttribute("hidden");
+  });
+
+  it("does not close when clicking inside the panel content", async () => {
+    const user = userEvent.setup();
+    render(<HistoryPanel source={createSource(vi.fn().mockResolvedValue(SAMPLE))} />);
+
+    const trigger = screen.getByRole("button", { name: "History" });
+    await user.click(trigger);
+    await waitFor(() => {
+      expect(screen.getByText("Streak")).toBeInTheDocument();
+    });
+
+    const panelDomId = trigger.getAttribute("aria-controls")!;
+    const panel = document.getElementById(panelDomId)!;
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    // Click inside the panel on a stat label
+    await user.click(screen.getByText("Streak"));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(panel).not.toHaveAttribute("hidden");
+
+    // Click inside the panel on a stat value
+    await user.click(screen.getByText("This week"));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(panel).not.toHaveAttribute("hidden");
+  });
+
+  it("allows trigger click to toggle open and closed without outside-click interference", async () => {
+    const user = userEvent.setup();
+    render(<HistoryPanel source={createSource(vi.fn().mockResolvedValue(SAMPLE))} />);
+
+    const trigger = screen.getByRole("button", { name: "History" });
+    const panelDomId = trigger.getAttribute("aria-controls")!;
+
+    // First click opens
+    await user.click(trigger);
+    await waitFor(() => {
+      expect(screen.getByText("Streak")).toBeInTheDocument();
+    });
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    const panel = document.getElementById(panelDomId)!;
+    expect(panel).not.toHaveAttribute("hidden");
+
+    // Second click closes
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(panel).toHaveAttribute("hidden");
+
+    // Third click re-opens
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(panel).not.toHaveAttribute("hidden");
+  });
+
+  it("retains bounded height, internal scroll, and non-modal disclosure semantics when open", async () => {
+    const user = userEvent.setup();
+    render(<HistoryPanel source={createSource(vi.fn().mockResolvedValue(SAMPLE))} />);
+
+    const trigger = screen.getByRole("button", { name: "History" });
+    await user.click(trigger);
+    const panelDomId = trigger.getAttribute("aria-controls")!;
+    const panel = document.getElementById(panelDomId)!;
+
+    expect(panel).toHaveClass("history-fields");
+    // Non-modal disclosure semantics: NO role="dialog", NO aria-modal
+    expect(panel).not.toHaveAttribute("role", "dialog");
+    expect(panel).not.toHaveAttribute("aria-modal");
+
+    // Verify globals.css defines bounded height, scroll, and stacking for .history-fields
+    const cssPath = path.resolve(__dirname, "../../app/globals.css");
+    const cssContent = fs.readFileSync(cssPath, "utf-8");
+
+    expect(cssContent).toMatch(
+      /\.history-fields\s*\{[^}]*max-block-size:\s*min\(70vh,\s*32rem\)/,
+    );
+    expect(cssContent).toMatch(
+      /\.history-fields\s*\{[^}]*overflow-y:\s*auto/,
+    );
+    expect(cssContent).toMatch(
+      /\.history-fields\s*\{[^}]*overscroll-behavior:\s*contain/,
+    );
+    expect(cssContent).toMatch(
+      /\.history-fields\s*\{[^}]*z-index:\s*50/,
+    );
+    expect(cssContent).toMatch(
+      /\.history-fields\s*\{[^}]*background:\s*var\(--panel/i,
+    );
+    expect(cssContent).toMatch(
+      /\.history-fields\s*\{[^}]*border:\s*1px solid var\(--panel-border\)/,
+    );
+  });
+
+  it("defines edge-to-edge sheet layout and safe-area padding at narrow viewports (~390px) via media query", () => {
+    const cssPath = path.resolve(__dirname, "../../app/globals.css");
+    const cssContent = fs.readFileSync(cssPath, "utf-8");
+
+    // Narrow viewport media query covers ~390px (e.g. max-width: 480px)
+    expect(cssContent).toMatch(
+      /@media\s*\([^)]*max-width:\s*480px\)[^{]*\{[\s\S]*?\.history-fields\s*\{[\s\S]*?position:\s*fixed/,
+    );
+    expect(cssContent).toMatch(
+      /@media\s*\([^)]*max-width:\s*480px\)[^{]*\{[\s\S]*?\.history-fields\s*\{[\s\S]*?inset-inline:\s*0/,
+    );
+    expect(cssContent).toMatch(
+      /@media\s*\([^)]*max-width:\s*480px\)[^{]*\{[\s\S]*?\.history-fields\s*\{[\s\S]*?bottom:\s*0/,
+    );
+    expect(cssContent).toMatch(
+      /@media\s*\([^)]*max-width:\s*480px\)[^{]*\{[\s\S]*?\.history-fields\s*\{[\s\S]*?env\(safe-area-inset-bottom/,
+    );
   });
 });
