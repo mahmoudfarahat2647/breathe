@@ -8,6 +8,7 @@ export { BreathingStage } from "./breathing-stage";
 export { BreathingTriangle } from "./breathing-triangle";
 export { DurationStepper } from "./duration-stepper";
 export { GoalPicker } from "./goal-picker";
+export { RampPicker } from "./ramp-picker";
 export { HistoryPanel } from "./history-panel";
 export {
   createHttpBreathingPersistence,

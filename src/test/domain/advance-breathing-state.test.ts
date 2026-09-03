@@ -12,6 +12,7 @@ import {
   sideStates,
   startBreathing,
   type BreathingEngineState,
+  type Ramp,
 } from "@/domain";
 
 const settings = BreathingSettings.default();
@@ -22,12 +23,19 @@ function play(
   startMs: number,
   elapsedSeconds: number,
   currentSettings: BreathingSettings,
+  ramp: Ramp = null,
   stepMs = 1_000,
 ): BreathingEngineState {
-  let current = advanceBreathingState(state, startMs, currentSettings);
+  let current = advanceBreathingState(
+    state,
+    startMs,
+    currentSettings,
+    undefined,
+    ramp,
+  );
   const endMs = startMs + elapsedSeconds * 1000;
   for (let now = startMs + stepMs; now <= endMs; now += stepMs) {
-    current = advanceBreathingState(current, now, currentSettings);
+    current = advanceBreathingState(current, now, currentSettings, undefined, ramp);
   }
   return current;
 }
@@ -265,6 +273,7 @@ describe("advanceBreathingState", () => {
       0,
       1.5,
       settings,
+      null,
       500,
     );
     expect(state.phaseElapsedSeconds).toBeCloseTo(1.5, 8);
@@ -297,6 +306,63 @@ describe("advanceBreathingState", () => {
     const copy = { ...first };
     advanceBreathingState(first, 2_000, settings);
     expect(first).toEqual(copy);
+  });
+});
+
+describe("advanceBreathingState with a Ramp", () => {
+  const short = BreathingSettings.fromDto({
+    inhale: 2,
+    hold: 1,
+    exhale: 6,
+    rest: 1,
+  });
+
+  it("lengthens the exhale on the third cycle under Wind Down", () => {
+    // Cycles 0 and 1 use base exhale (6s); cycle 2 steps to 7s (floor(2 / 2)).
+    // Cycle length is 2 + 1 + 6 + 1 = 10s, so ~20s in we enter cycle 2's inhale;
+    // three more seconds carry us through hold into exhale.
+    const intoThirdExhale = play(
+      startBreathing(createIdleBreathingState()),
+      0,
+      24,
+      short,
+      "wind-down",
+    );
+
+    expect(intoThirdExhale.cycleCount).toBe(2);
+    expect(intoThirdExhale.phaseIndex).toBe(2);
+    expect(intoThirdExhale.phaseDurationSeconds).toBe(7);
+  });
+
+  it("still uses the base exhale during the first two cycles", () => {
+    const firstExhale = play(
+      startBreathing(createIdleBreathingState()),
+      0,
+      4,
+      short,
+      "wind-down",
+    );
+    expect(firstExhale.cycleCount).toBe(0);
+    expect(firstExhale.phaseIndex).toBe(2);
+    expect(firstExhale.phaseDurationSeconds).toBe(6);
+  });
+
+  it("is identical to the un-ramped engine when the Ramp is omitted", () => {
+    const withArgOmitted = play(
+      startBreathing(createIdleBreathingState()),
+      0,
+      24,
+      short,
+    );
+    const withRampOff = play(
+      startBreathing(createIdleBreathingState()),
+      0,
+      24,
+      short,
+      null,
+    );
+    expect(withArgOmitted).toEqual(withRampOff);
+    expect(withArgOmitted.phaseDurationSeconds).toBe(6);
   });
 });
 

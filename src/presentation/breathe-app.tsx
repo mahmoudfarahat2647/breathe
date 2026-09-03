@@ -16,6 +16,7 @@ import { BreathingStage } from "./breathing-stage";
 import { BreathingTriangle } from "./breathing-triangle";
 import { DurationStepper } from "./duration-stepper";
 import { GoalPicker } from "./goal-picker";
+import { RampPicker } from "./ramp-picker";
 import { HistoryPanel } from "./history-panel";
 import { handleBreathingKeydown } from "./keyboard";
 import {
@@ -144,6 +145,9 @@ export function BreatheApp({
               <span className="mv-coach">
                 {isIdle ? COACH.inhale : COACH[view.phase]}
               </span>
+              {view.rampHint ? (
+                <span className="mv-ramp-hint">{view.rampHint}</span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -245,7 +249,12 @@ export function BreatheApp({
             activePresetId={engine.activePresetId}
             onAdjust={engine.adjust}
             label="Show advanced options"
-          />
+          >
+            <RampPicker
+              selectedRamp={engine.selectedRamp}
+              onSelect={engine.setRamp}
+            />
+          </DurationStepper>
         </div>
       </section>
     </div>

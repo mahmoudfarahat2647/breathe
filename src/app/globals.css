@@ -571,6 +571,13 @@
   color: var(--mv-coach);
   letter-spacing: 0.01em;
 }
+.mv-ramp-hint {
+  font-size: clamp(0.68rem, 2cqmin, 0.8rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mv-ink-faint);
+}
 
 /* four edge labels outside the square */
 .mv-edge {
@@ -821,15 +828,17 @@
   gap: 0.6em;
 }
 
-/* goal chips */
-.goal-picker {
+/* goal + ramp chips */
+.goal-picker,
+.ramp-picker {
   width: 100%;
   max-width: 880px;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-.goal-options {
+.goal-options,
+.ramp-options {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -842,18 +851,21 @@
   color: var(--mv-ink-dim);
 }
 .mv-deck .goal-picker-label,
-.mv-deck .goal-picker span:first-child {
+.mv-deck .goal-picker span:first-child,
+.mv-advanced .ramp-picker-label {
   font-size: 0.68rem;
   letter-spacing: 0.2em;
   color: var(--mv-ink-faint);
 }
-.mv-deck .goal-options {
+.mv-deck .goal-options,
+.mv-advanced .ramp-options {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
 }
-.mv-deck .breathe-btn {
+.mv-deck .breathe-btn,
+.mv-advanced .ramp-options .breathe-btn {
   border-radius: 12px;
   border: 1px solid transparent;
   background: transparent;
@@ -861,6 +873,15 @@
   font-size: 0.86rem;
   font-weight: 500;
   padding: 0.6em 1em;
+}
+.mv-advanced .ramp-options .breathe-btn {
+  padding: 0.32em 0.8em;
+  font-size: 0.82rem;
+}
+.mv-advanced .ramp-options .breathe-btn[aria-pressed="true"] {
+  background: var(--mv-chip-sel);
+  border-color: rgb(var(--mv-teal-rgb) / 0.35);
+  color: var(--mv-ink);
 }
 .mv-deck .breathe-btn[aria-checked="true"],
 .mv-deck .breathe-btn[aria-pressed="true"] {
@@ -950,8 +971,17 @@
   }
 }
 .duration-fields .default-row,
-.duration-fields .default-hint {
+.duration-fields .default-hint,
+.duration-fields .ramp-picker {
   grid-column: 1 / -1;
+}
+.mv-advanced .ramp-picker {
+  gap: 4px;
+}
+.mv-advanced .ramp-picker .default-hint {
+  margin-top: 0;
+  font-size: 0.76rem;
+  line-height: 1.3;
 }
 .duration-row {
   display: flex;

@@ -1,5 +1,6 @@
 import type { BreathingSettings } from "./breathing-settings";
 import { PHASES, type Phase } from "./phase";
+import { settingsForCycle, type Ramp } from "./ramp";
 import { isGoalMet, type SessionGoal } from "./session-goal";
 
 export type EngineStatus = "idle" | "running" | "paused" | "completed";
@@ -77,14 +78,20 @@ export function advanceBreathingState(
   nowMs: number,
   settings: BreathingSettings,
   activeGoal?: SessionGoal | null,
+  ramp: Ramp = null,
 ): BreathingEngineState {
   if (state.status !== "running") {
     return state;
   }
 
+  const durationFor = (phaseIdx: number, completedCycles: number): number =>
+    settingsForCycle(settings, ramp, completedCycles).durationFor(
+      PHASES[phaseIdx]!,
+    );
+
   let phaseDurationSeconds =
     state.phaseDurationSeconds ??
-    settings.durationFor(PHASES[state.phaseIndex]!);
+    durationFor(state.phaseIndex, state.cycleCount);
 
   const lastFrameTimeMs = state.lastFrameTimeMs ?? nowMs;
   let delta = (nowMs - lastFrameTimeMs) / 1000;
@@ -107,7 +114,7 @@ export function advanceBreathingState(
       cycleCount += 1;
     }
     phaseElapsedSeconds = overflow;
-    phaseDurationSeconds = settings.durationFor(PHASES[phaseIndex]!);
+    phaseDurationSeconds = durationFor(phaseIndex, cycleCount);
     guard += 1;
   }
 

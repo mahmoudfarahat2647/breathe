@@ -132,4 +132,49 @@ describe("toBreathingViewModel", () => {
       rest: "2s",
     });
   });
+
+  describe("rampHint", () => {
+    const rampedExhale = {
+      ...startBreathing(createIdleBreathingState()),
+      status: "running" as const,
+      phaseIndex: 2,
+      phaseElapsedSeconds: 1,
+      totalElapsedSeconds: 30,
+      cycleCount: 2,
+      lastFrameTimeMs: 30_000,
+      phaseDurationSeconds: 7,
+    };
+
+    it("names the phase and its ramped duration when a Ramp is active", () => {
+      const view = toBreathingViewModel(rampedExhale, settings, null, "wind-down");
+      expect(view.rampHint).toBe("Exhale now 7s");
+    });
+
+    it("is null when idle", () => {
+      const view = toBreathingViewModel(
+        createIdleBreathingState(),
+        settings,
+        null,
+        "wind-down",
+      );
+      expect(view.rampHint).toBeNull();
+    });
+
+    it("is null when no Ramp is active even if the displayed duration differs from base", () => {
+      // The Ramp-Off regression: a manual mid-phase stepper edit can make the
+      // displayed (snapshotted) duration differ from the just-changed base.
+      const view = toBreathingViewModel(rampedExhale, settings, null, null);
+      expect(view.rampHint).toBeNull();
+    });
+
+    it("is null while a Ramp is active but the phase is still at its base duration", () => {
+      const view = toBreathingViewModel(
+        { ...rampedExhale, phaseDurationSeconds: 6 },
+        settings,
+        null,
+        "wind-down",
+      );
+      expect(view.rampHint).toBeNull();
+    });
+  });
 });

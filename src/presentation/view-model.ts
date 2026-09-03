@@ -7,6 +7,7 @@ import {
   phaseProgress,
 } from "@/domain/breathing-engine";
 import { goalProgress, type SessionGoal } from "@/domain/session-goal";
+import type { Ramp } from "@/domain/ramp";
 import {
   PHASE_LABELS,
   PHASES,
@@ -32,6 +33,7 @@ export type BreathingViewModel = {
   cycleCount: string;
   elapsed: string;
   goalRemaining: string | null;
+  rampHint: string | null;
   primaryLabel: "Start" | "Resume";
   showPause: boolean;
   isCompleted: boolean;
@@ -48,6 +50,7 @@ export function toBreathingViewModel(
   state: BreathingEngineState,
   settings: BreathingSettings,
   activeGoal: SessionGoal | null = null,
+  activeRamp: Ramp = null,
 ): BreathingViewModel {
   const phase = currentPhase(state);
   const displayedDuration = durationForDisplay(state, settings, phase);
@@ -76,6 +79,7 @@ export function toBreathingViewModel(
     cycleCount: String(displayedCycleCount(state)),
     elapsed: formatElapsed(state.totalElapsedSeconds),
     goalRemaining: formatGoalRemaining(progressInfo),
+    rampHint: formatRampHint(state, settings, phase, displayedDuration, activeRamp),
     primaryLabel: state.status === "paused" ? "Resume" : "Start",
     showPause: state.status === "running",
     isCompleted: state.status === "completed",
@@ -122,6 +126,32 @@ function durationForDisplay(
 
 function formatDurationHint(seconds: number): string {
   return seconds === 1 ? "1 second" : `${seconds} seconds`;
+}
+
+const RAMP_HINT_PHASE_LABELS: Record<Phase, string> = {
+  inhale: "Inhale",
+  hold: "Hold",
+  exhale: "Exhale",
+  rest: "Rest",
+};
+
+/**
+ * A short "Exhale now 8s" line shown while a Ramp has lengthened the live phase
+ * past its base duration. Keyed on `activeRamp`, not the duration alone: a manual
+ * mid-phase stepper edit with Ramp Off can also make the snapshotted duration
+ * differ from the (just-changed) base, and that must not surface a hint.
+ */
+function formatRampHint(
+  state: BreathingEngineState,
+  settings: BreathingSettings,
+  phase: Phase,
+  displayedDuration: number,
+  activeRamp: Ramp,
+): string | null {
+  if (activeRamp === null) return null;
+  if (state.status !== "running" && state.status !== "paused") return null;
+  if (displayedDuration <= settings.durationFor(phase)) return null;
+  return `${RAMP_HINT_PHASE_LABELS[phase]} now ${displayedDuration}s`;
 }
 
 function formatGoalRemaining(

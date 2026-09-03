@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -107,11 +107,12 @@ describe("BreatheApp", () => {
 
     const soundSwitch = screen.getByRole("switch", { name: "Sound" });
     expect(soundSwitch).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByText("Off")).toBeInTheDocument();
+    const soundToggle = soundSwitch.closest(".mv-sound-toggle") as HTMLElement;
+    expect(within(soundToggle).getByText("Off")).toBeInTheDocument();
 
     await user.click(soundSwitch);
     expect(soundSwitch).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByText("On")).toBeInTheDocument();
+    expect(within(soundToggle).getByText("On")).toBeInTheDocument();
   });
 
   it("updates live announcer when session starts with INHALE and duration", async () => {

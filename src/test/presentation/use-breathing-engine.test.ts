@@ -580,3 +580,98 @@ describe("useBreathingEngine persistence", () => {
     );
   });
 });
+
+describe("useBreathingEngine ramp", () => {
+  const silentAudio = () => ({
+    ensure: vi.fn(),
+    playPhase: vi.fn(),
+    playCompletion: vi.fn(),
+    context: null,
+  });
+
+  it("holds a mid-session Ramp change until the next Reset + Start", () => {
+    const frames = createRafStub();
+    const { result } = renderHook(() =>
+      useBreathingEngine({ raf: frames.raf, caf: frames.caf, audio: silentAudio() }),
+    );
+
+    act(() => {
+      result.current.start();
+    });
+    completeCycles(frames, 3);
+
+    act(() => {
+      result.current.setRamp("wind-down");
+    });
+    expect(result.current.selectedRamp).toBe("wind-down");
+    expect(result.current.activeRamp).toBeNull();
+    expect(result.current.announcement).toBe(
+      "Ramp will apply on your next session.",
+    );
+
+    act(() => {
+      result.current.reset();
+    });
+    expect(result.current.activeRamp).toBeNull();
+
+    act(() => {
+      result.current.start();
+    });
+    expect(result.current.activeRamp).toBe("wind-down");
+  });
+
+  it("shows no ramp hint while idle", () => {
+    const { result } = renderHook(() => useBreathingEngine());
+
+    act(() => {
+      result.current.setRamp("wind-down");
+    });
+
+    expect(result.current.view.rampHint).toBeNull();
+  });
+
+  it("shows no ramp hint after a manual mid-phase duration edit when the Ramp is Off", () => {
+    const frames = createRafStub();
+    const { result } = renderHook(() =>
+      useBreathingEngine({ raf: frames.raf, caf: frames.caf, audio: silentAudio() }),
+    );
+
+    act(() => {
+      result.current.start();
+    });
+    completeCycles(frames, 1);
+
+    act(() => {
+      result.current.adjust("inhale", -1);
+      result.current.adjust("inhale", -1);
+    });
+
+    // The snapshotted phase duration now exceeds the (just-lowered) base...
+    expect(result.current.view.displayedDuration).toBeGreaterThan(
+      result.current.settings.inhale,
+    );
+    // ...but with the Ramp Off there must be no hint.
+    expect(result.current.activeRamp).toBeNull();
+    expect(result.current.view.rampHint).toBeNull();
+  });
+
+  it("shows the ramped exhale hint once Wind Down has stepped up", () => {
+    const frames = createRafStub();
+    const { result } = renderHook(() =>
+      useBreathingEngine({ raf: frames.raf, caf: frames.caf, audio: silentAudio() }),
+    );
+
+    act(() => {
+      result.current.setRamp("wind-down");
+      result.current.start();
+    });
+    expect(result.current.activeRamp).toBe("wind-down");
+
+    // Default 4-4-6-2 cycle is 16s; by cycle 2's exhale Wind Down adds +1s.
+    completeCycles(frames, 41);
+
+    expect(result.current.view.phase).toBe("exhale");
+    expect(result.current.view.displayedDuration).toBe(7);
+    expect(result.current.view.rampHint).toBe("Exhale now 7s");
+  });
+});

@@ -44,6 +44,15 @@ export {
   type SessionGoalDto,
 } from "./session-goal";
 export {
+  RAMP_CATALOG,
+  rampFromDto,
+  rampToDto,
+  settingsForCycle,
+  type Ramp,
+  type RampDto,
+  type RampRule,
+} from "./ramp";
+export {
   BreathingSession,
   type BreathingSessionDto,
 } from "./breathing-session";

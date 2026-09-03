@@ -19,6 +19,7 @@ import {
   type BreathingEngineState,
 } from "@/domain/breathing-engine";
 import type { Phase } from "@/domain/phase";
+import type { Ramp } from "@/domain/ramp";
 import {
   sessionGoalToDto,
   type SessionGoal,
@@ -53,6 +54,8 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     useState<BreathingPresetId>(DEFAULT_PRESET_ID);
   const [selectedGoal, setSelectedGoal] = useState<SessionGoal>(null);
   const [activeGoal, setActiveGoal] = useState<SessionGoal>(null);
+  const [selectedRamp, setSelectedRamp] = useState<Ramp>(null);
+  const [activeRamp, setActiveRamp] = useState<Ramp>(null);
   const [soundEnabled, setSoundEnabledState] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [pulseNonce, setPulseNonce] = useState(0);
@@ -62,6 +65,8 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
   const activePresetIdRef = useRef(activePresetId);
   const selectedGoalRef = useRef(selectedGoal);
   const activeGoalRef = useRef(activeGoal);
+  const selectedRampRef = useRef(selectedRamp);
+  const activeRampRef = useRef(activeRamp);
   const sessionIdRef = useRef<string | null>(null);
   const sessionSavedRef = useRef(false);
   const soundRef = useRef(soundEnabled);
@@ -95,8 +100,19 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     activePresetIdRef.current = activePresetId;
     selectedGoalRef.current = selectedGoal;
     activeGoalRef.current = activeGoal;
+    selectedRampRef.current = selectedRamp;
+    activeRampRef.current = activeRamp;
     soundRef.current = soundEnabled;
-  }, [engine, settings, activePresetId, selectedGoal, activeGoal, soundEnabled]);
+  }, [
+    engine,
+    settings,
+    activePresetId,
+    selectedGoal,
+    activeGoal,
+    selectedRamp,
+    activeRamp,
+    soundEnabled,
+  ]);
 
   useEffect(() => {
     if (adapters.audio) audioRef.current = adapters.audio;
@@ -195,6 +211,9 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
       const nextActiveGoal = selectedGoalRef.current;
       activeGoalRef.current = nextActiveGoal;
       setActiveGoal(nextActiveGoal);
+      const nextActiveRamp = selectedRampRef.current;
+      activeRampRef.current = nextActiveRamp;
+      setActiveRamp(nextActiveRamp);
       sessionIdRef.current = createSessionIdRef.current();
       sessionSavedRef.current = false;
     }
@@ -234,6 +253,8 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     setPulseNonce(0);
     activeGoalRef.current = null;
     setActiveGoal(null);
+    activeRampRef.current = null;
+    setActiveRamp(null);
     sessionIdRef.current = null;
     if (snapshot && persistence) {
       sessionSavedRef.current = true;
@@ -302,6 +323,18 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     [goalsMatch, queueSettingsSave],
   );
 
+  const setRamp = useCallback((ramp: Ramp) => {
+    if (selectedRampRef.current === ramp) return;
+
+    selectedRampRef.current = ramp;
+    setSelectedRamp(ramp);
+
+    const status = engineRef.current.status;
+    if (status === "running" || status === "paused") {
+      setAnnouncement("Ramp will apply on your next session.");
+    }
+  }, []);
+
   const setSoundEnabled = useCallback((enabled: boolean) => {
     soundRef.current = enabled;
     setSoundEnabledState(enabled);
@@ -367,6 +400,7 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
         now,
         settingsRef.current,
         activeGoalRef.current,
+        activeRampRef.current,
       );
       engineRef.current = next;
       setEngine(next);
@@ -387,8 +421,8 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
   }, [cuePhase, engine.status, handleCompletion]);
 
   const view = useMemo(
-    () => toBreathingViewModel(engine, settings, activeGoal),
-    [engine, settings, activeGoal],
+    () => toBreathingViewModel(engine, settings, activeGoal, activeRamp),
+    [engine, settings, activeGoal, activeRamp],
   );
 
   const announce = useCallback((message: string) => {
@@ -401,6 +435,8 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     activePresetId,
     selectedGoal,
     activeGoal,
+    selectedRamp,
+    activeRamp,
     view,
     soundEnabled,
     announcement,
@@ -413,6 +449,7 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     recommend,
     announce,
     setGoal,
+    setRamp,
     setSoundEnabled,
   };
 }

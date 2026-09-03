@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { PHASES, type Phase } from "@/domain/phase";
 import type { BreathingPresetId } from "@/domain/breathing-preset";
@@ -13,6 +13,8 @@ type DurationStepperProps = {
   onAdjust: (phase: Phase, direction: number) => void;
   /** Toggle copy. Defaults to "Durations" (the parity-locked label). */
   label?: string;
+  /** Extra rows rendered inside the disclosure panel, after the four phases. */
+  children?: ReactNode;
 };
 
 const PHASE_ROW_EN: Record<Phase, string> = {
@@ -29,6 +31,7 @@ export function DurationStepper({
   activePresetId,
   onAdjust,
   label = "Durations",
+  children,
 }: DurationStepperProps) {
   const [open, setOpen] = useState(false);
 
@@ -90,6 +93,8 @@ export function DurationStepper({
             Custom preset — adjust each phase. Not medical advice.
           </p>
         ) : null}
+
+        {children}
       </div>
     </div>
   );

@@ -12,6 +12,10 @@ _Avoid_: Step, stage (see Stage below — different concept, same word collides)
 A named set of phase durations a user can select as a starting point (Current Calm, Triangle, Box, 4-7-8 Relaxation, Coherence), or Custom once durations are hand-adjusted.
 _Avoid_: Pattern, breathing pattern.
 
+**Ramp**:
+An optional rule that changes phase durations from cycle to cycle during a Session, stepping from the active Preset's durations toward a target. Off by default. Two ramps ship: Wind Down and Slow Down. Like a Session Goal, the Ramp selected at Start is the one that applies for that whole Session.
+_Avoid_: taper, ladder, progression.
+
 **Stage**:
 The area of the screen holding the live breathing visual (the Square or Triangle) that the user watches and breathes along with. Distinct from Phase.
 _Avoid_: Visual, animation, shape (informal; use Stage for the region, Square/Triangle for what's drawn in it).
