@@ -35,6 +35,13 @@ This app was ported from a static reference implementation; [docs/parity-contrac
 - `agy-delegate` (Antigravity CLI, Gemini 3.7 Flash High) is a secondary option: reach for it only when explicitly requested, or for a specific sub-agent task that benefits from a second, independent implementer. It never blocks direct code generation and file edits.
 - Prefer having a plan or spec before larger changes; use judgment on when a small fix doesn't need one.
 
+## Debate review
+
+**Debate review** = a two-model debate between **Fable at medium reasoning effort** and **Codex at high reasoning effort**, ending in a written report that is always surfaced to the user (never acted on silently).
+
+- **Every plan or spec** gets a debate review before implementation starts. Show the user the report - where each model landed, what survived the debate, and the final call.
+- **Branch / PR code review** runs the `debate-review` skill with its `review-main` lane set to Fable (medium effort) and its `review-debate` lane set to Codex (high effort) - configure via `delegate-setup`, or pass `--main` / `--debate` for a one-off. Relay the resulting review report.
+
 ## Project docs and workflow
 
 - **Domain glossary / ADRs**: single-context layout - [CONTEXT.md](CONTEXT.md) at repo root, ADRs would live in `docs/adr/`. See [docs/agents/domain.md](docs/agents/domain.md) for how to consume them (use glossary vocabulary, flag ADR conflicts explicitly).
