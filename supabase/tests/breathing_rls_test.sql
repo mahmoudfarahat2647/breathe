@@ -1,5 +1,5 @@
 begin;
-select plan(27);
+select plan(29);
 
 insert into auth.users (
   instance_id,
@@ -210,6 +210,17 @@ select throws_ok(
   '23514',
   null,
   'cycles goal above 100 is rejected'
+);
+
+select lives_ok(
+  $$update public.breathing_settings set ramp = 'wind-down' where user_id = '11111111-1111-4111-8111-111111111111'$$,
+  'wind-down ramp is accepted'
+);
+select throws_ok(
+  $$update public.breathing_settings set ramp = 'slow-down' where user_id = '11111111-1111-4111-8111-111111111111'$$,
+  '23514',
+  null,
+  'unknown ramp id is rejected by the check constraint'
 );
 
 select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', true);

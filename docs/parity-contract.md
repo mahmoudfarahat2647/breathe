@@ -116,6 +116,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | `breathing_settings.rest_seconds` integer not null default 2, check between 1 and 15 | A |
 | `breathing_sessions.rest_seconds` integer not null default 0, check `>= 0` (no backfill of 2 onto historical rows) | A |
 | Settings equality checks compare rest so a saved rest duration actually loads | A |
+| Settings DTO, HTTP body, mapper (both directions), repository select, and generated types carry `ramp`; `breathing_settings.ramp` is nullable text checked against `('wind-down')` | A |
 
 ## Out of scope for parity
 

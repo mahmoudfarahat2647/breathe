@@ -1,4 +1,4 @@
-import type { BreathingPreferencesDto } from "@/domain";
+import { rampFromDto, type BreathingPreferencesDto } from "@/domain";
 
 import type { BreathingSettingsRow } from "../supabase/database.types";
 
@@ -11,6 +11,7 @@ export function settingsRowToDto(
     | "rest_seconds"
     | "goal_type"
     | "goal_value"
+    | "ramp"
   >,
 ): BreathingPreferencesDto {
   return {
@@ -21,6 +22,7 @@ export function settingsRowToDto(
       rest: row.rest_seconds,
     },
     goal: goalFromRow(row.goal_type, row.goal_value),
+    ramp: rampFromDto(row.ramp),
   };
 }
 
@@ -36,6 +38,7 @@ export function settingsDtoToRow(
   | "rest_seconds"
   | "goal_type"
   | "goal_value"
+  | "ramp"
 > {
   const goal = goalToRow(dto.goal);
   return {
@@ -46,6 +49,7 @@ export function settingsDtoToRow(
     rest_seconds: dto.durations.rest,
     goal_type: goal.goal_type,
     goal_value: goal.goal_value,
+    ramp: dto.ramp,
   };
 }
 

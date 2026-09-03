@@ -19,7 +19,7 @@ import {
   type BreathingEngineState,
 } from "@/domain/breathing-engine";
 import type { Phase } from "@/domain/phase";
-import type { Ramp } from "@/domain/ramp";
+import { rampToDto, type Ramp } from "@/domain/ramp";
 import {
   sessionGoalToDto,
   type SessionGoal,
@@ -138,6 +138,7 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     return {
       durations: settingsRef.current.toDto(),
       goal: sessionGoalToDto(selectedGoalRef.current),
+      ramp: rampToDto(selectedRampRef.current),
     };
   }, []);
 
@@ -323,17 +324,21 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     [goalsMatch, queueSettingsSave],
   );
 
-  const setRamp = useCallback((ramp: Ramp) => {
-    if (selectedRampRef.current === ramp) return;
+  const setRamp = useCallback(
+    (ramp: Ramp) => {
+      if (selectedRampRef.current === ramp) return;
 
-    selectedRampRef.current = ramp;
-    setSelectedRamp(ramp);
+      selectedRampRef.current = ramp;
+      setSelectedRamp(ramp);
+      queueSettingsSave();
 
-    const status = engineRef.current.status;
-    if (status === "running" || status === "paused") {
-      setAnnouncement("Ramp will apply on your next session.");
-    }
-  }, []);
+      const status = engineRef.current.status;
+      if (status === "running" || status === "paused") {
+        setAnnouncement("Ramp will apply on your next session.");
+      }
+    },
+    [queueSettingsSave],
+  );
 
   const setSoundEnabled = useCallback((enabled: boolean) => {
     soundRef.current = enabled;
@@ -353,22 +358,27 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
         const preferences = BreathingPreferences.fromDto(dto);
         const nextSettings = preferences.settings;
         const nextGoal = preferences.goal;
+        const nextRamp = preferences.ramp;
         const current = settingsRef.current;
         const currentGoal = selectedGoalRef.current;
+        const currentRamp = selectedRampRef.current;
         const settingsUnchanged =
           nextSettings.inhale === current.inhale &&
           nextSettings.hold === current.hold &&
           nextSettings.exhale === current.exhale &&
           nextSettings.rest === current.rest;
         const goalUnchanged = goalsMatch(nextGoal, currentGoal);
-        if (settingsUnchanged && goalUnchanged) {
+        const rampUnchanged = nextRamp === currentRamp;
+        if (settingsUnchanged && goalUnchanged && rampUnchanged) {
           return;
         }
         settingsRef.current = nextSettings;
         selectedGoalRef.current = nextGoal;
+        selectedRampRef.current = nextRamp;
         activePresetIdRef.current = matchPresetId(nextSettings.toDto());
         setSettings(nextSettings);
         setSelectedGoal(nextGoal);
+        setSelectedRamp(nextRamp);
         setActivePresetId(activePresetIdRef.current);
       })
       .catch(() => {});

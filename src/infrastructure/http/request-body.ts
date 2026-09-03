@@ -1,4 +1,4 @@
-import { DomainValidationError } from "@/domain";
+import { DomainValidationError, rampFromDto } from "@/domain";
 import type { BreathingPreferencesDto, BreathingSessionDto } from "@/domain";
 
 function asRecord(body: unknown): Record<string, unknown> {
@@ -45,6 +45,16 @@ function asGoal(value: unknown): BreathingPreferencesDto["goal"] {
   throw new DomainValidationError("Goal kind must be minutes or cycles.");
 }
 
+function asRamp(value: unknown): BreathingPreferencesDto["ramp"] {
+  if (value === null) {
+    return null;
+  }
+  if (typeof value === "string") {
+    return rampFromDto(value);
+  }
+  throw new DomainValidationError("Ramp must be a string or null.");
+}
+
 function asNumber(value: unknown, label: string): number {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new DomainValidationError(`${label} must be a number.`);
@@ -62,12 +72,14 @@ function asString(value: unknown, label: string): string {
 export function preferencesFromRequestBody(
   body: unknown,
   fallbackGoal: BreathingPreferencesDto["goal"] = null,
+  fallbackRamp: BreathingPreferencesDto["ramp"] = null,
 ): BreathingPreferencesDto {
   const raw = asRecord(body);
   if ("durations" in raw) {
     return {
       durations: asDurations(raw.durations),
       goal: "goal" in raw && raw.goal !== undefined ? asGoal(raw.goal) : fallbackGoal,
+      ramp: "ramp" in raw && raw.ramp !== undefined ? asRamp(raw.ramp) : fallbackRamp,
     };
   }
 
@@ -79,6 +91,7 @@ export function preferencesFromRequestBody(
       rest: asNumber(raw.rest, "rest"),
     },
     goal: "goal" in raw && raw.goal !== undefined ? asGoal(raw.goal) : fallbackGoal,
+    ramp: "ramp" in raw && raw.ramp !== undefined ? asRamp(raw.ramp) : fallbackRamp,
   };
 }
 

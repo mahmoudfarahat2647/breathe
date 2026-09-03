@@ -21,10 +21,12 @@ describe("settings row mapper", () => {
         rest_seconds: 3,
         goal_type: "minutes",
         goal_value: 10,
+        ramp: null,
       }),
     ).toEqual({
       durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
       goal: { kind: "minutes", minutes: 10 },
+      ramp: null,
     });
   });
 
@@ -37,10 +39,12 @@ describe("settings row mapper", () => {
         rest_seconds: 3,
         goal_type: null,
         goal_value: null,
+        ramp: null,
       }),
     ).toEqual({
       durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
       goal: null,
+      ramp: null,
     });
   });
 
@@ -49,6 +53,7 @@ describe("settings row mapper", () => {
       settingsDtoToRow(USER_ID, {
         durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
         goal: { kind: "cycles", cycles: 5 },
+        ramp: null,
       }),
     ).toEqual({
       user_id: USER_ID,
@@ -58,6 +63,62 @@ describe("settings row mapper", () => {
       rest_seconds: 3,
       goal_type: "cycles",
       goal_value: 5,
+      ramp: null,
+    });
+  });
+
+  it("maps row with ramp: null to DTO ramp: null", () => {
+    expect(
+      settingsRowToDto({
+        inhale_seconds: 4,
+        hold_seconds: 4,
+        exhale_seconds: 6,
+        rest_seconds: 2,
+        goal_type: null,
+        goal_value: null,
+        ramp: null,
+      }),
+    ).toEqual({
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      goal: null,
+      ramp: null,
+    });
+  });
+
+  it("maps row with ramp: 'wind-down' to DTO ramp: 'wind-down'", () => {
+    expect(
+      settingsRowToDto({
+        inhale_seconds: 4,
+        hold_seconds: 4,
+        exhale_seconds: 6,
+        rest_seconds: 2,
+        goal_type: null,
+        goal_value: null,
+        ramp: "wind-down",
+      }),
+    ).toEqual({
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      goal: null,
+      ramp: "wind-down",
+    });
+  });
+
+  it("maps settingsDtoToRow with ramp: 'wind-down' to row ramp: 'wind-down'", () => {
+    expect(
+      settingsDtoToRow(USER_ID, {
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+        goal: null,
+        ramp: "wind-down",
+      }),
+    ).toEqual({
+      user_id: USER_ID,
+      inhale_seconds: 4,
+      hold_seconds: 4,
+      exhale_seconds: 6,
+      rest_seconds: 2,
+      goal_type: null,
+      goal_value: null,
+      ramp: "wind-down",
     });
   });
 });
@@ -117,6 +178,7 @@ describe("preferencesFromRequestBody", () => {
     ).toEqual({
       durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       goal: fallbackGoal,
+      ramp: null,
     });
   });
 
@@ -130,6 +192,7 @@ describe("preferencesFromRequestBody", () => {
     ).toEqual({
       durations: { inhale: 5, hold: 5, exhale: 5, rest: 5 },
       goal: fallbackGoal,
+      ramp: null,
     });
   });
 
@@ -143,6 +206,7 @@ describe("preferencesFromRequestBody", () => {
     ).toEqual({
       durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       goal: null,
+      ramp: null,
     });
   });
 
@@ -151,6 +215,56 @@ describe("preferencesFromRequestBody", () => {
       preferencesFromRequestBody({
         durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
         goal: "invalid",
+      }),
+    ).toThrow(DomainValidationError);
+  });
+
+  it("preserves fallback ramp when ramp property is omitted in structured body", () => {
+    expect(
+      preferencesFromRequestBody(
+        { durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 } },
+        null,
+        "wind-down",
+      ),
+    ).toEqual({
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      goal: null,
+      ramp: "wind-down",
+    });
+  });
+
+  it("explicitly sets ramp to null when ramp is null", () => {
+    expect(
+      preferencesFromRequestBody(
+        { durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 }, ramp: null },
+        null,
+        "wind-down",
+      ),
+    ).toEqual({
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      goal: null,
+      ramp: null,
+    });
+  });
+
+  it("accepts known ramp id", () => {
+    expect(
+      preferencesFromRequestBody({
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+        ramp: "wind-down",
+      }),
+    ).toEqual({
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      goal: null,
+      ramp: "wind-down",
+    });
+  });
+
+  it("rejects invalid or unknown ramp values", () => {
+    expect(() =>
+      preferencesFromRequestBody({
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+        ramp: "bogus",
       }),
     ).toThrow(DomainValidationError);
   });

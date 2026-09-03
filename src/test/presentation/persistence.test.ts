@@ -26,6 +26,7 @@ describe("createHttpBreathingPersistence", () => {
         return jsonResponse({
           durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
           goal: { kind: "minutes", minutes: 10 },
+          ramp: null,
         });
       }) as typeof fetch,
     });
@@ -33,6 +34,7 @@ describe("createHttpBreathingPersistence", () => {
     await expect(persistence.initialize()).resolves.toEqual({
       durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
       goal: { kind: "minutes", minutes: 10 },
+      ramp: null,
     });
     expect(calls).toEqual([
       "POST /api/auth/anonymous",
@@ -50,6 +52,7 @@ describe("createHttpBreathingPersistence", () => {
     await expect(persistence.initialize()).resolves.toEqual({
       durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       goal: null,
+      ramp: null,
     });
   });
 
@@ -63,6 +66,7 @@ describe("createHttpBreathingPersistence", () => {
         return jsonResponse({
           durations: { inhale: 1, hold: 4, exhale: 6, rest: 2 },
           goal: null,
+          ramp: null,
         });
       }) as typeof fetch,
     });
@@ -70,6 +74,7 @@ describe("createHttpBreathingPersistence", () => {
     await expect(persistence.initialize()).resolves.toEqual({
       durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       goal: null,
+      ramp: null,
     });
   });
 
@@ -86,6 +91,7 @@ describe("createHttpBreathingPersistence", () => {
         expect(body).toEqual({
           durations: { inhale: 7, hold: 3, exhale: 9, rest: 2 },
           goal: null,
+          ramp: null,
         });
         expect(body).not.toHaveProperty("userId");
         expect(body).not.toHaveProperty("user_id");
@@ -97,6 +103,7 @@ describe("createHttpBreathingPersistence", () => {
       persistence.saveSettings({
         durations: { inhale: 7, hold: 3, exhale: 9, rest: 2 },
         goal: null,
+        ramp: null,
       }),
     ).resolves.toBeUndefined();
   });
@@ -123,6 +130,7 @@ describe("createHttpBreathingPersistence", () => {
     const savePromise = persistence.saveSettings({
       durations: { inhale: 7, hold: 3, exhale: 9, rest: 2 },
       goal: null,
+      ramp: null,
     });
 
     await Promise.resolve();
@@ -157,6 +165,7 @@ describe("createHttpBreathingPersistence", () => {
         return jsonResponse({
           durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
           goal: null,
+          ramp: null,
         });
       }) as typeof fetch,
     });
@@ -166,6 +175,7 @@ describe("createHttpBreathingPersistence", () => {
       persistence.saveSettings({
         durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
         goal: null,
+        ramp: null,
       }),
     ).resolves.toBeUndefined();
 
@@ -191,6 +201,7 @@ describe("createHttpBreathingPersistence", () => {
       persistence.saveSettings({
         durations: { inhale: 7, hold: 3, exhale: 9, rest: 2 },
         goal: null,
+        ramp: null,
       }),
     ).resolves.toBeUndefined();
   });
@@ -211,6 +222,7 @@ describe("createHttpBreathingPersistence", () => {
       {
         durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
         goal: null,
+        ramp: null,
       },
       { keepalive: true },
     );

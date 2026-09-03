@@ -25,6 +25,7 @@ describe("GetSettings", () => {
     await expect(useCase.execute(USER_ID)).resolves.toEqual({
       durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       goal: null,
+      ramp: null,
     });
   });
 
@@ -35,6 +36,7 @@ describe("GetSettings", () => {
         {
           durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
           goal: { kind: "minutes", minutes: 10 },
+          ramp: "wind-down",
         },
       ],
     ]);
@@ -42,6 +44,7 @@ describe("GetSettings", () => {
     await expect(useCase.execute(USER_ID)).resolves.toEqual({
       durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
       goal: { kind: "minutes", minutes: 10 },
+      ramp: "wind-down",
     });
   });
 

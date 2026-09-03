@@ -32,7 +32,7 @@ export async function PUT(request: Request) {
     const existing = await getSettings.execute(userId);
     const preferences = await saveSettings.execute(
       userId,
-      preferencesFromRequestBody(body, existing?.goal ?? null),
+      preferencesFromRequestBody(body, existing?.goal ?? null, existing?.ramp ?? null),
     );
     return jsonResponse(preferences);
   } catch (error) {

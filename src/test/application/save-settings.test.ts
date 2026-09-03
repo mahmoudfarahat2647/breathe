@@ -26,11 +26,13 @@ describe("SaveSettings", () => {
     const saved = await useCase.execute(USER_ID, {
       durations: { inhale: 7, hold: 3, exhale: 9, rest: 2 },
       goal: { kind: "cycles", cycles: 10 },
+      ramp: "wind-down",
     });
 
     expect(saved).toEqual({
       durations: { inhale: 7, hold: 3, exhale: 9, rest: 2 },
       goal: { kind: "cycles", cycles: 10 },
+      ramp: "wind-down",
     });
     expect(store.get(USER_ID)).toEqual(saved);
   });
@@ -43,12 +45,14 @@ describe("SaveSettings", () => {
       useCase.execute(USER_ID, {
         durations: { inhale: 1, hold: 4, exhale: 6, rest: 2 },
         goal: null,
+        ramp: null,
       }),
     ).rejects.toBeInstanceOf(DomainValidationError);
     await expect(
       useCase.execute(USER_ID, {
         durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
         goal: { kind: "minutes", minutes: 0 },
+        ramp: null,
       }),
     ).rejects.toBeInstanceOf(DomainValidationError);
     expect(store.size).toBe(0);

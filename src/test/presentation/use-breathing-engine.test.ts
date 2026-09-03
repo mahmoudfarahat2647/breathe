@@ -236,6 +236,7 @@ function fakePersistence(
       return {
         durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
         goal: null,
+        ramp: null,
       };
     },
     async saveSettings() {},
@@ -265,6 +266,7 @@ describe("useBreathingEngine persistence", () => {
       initialize: vi.fn(async () => ({
         durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
         goal: { kind: "minutes" as const, minutes: 5 },
+        ramp: null,
       })),
     });
     const { result } = renderHook(() => useBreathingEngine({ persistence }));
@@ -315,6 +317,7 @@ describe("useBreathingEngine persistence", () => {
       initialize: vi.fn(async () => ({
         durations: { inhale: 4, hold: 4, exhale: 6, rest: 8 },
         goal: null,
+        ramp: null,
       })),
     });
     const { result } = renderHook(() => useBreathingEngine({ persistence }));
@@ -328,6 +331,7 @@ describe("useBreathingEngine persistence", () => {
     let resolveInit!: (value: {
       durations: { inhale: number; hold: number; exhale: number; rest: number };
       goal: null;
+      ramp: null;
     }) => void;
     const persistence = fakePersistence({
       initialize: () =>
@@ -346,6 +350,7 @@ describe("useBreathingEngine persistence", () => {
       resolveInit({
         durations: { inhale: 8, hold: 8, exhale: 8, rest: 8 },
         goal: null,
+        ramp: null,
       });
       await Promise.resolve();
     });
@@ -381,6 +386,7 @@ describe("useBreathingEngine persistence", () => {
     expect(saveSettings).toHaveBeenCalledWith({
       durations: { inhale: 6, hold: 5, exhale: 6, rest: 2 },
       goal: null,
+      ramp: null,
     });
 
     act(() => {
@@ -392,6 +398,7 @@ describe("useBreathingEngine persistence", () => {
     expect(saveSettings).toHaveBeenLastCalledWith({
       durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       goal: null,
+      ramp: null,
     });
   });
 
@@ -418,9 +425,55 @@ describe("useBreathingEngine persistence", () => {
 
     expect(saveSettings).toHaveBeenCalledTimes(1);
     expect(saveSettings).toHaveBeenCalledWith(
-      { durations: { inhale: 5, hold: 4, exhale: 7, rest: 2 }, goal: null },
+      {
+        durations: { inhale: 5, hold: 4, exhale: 7, rest: 2 },
+        goal: null,
+        ramp: null,
+      },
       undefined,
     );
+  });
+
+  it("debounces settings saves when selecting a ramp", () => {
+    const clocks = createScheduleStub();
+    const saveSettings = vi.fn(async () => {});
+    const { result } = renderHook(() =>
+      useBreathingEngine({
+        persistence: fakePersistence({ saveSettings }),
+        schedule: clocks.schedule,
+        cancel: clocks.cancel,
+      }),
+    );
+
+    act(() => {
+      result.current.setRamp("wind-down");
+    });
+    expect(result.current.selectedRamp).toBe("wind-down");
+    act(() => {
+      clocks.advance(SETTINGS_SAVE_DEBOUNCE_MS);
+    });
+
+    expect(saveSettings).toHaveBeenCalledTimes(1);
+    expect(saveSettings).toHaveBeenCalledWith({
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      goal: null,
+      ramp: "wind-down",
+    });
+  });
+
+  it("restores stored ramp after initialize", async () => {
+    const persistence = fakePersistence({
+      initialize: vi.fn(async () => ({
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+        goal: null,
+        ramp: "wind-down" as const,
+      })),
+    });
+    const { result } = renderHook(() => useBreathingEngine({ persistence }));
+
+    await waitFor(() => {
+      expect(result.current.selectedRamp).toBe("wind-down");
+    });
   });
 
   it("does not persist a zero-cycle reset and saves completed sessions once per id", () => {

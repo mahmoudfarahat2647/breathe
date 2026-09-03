@@ -14,7 +14,7 @@ export class SupabaseSettingsRepository implements SettingsRepository {
     const { data, error } = await this.client
       .from("breathing_settings")
       .select(
-        "user_id, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds, goal_type, goal_value",
+        "user_id, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds, goal_type, goal_value, ramp",
       )
       .eq("user_id", userId)
       .maybeSingle();
