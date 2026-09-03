@@ -26,7 +26,12 @@ describe("schema contract", () => {
     expect(migration).toMatch(/goal_type = 'cycles' and goal_value between 1 and 100/);
     expect(migration).toMatch(/breathing_settings_goal_pair_check/);
     expect(migration).toMatch(/breathing_settings_ramp_check/);
-    expect(migration).toMatch(/ramp is null or ramp in \('wind-down'\)/);
+    expect(migration).toMatch(
+      /drop constraint if exists breathing_settings_ramp_check/,
+    );
+    expect(migration).toMatch(
+      /ramp is null or ramp in \('wind-down', 'slow-down'\)/,
+    );
     expect(migration).toMatch(/cycle_count >= 1/);
     expect(migration).toMatch(/elapsed_seconds >= 0/);
     expect(migration).toMatch(

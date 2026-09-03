@@ -29,6 +29,14 @@ describe("BreathingPreferences", () => {
     });
     expect(preferencesWithRamp.ramp).toBe("wind-down");
     expect(preferencesWithRamp.toDto().ramp).toBe("wind-down");
+
+    const preferencesWithSlowDown = BreathingPreferences.fromDto({
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      goal: null,
+      ramp: "slow-down",
+    });
+    expect(preferencesWithSlowDown.ramp).toBe("slow-down");
+    expect(preferencesWithSlowDown.toDto().ramp).toBe("slow-down");
   });
 
   it("updates ramp with withRamp", () => {
@@ -70,7 +78,7 @@ describe("BreathingPreferences", () => {
       BreathingPreferences.fromDto({
         durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
         goal: null,
-        ramp: "slow-down" as unknown as null,
+        ramp: "taper" as unknown as null,
       }),
     ).toThrow(DomainValidationError);
 

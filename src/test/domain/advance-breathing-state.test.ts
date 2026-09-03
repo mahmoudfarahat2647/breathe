@@ -364,6 +364,76 @@ describe("advanceBreathingState with a Ramp", () => {
     expect(withArgOmitted).toEqual(withRampOff);
     expect(withArgOmitted.phaseDurationSeconds).toBe(6);
   });
+
+  it("steps both inhale and exhale on cycle 3 under Slow Down", () => {
+    // Preset 2-1-3-1 (cycle length 7s).
+    // Cycles 0, 1, 2 take 21s total (durations 2-1-3-1).
+    // Cycle 3 steps both inhale (2 + 1 = 3s) and exhale (3 + 1 = 4s).
+    const shortSlowDown = BreathingSettings.fromDto({
+      inhale: 2,
+      hold: 1,
+      exhale: 3,
+      rest: 1,
+    });
+
+    // t = 22s: 1s into cycle 3's inhale
+    const duringInhale = play(
+      startBreathing(createIdleBreathingState()),
+      0,
+      22,
+      shortSlowDown,
+      "slow-down",
+    );
+    expect(duringInhale.cycleCount).toBe(3);
+    expect(duringInhale.phaseIndex).toBe(0);
+    expect(duringInhale.phaseDurationSeconds).toBe(3);
+
+    // t = 26s: 1s into cycle 3's exhale (inhale 3s ends at 24s, hold 1s ends at 25s)
+    const duringExhale = play(
+      startBreathing(createIdleBreathingState()),
+      0,
+      26,
+      shortSlowDown,
+      "slow-down",
+    );
+    expect(duringExhale.cycleCount).toBe(3);
+    expect(duringExhale.phaseIndex).toBe(2);
+    expect(duringExhale.phaseDurationSeconds).toBe(4);
+  });
+
+  it("resolves the new cycle's inhale with post-increment cycle count across wrap boundary", () => {
+    // Pins that the multi-phase overflow while-loop resolves durationFor with post-increment cycleCount.
+    const preset = BreathingSettings.fromDto({
+      inhale: 2,
+      hold: 0,
+      exhale: 3,
+      rest: 0,
+    });
+
+    // Drive to t = 14: 2s into cycle 2's exhale (cycles 0 and 1 take 5s each = 10s; inhale 2s ends at 12s)
+    const at14 = play(
+      startBreathing(createIdleBreathingState()),
+      0,
+      14,
+      preset,
+      "slow-down",
+    );
+    expect(at14.cycleCount).toBe(2);
+    expect(at14.phaseIndex).toBe(2);
+    expect(at14.phaseDurationSeconds).toBe(3);
+
+    // Single 1s frame to t = 15: overflows exhale (3s) -> rest (0s) -> cycle 3 inhale
+    const at15 = advanceBreathingState(
+      at14,
+      15_000,
+      preset,
+      undefined,
+      "slow-down",
+    );
+    expect(at15.cycleCount).toBe(3);
+    expect(at15.phaseIndex).toBe(0);
+    expect(at15.phaseDurationSeconds).toBe(3);
+  });
 });
 
 describe("elapsed formatting and countdown", () => {

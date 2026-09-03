@@ -123,6 +123,7 @@ test.describe("settings persistence", () => {
 
     await page.goto("/");
     await page.getByRole("button", { name: "Show advanced options" }).click();
+    await expect(page.getByRole("button", { name: "Slow down" })).toBeVisible();
 
     const putRequest = page.waitForRequest(
       (request) =>
@@ -138,6 +139,24 @@ test.describe("settings persistence", () => {
     await page.reload();
     await page.getByRole("button", { name: "Show advanced options" }).click();
     await expect(page.getByRole("button", { name: "Wind down" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    const putSlowDownRequest = page.waitForRequest(
+      (request) =>
+        request.url().includes("/api/settings") && request.method() === "PUT",
+    );
+    await page.getByRole("button", { name: "Slow down" }).click();
+    const slowDownRequest = await putSlowDownRequest;
+    expect(slowDownRequest.postDataJSON()).toMatchObject({
+      ramp: "slow-down",
+    });
+    await expect.poll(() => puts.at(-1)?.ramp).toBe("slow-down");
+
+    await page.reload();
+    await page.getByRole("button", { name: "Show advanced options" }).click();
+    await expect(page.getByRole("button", { name: "Slow down" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );

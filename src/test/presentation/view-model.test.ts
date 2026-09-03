@@ -150,6 +150,21 @@ describe("toBreathingViewModel", () => {
       expect(view.rampHint).toBe("Exhale now 7s");
     });
 
+    it("names the lengthened inhale when Slow Down is active", () => {
+      const rampedInhale = {
+        ...rampedExhale,
+        phaseIndex: 0,
+        phaseDurationSeconds: 5,
+      };
+      const view = toBreathingViewModel(
+        rampedInhale,
+        settings,
+        null,
+        "slow-down",
+      );
+      expect(view.rampHint).toBe("Inhale now 5s");
+    });
+
     it("is null when idle", () => {
       const view = toBreathingViewModel(
         createIdleBreathingState(),

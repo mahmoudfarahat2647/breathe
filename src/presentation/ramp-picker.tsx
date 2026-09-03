@@ -12,6 +12,7 @@ const OFF_DESCRIPTION = "No ramp — durations stay as you set them.";
 
 export function RampPicker({ selectedRamp, onSelect }: RampPickerProps) {
   const windDown = RAMP_CATALOG["wind-down"];
+  const slowDown = RAMP_CATALOG["slow-down"];
   const description = selectedRamp
     ? RAMP_CATALOG[selectedRamp].description
     : OFF_DESCRIPTION;
@@ -39,6 +40,17 @@ export function RampPicker({ selectedRamp, onSelect }: RampPickerProps) {
           onClick={() => onSelect("wind-down")}
         >
           {windDown.name}
+        </Button>
+        <Button
+          type="button"
+          variant={
+            selectedRamp === "slow-down" ? "breathePrimary" : "breatheSecondary"
+          }
+          size="breathe"
+          aria-pressed={selectedRamp === "slow-down"}
+          onClick={() => onSelect("slow-down")}
+        >
+          {slowDown.name}
         </Button>
       </div>
       <p className="default-hint">{description}</p>

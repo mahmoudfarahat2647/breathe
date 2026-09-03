@@ -6,10 +6,8 @@ import { PHASE_DURATION_LIMITS, type Phase } from "./phase";
  * A Ramp is an optional rule that steps phase durations from the active Preset's
  * values toward a target as cycles complete. Off (`null`) by default. Like a
  * Session Goal, the Ramp selected at Start applies for that whole Session.
- *
- * `"slow-down"` is deferred to Ramp T3 (#35).
  */
-export type Ramp = null | "wind-down";
+export type Ramp = null | "wind-down" | "slow-down";
 
 export type RampDto = Ramp;
 
@@ -33,6 +31,14 @@ export const RAMP_CATALOG: Record<Exclude<Ramp, null>, RampRule> = {
     phases: ["exhale"],
     every: 2,
     cap: 4,
+  },
+  "slow-down": {
+    id: "slow-down",
+    name: "Slow down",
+    description: "Inhale and exhale lengthen by 1s every 3 cycles, up to +3s each.",
+    phases: ["inhale", "exhale"],
+    every: 3,
+    cap: 3,
   },
 };
 

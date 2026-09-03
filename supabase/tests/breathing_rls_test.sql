@@ -1,5 +1,5 @@
 begin;
-select plan(29);
+select plan(30);
 
 insert into auth.users (
   instance_id,
@@ -216,8 +216,12 @@ select lives_ok(
   $$update public.breathing_settings set ramp = 'wind-down' where user_id = '11111111-1111-4111-8111-111111111111'$$,
   'wind-down ramp is accepted'
 );
-select throws_ok(
+select lives_ok(
   $$update public.breathing_settings set ramp = 'slow-down' where user_id = '11111111-1111-4111-8111-111111111111'$$,
+  'slow-down ramp is accepted after the widening migration'
+);
+select throws_ok(
+  $$update public.breathing_settings set ramp = 'taper' where user_id = '11111111-1111-4111-8111-111111111111'$$,
   '23514',
   null,
   'unknown ramp id is rejected by the check constraint'
