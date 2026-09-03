@@ -68,10 +68,7 @@ test.describe("parity — desktop", () => {
     ).toBeVisible();
 
     await expect(page.getByRole("button", { name: "History" })).toBeVisible();
-    // TODO(#36 Ramp T4): with the Ramp row the advanced panel is ~4px over the 1280×800
-    // layout budget; the minmax(260px,1fr) stage re-expands into any deck height trimmed.
-    // Ramp T4 owns re-verifying the layout-budget test at all four viewports, panel open.
-    // await expectSquareAboveControls(page);
+    await expectSquareAboveControls(page);
 
     await disclosure.click();
     await expectSquareAboveControls(page);
@@ -274,6 +271,16 @@ test.describe("parity — short viewport 472", () => {
     await disclosure.click();
     await expect(page.getByLabel("Decrease rest duration")).toBeVisible();
     await expectSquareAboveControls(page);
+
+    // The geometry check alone can pass with the Ramp row clipped below the
+    // deck's short-height overflow; prove each chip is actually scroll-reachable.
+    const rampGroup = page.getByRole("group", { name: "Ramp" });
+    for (const label of ["Wind down", "Slow down", "Off"]) {
+      const btn = rampGroup.getByRole("button", { name: label, exact: true });
+      await btn.scrollIntoViewIfNeeded();
+      await btn.click();
+      await expect(btn).toHaveAttribute("aria-pressed", "true");
+    }
   });
 });
 

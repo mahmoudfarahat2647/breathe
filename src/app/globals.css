@@ -1074,6 +1074,18 @@
   }
 }
 
+/* With side bands present and a non-short viewport, the open advanced panel
+   (Session Goal + duration steppers + Ramp row) is tall enough that an 88cqh
+   square pushes its `Exhale` label into the control deck. Trim the height term
+   to 82cqh in this regime only; every other viewport keeps 88cqh. The 641px
+   lower bound is the complement of the `max-height: 640px` short-viewport rule
+   below (which overrides this with 65cqh), so the two never both apply. */
+@media (min-width: 1200px) and (min-height: 641px) {
+  .mv-square {
+    width: min(82cqh, 26cqw, 400px);
+  }
+}
+
 @media (max-width: 480px) {
   .mv-transport {
     gap: 10px;

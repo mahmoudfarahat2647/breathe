@@ -18,7 +18,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Dot computed via `pointOnRoundedSegment` along the active rounded segment; hidden when idle and under reduced motion | A |
 | Active side uses `stroke-dashoffset` from `1 → 0` with `pathLength="1"` | A |
 | Side states: `pending` / `active` / `completed` match phase index for four sides | A |
-| Stage sizing `.mv-square` uses `aspect-ratio: 1/1` and `width: min(88cqh, 26cqw, 400px)`, preserving Stage rendered width ≥ 280px at 1280×800 with side bands | A / V |
+| Stage sizing `.mv-square` uses `aspect-ratio: 1/1` and `width: min(88cqh, 26cqw, 400px)` (height term trimmed to `82cqh` in the ≥1200px-wide, ≥641px-tall regime — see Responsive breakpoints), preserving Stage rendered width ≥ 280px at 1280×800 with side bands | A / V |
 | CSS/component names use `square-*` / `mv-*`; progress dot id remains `#progressDot` | A |
 | Frosted frame border, glow, and tracer match redesign palette; glow reduces at short heights | V |
 
@@ -28,7 +28,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | --- | --- |
 | Phases order: inhale → hold → exhale → rest. Cycle increments when index wraps to inhale | A |
 | Default pattern 4-4-6-2 seconds | A |
-| Duration limits: inhale 2–15, hold 1–15, exhale 2–15, rest 1–15 (default 2) | A |
+| Duration validation (`PHASE_DURATION_LIMITS`) allows inhale/exhale 2–15 and hold/rest **0–15**; the manual steppers (`MANUAL_STEPPER_LIMITS`) additionally clamp hold/rest to 1–15 when adjusting by hand | A |
 | Phase advancement is timestamp-driven (`requestAnimationFrame`), not `setInterval` | A |
 | Delta capped at 1s when tab was backgrounded | A |
 | Multi-phase overflow while-loop advances correctly across four phases | A |
@@ -37,6 +37,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Start from idle begins cycle 1 and removes SVG `idle` class | A |
 | Pause cancels RAF; Resume continues without resetting progress | A |
 | Reset returns idle, zero stats, pending sides, Start label | A |
+| Ramp Off (default) leaves phase timing byte-identical to the rules above | A |
 
 ## Controls and labels
 
@@ -50,6 +51,8 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Stats: Cycle (goal-aware: "n / N" for a cycles goal) + Elapsed | A |
 | Sound switch opt-in (default off) with visible On/Off word | A |
 | History is a header disclosure opening a non-modal overlay | A / V |
+| Ramp picker (Off / Wind down / Slow down) is a `role="group"` inside the advanced options disclosure panel; each chip carries `aria-pressed` | A |
+| Ramp hint ("Exhale now Ns" / "Inhale now Ns") appears under the coaching line while a Ramp has lengthened the live phase past its base duration; absent when Ramp is Off or the phase is at base | V |
 
 ## Audio
 
@@ -84,11 +87,10 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Root layout is `height: 100dvh; display: grid; grid-template-rows: auto minmax(260px, 1fr) auto` | A / V |
 | Side bands: at ≥1200px viewport, `--mv-ad-w` reserves padding-inline; at <1200px, side bands are absent (0px) | A / V |
 | Stage is a size container (`container-type: size; min-height: 0; overflow: visible`) | A / V |
-| Stage sizes from container queries: `.mv-square` uses `min(88cqh, 26cqw, 400px)` | A / V |
+| Stage sizes from container queries: `.mv-square` uses `min(88cqh, 26cqw, 400px)`; the height term is trimmed to `82cqh` under `@media (min-width: 1200px) and (min-height: 641px)` so the taller advanced panel with the Ramp row keeps the labelled Stage extent above the deck at 1280×800 (`65cqh` still applies under `max-height: 640px`) | A / V |
 | Duration rows: 2×2 under 900px, four-column above | A / V |
 | Control deck `min-height: 0; overflow: visible` (fallback `max-height` and `overflow-y: auto` under 640px height) | A / V |
-| Labelled `.mv-square` extent bottom is strictly above `#controls` top at 1024×600, 1024×472, and 390×844 (advanced options open and closed), and at 1280×800 with advanced options closed | A |
-| Labelled `.mv-square` extent bottom is strictly above `#controls` top at 1280×800 with advanced options **open** — re-verification deferred to #36 (Ramp T4); the Ramp row currently puts this ~4px over budget and the e2e assertion is disabled | V |
+| Labelled `.mv-square` extent bottom (square box plus the `Exhale` edge label) is strictly above `#controls` top at all four protected viewports — 1280×800, 1024×600, 1024×472, 390×844 — with advanced options both open and closed | A |
 | `@media (max-width: 480px)` tighter transport/buttons and bottom-sheet History overlay | V |
 | `@media (max-height: 640px)` compact stage sizing and tighter edge-label offsets | A / V |
 | History is a non-modal disclosure (Escape / outside-click dismiss, focus restored to trigger); scrollable within its max-height; on ≤480px it is a bottom sheet that may cover controls while open but never leaves one unreachable | A / V |
@@ -113,7 +115,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Behavior | Check |
 | --- | --- |
 | Settings DTO, session snapshot, HTTP body, mappers, repository select, and generated types include `rest` / `rest_seconds` | A |
-| `breathing_settings.rest_seconds` integer not null default 2, check between 1 and 15 | A |
+| `breathing_settings.rest_seconds` integer not null default 2, check between 0 and 15 | A |
 | `breathing_sessions.rest_seconds` integer not null default 0, check `>= 0` (no backfill of 2 onto historical rows) | A |
 | Settings equality checks compare rest so a saved rest duration actually loads | A |
 | Settings DTO, HTTP body, mapper (both directions), repository select, and generated types carry `ramp`; `breathing_settings.ramp` is nullable text checked against `('wind-down', 'slow-down')` | A |
@@ -123,3 +125,4 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 - Changing reference HTML behavior “for improvement” without documented approval
 - Redesigned to the approved mockup — reviewed and approved 2026-09-02 (spec #23).
 - Forest-photo ground added over the gradient — approved 2026-09-02 (supersedes #23's "gradient ground, not forest photo" departure; contrast, reduced-motion and reduced-transparency re-verified).
+- Ramp (Wind Down / Slow Down) — re-verified end-to-end 2026-09-03 (#36 Ramp T4): `e2e/ramp.spec.ts` proves both ramps in a real browser; layout-budget e2e re-enabled and green at all four protected viewports (1280×800, 1024×600, 1024×472, 390×844), panel open and closed, after trimming the Stage height term to `82cqh` in the ≥1200×≥641 regime so the open advanced panel's Ramp row no longer pushes the `Exhale` label into the deck; reduced-motion and the Stage hint line visually re-checked.
