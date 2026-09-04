@@ -1,4 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
+import {
+  RAMP_GROUP_NAME,
+  RAMP_LABELS,
+} from "./support/mock-breathing-api";
 
 async function expectSquareGeometry(page: Page) {
   const svg = page.locator("svg.square-svg");
@@ -274,8 +278,8 @@ test.describe("parity — short viewport 472", () => {
 
     // The geometry check alone can pass with the Ramp row clipped below the
     // deck's short-height overflow; prove each chip is actually scroll-reachable.
-    const rampGroup = page.getByRole("group", { name: "Ramp" });
-    for (const label of ["Wind down", "Slow down", "Off"]) {
+    const rampGroup = page.getByRole("group", { name: RAMP_GROUP_NAME });
+    for (const label of RAMP_LABELS) {
       const btn = rampGroup.getByRole("button", { name: label, exact: true });
       await btn.scrollIntoViewIfNeeded();
       await btn.click();
