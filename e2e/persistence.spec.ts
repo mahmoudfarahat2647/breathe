@@ -1,51 +1,14 @@
 import { expect, test } from "@playwright/test";
+import { mockBreathingApi } from "./support/mock-breathing-api";
 
 test.describe("settings persistence", () => {
   test("restores saved durations after reload and debounce-saves changes", async ({
     page,
   }) => {
-    let stored = {
+    const { puts } = await mockBreathingApi(page, {
       durations: { inhale: 5, hold: 2, exhale: 8, rest: 3 },
       goal: null,
       ramp: null,
-    };
-    const puts: typeof stored[] = [];
-
-    await page.route("**/api/auth/anonymous", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          userId: "11111111-1111-4111-8111-111111111111",
-        }),
-      });
-    });
-
-    await page.route("**/api/settings", async (route) => {
-      if (route.request().method() === "PUT") {
-        stored = route.request().postDataJSON() as typeof stored;
-        puts.push(stored);
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(stored),
-        });
-        return;
-      }
-
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(stored),
-      });
-    });
-
-    await page.route("**/api/sessions", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ outcome: "saved" }),
-      });
     });
 
     await page.goto("/");
@@ -77,48 +40,10 @@ test.describe("settings persistence", () => {
   });
 
   test("persists selected ramp across reloads", async ({ page }) => {
-    let stored = {
+    const { puts } = await mockBreathingApi(page, {
       durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       goal: null,
-      ramp: null as string | null,
-    };
-    const puts: typeof stored[] = [];
-
-    await page.route("**/api/auth/anonymous", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          userId: "11111111-1111-4111-8111-111111111111",
-        }),
-      });
-    });
-
-    await page.route("**/api/settings", async (route) => {
-      if (route.request().method() === "PUT") {
-        stored = route.request().postDataJSON() as typeof stored;
-        puts.push(stored);
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(stored),
-        });
-        return;
-      }
-
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(stored),
-      });
-    });
-
-    await page.route("**/api/sessions", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ outcome: "saved" }),
-      });
+      ramp: null,
     });
 
     await page.goto("/");

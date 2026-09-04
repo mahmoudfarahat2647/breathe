@@ -1,4 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
+import {
+  mockBreathingApi,
+  RAMP_GROUP_NAME,
+  type RampLabel,
+} from "./support/mock-breathing-api";
 
 function cycleValueLocator(page: Page) {
   return page
@@ -7,9 +12,9 @@ function cycleValueLocator(page: Page) {
     .locator(".mv-stat-value");
 }
 
-function rampButton(page: Page, label: "Off" | "Wind down" | "Slow down") {
+function rampButton(page: Page, label: RampLabel) {
   return page
-    .getByRole("group", { name: "Ramp" })
+    .getByRole("group", { name: RAMP_GROUP_NAME })
     .getByRole("button", { name: label, exact: true });
 }
 
@@ -46,52 +51,10 @@ async function setPhaseDurationToMin(page: Page, phase: string, target: string) 
 }
 
 async function setupRampTest(page: Page) {
-  let stored = {
+  await mockBreathingApi(page, {
     durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
-    goal: null as string | null,
-    ramp: null as string | null,
-  };
-
-  await page.route("**/api/auth/anonymous", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ userId: "11111111-1111-4111-8111-111111111111" }),
-    });
-  });
-
-  await page.route("**/api/settings", async (route) => {
-    if (route.request().method() === "PUT") {
-      stored = route.request().postDataJSON() as typeof stored;
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(stored),
-      });
-      return;
-    }
-
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(stored),
-    });
-  });
-
-  await page.route("**/api/sessions", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ outcome: "saved" }),
-    });
-  });
-
-  await page.route("**/api/sessions/history", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([]),
-    });
+    goal: null,
+    ramp: null,
   });
 
   await page.goto("/");
