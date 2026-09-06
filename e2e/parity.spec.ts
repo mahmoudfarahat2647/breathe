@@ -1,7 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import {
+  mockBreathingApi,
   RAMP_GROUP_NAME,
   RAMP_LABELS,
+  SQUARE_PREFERENCES,
 } from "./support/mock-breathing-api";
 
 async function expectSquareGeometry(page: Page) {
@@ -20,6 +22,7 @@ async function expectSquareGeometry(page: Page) {
 }
 
 async function expectSquareAboveControls(page: Page) {
+  await expect(page.locator("#side-rest")).toBeAttached();
   const square = page.locator(".mv-square");
   const controls = page.locator("#controls");
   const squareBox = await square.boundingBox();
@@ -36,7 +39,11 @@ async function expectSquareAboveControls(page: Page) {
   expect(squareBottom).toBeLessThan(controlsBox!.y);
 }
 
-test.describe("parity — desktop", () => {
+test.beforeEach(async ({ page }) => {
+  await mockBreathingApi(page, SQUARE_PREFERENCES);
+});
+
+test.describe("parity - desktop", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test("renders square geometry, labels, and idle state", async ({ page }) => {
@@ -67,9 +74,7 @@ test.describe("parity — desktop", () => {
 
     const soundSwitch = page.getByRole("switch", { name: "Sound" });
     await expect(soundSwitch).toHaveAttribute("aria-checked", "false");
-    await expect(
-      page.locator(".mv-sound-toggle").getByText("Off"),
-    ).toBeVisible();
+    await expect(page.locator(".mv-sound-toggle").getByText("Off")).toBeVisible();
 
     await expect(page.getByRole("button", { name: "History" })).toBeVisible();
     await expectSquareAboveControls(page);
@@ -78,7 +83,7 @@ test.describe("parity — desktop", () => {
     await expectSquareAboveControls(page);
   });
 
-  test("renders side bands and preserves stage width >= 280px at 1280×800", async ({
+  test("renders side bands and preserves stage width >= 280px at 1280x800", async ({
     page,
   }) => {
     await page.goto("/");
@@ -171,18 +176,14 @@ test.describe("parity — desktop", () => {
     await expect(page.locator("svg.square-svg")).toHaveClass(/idle/);
   });
 
-  test("does not steal Space from the focused Sound switch", async ({
-    page,
-  }) => {
+  test("does not steal Space from the focused Sound switch", async ({ page }) => {
     await page.goto("/");
     const soundSwitch = page.getByRole("switch", { name: "Sound" });
     await expect(soundSwitch).toHaveAttribute("aria-checked", "false");
     await soundSwitch.focus();
     await page.keyboard.press("Space");
     await expect(soundSwitch).toHaveAttribute("aria-checked", "true");
-    await expect(
-      page.getByRole("button", { name: "Start", exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible();
     await expect(page.locator("svg.square-svg")).toHaveClass(/idle/);
   });
 
@@ -210,12 +211,10 @@ test.describe("parity — desktop", () => {
   });
 });
 
-test.describe("parity — mobile", () => {
+test.describe("parity - mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("keeps the exercise usable under 480px without overlap", async ({
-    page,
-  }) => {
+  test("keeps the exercise usable under 480px without overlap", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible();
     await expectSquareGeometry(page);
@@ -232,7 +231,7 @@ test.describe("parity — mobile", () => {
   });
 });
 
-test.describe("parity — short viewport 600", () => {
+test.describe("parity - short viewport 600", () => {
   test.use({ viewport: { width: 1024, height: 600 } });
 
   test("collapses durations, keeps square above controls, and has no side bands", async ({
@@ -259,10 +258,10 @@ test.describe("parity — short viewport 600", () => {
   });
 });
 
-test.describe("parity — short viewport 472", () => {
+test.describe("parity - short viewport 472", () => {
   test.use({ viewport: { width: 1024, height: 472 } });
 
-  test("does not overlap the square and control deck at 1024×472", async ({
+  test("does not overlap the square and control deck at 1024x472", async ({
     page,
   }) => {
     await page.goto("/");
@@ -288,7 +287,7 @@ test.describe("parity — short viewport 472", () => {
   });
 });
 
-test.describe("parity — reduced motion", () => {
+test.describe("parity - reduced motion", () => {
   test.use({
     viewport: { width: 1280, height: 800 },
   });

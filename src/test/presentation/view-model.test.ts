@@ -10,7 +10,12 @@ import {
 import { interpolateTriangleDot } from "@/presentation/geometry";
 import { toBreathingViewModel } from "@/presentation/view-model";
 
-const settings = BreathingSettings.default();
+const settings = BreathingSettings.fromDto({
+  inhale: 4,
+  hold: 4,
+  exhale: 6,
+  rest: 2,
+});
 
 describe("toBreathingViewModel", () => {
   it("shows idle inhale labels, Start, zero stats, and pending sides", () => {

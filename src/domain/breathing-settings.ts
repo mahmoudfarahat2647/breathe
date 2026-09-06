@@ -13,10 +13,10 @@ export type BreathingSettingsDto = {
 };
 
 const DEFAULT_DURATIONS: BreathingSettingsDto = {
-  inhale: 4,
-  hold: 4,
-  exhale: 6,
-  rest: 2,
+  inhale: 5.5,
+  hold: 0,
+  exhale: 5.5,
+  rest: 0,
 };
 
 export class BreathingSettings {

@@ -14,7 +14,12 @@ import {
 } from "@/domain";
 import { BreathingSettings } from "@/domain/breathing-settings";
 
-const settings = BreathingSettings.default();
+const settings = BreathingSettings.fromDto({
+  inhale: 4,
+  hold: 4,
+  exhale: 6,
+  rest: 2,
+});
 
 function play(
   state: BreathingEngineState,

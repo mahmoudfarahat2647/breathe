@@ -42,7 +42,7 @@ describe("createHttpBreathingPersistence", () => {
     ]);
   });
 
-  it("falls back to 4-4-6 when auth or settings requests fail", async () => {
+  it("falls back to the default Resonance Coherence pattern when auth or settings requests fail", async () => {
     const persistence = createHttpBreathingPersistence({
       fetch: vi.fn(async () => {
         throw new Error("offline");
@@ -50,13 +50,13 @@ describe("createHttpBreathingPersistence", () => {
     });
 
     await expect(persistence.initialize()).resolves.toEqual({
-      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      durations: { inhale: 5.5, hold: 0, exhale: 5.5, rest: 0 },
       goal: null,
       ramp: null,
     });
   });
 
-  it("falls back to 4-4-6 when stored settings are invalid", async () => {
+  it("falls back to the default Resonance Coherence pattern when stored settings are invalid", async () => {
     const persistence = createHttpBreathingPersistence({
       fetch: vi.fn(async (input, init) => {
         if (String(input) === "/api/auth/anonymous") {
@@ -72,7 +72,7 @@ describe("createHttpBreathingPersistence", () => {
     });
 
     await expect(persistence.initialize()).resolves.toEqual({
-      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      durations: { inhale: 5.5, hold: 0, exhale: 5.5, rest: 0 },
       goal: null,
       ramp: null,
     });

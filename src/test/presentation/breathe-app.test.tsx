@@ -51,9 +51,9 @@ describe("BreatheApp", () => {
     expect(screen.getByLabelText("Decrease rest duration")).toBeVisible();
     expect(screen.getByLabelText("Increase rest duration")).toBeVisible();
 
-    expect(container.querySelector("#inhaleValue")).toHaveTextContent("4s");
+    expect(container.querySelector("#inhaleValue")).toHaveTextContent("5.5s");
     await user.click(screen.getByLabelText("Increase inhale duration"));
-    expect(container.querySelector("#inhaleValue")).toHaveTextContent("5s");
+    expect(container.querySelector("#inhaleValue")).toHaveTextContent("6s");
   });
 
   it("links advanced options aria-controls to the rendered duration panel", () => {
@@ -122,7 +122,7 @@ describe("BreatheApp", () => {
     await user.click(screen.getByRole("button", { name: "Start" }));
     const status = screen.getByRole("status");
     expect(status.textContent).toMatch(/INHALE/);
-    expect(status.textContent).toMatch(/4/);
+    expect(status.textContent).toMatch(/5\.5/);
   });
 
   it("toggles transport with Space and resets with R when focus is not on a control", async () => {

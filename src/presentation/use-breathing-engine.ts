@@ -267,7 +267,7 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     (presetId: BreathingPresetId) => {
       if (presetId === "custom") return;
       const dto = new ApplyPreset().execute(presetId);
-      const next = BreathingSettings.fromDto(dto);
+      const next = BreathingSettings.fromDto(dto.durations);
       settingsRef.current = next;
       activePresetIdRef.current = presetId;
       setSettings(next);
@@ -289,10 +289,6 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     },
     [queueSettingsSave],
   );
-
-  const recommend = useCallback(() => {
-    applyPreset(DEFAULT_PRESET_ID);
-  }, [applyPreset]);
 
   const goalsMatch = useCallback((left: SessionGoal, right: SessionGoal) => {
     if (left === right) return true;
@@ -456,7 +452,6 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     reset,
     adjust,
     applyPreset,
-    recommend,
     announce,
     setGoal,
     setRamp,

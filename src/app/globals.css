@@ -1082,7 +1082,7 @@
    below (which overrides this with 65cqh), so the two never both apply. */
 @media (min-width: 1200px) and (min-height: 641px) {
   .mv-square {
-    width: min(82cqh, 26cqw, 400px);
+    width: min(80cqh, 26cqw, 400px);
   }
 }
 
