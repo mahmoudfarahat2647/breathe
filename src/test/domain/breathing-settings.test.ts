@@ -7,15 +7,6 @@ import {
 } from "@/domain";
 
 describe("BreathingSettings", () => {
-  it("defaults to the recommended 4-4-6-2 pattern", () => {
-    expect(BreathingSettings.default().toDto()).toEqual({
-      inhale: 4,
-      hold: 4,
-      exhale: 6,
-      rest: 2,
-    });
-  });
-
   it("accepts durations at the reference min and max", () => {
     const settings = BreathingSettings.fromDto({
       inhale: PHASE_DURATION_LIMITS.inhale.min,
@@ -81,10 +72,24 @@ describe("BreathingSettings", () => {
     ).toThrow(DomainValidationError);
   });
 
-  it("rejects non-integer and non-finite durations", () => {
+  it("accepts half-second durations but rejects quarter-second durations", () => {
+    const settings = BreathingSettings.fromDto({
+      inhale: 5.5,
+      hold: 0,
+      exhale: 5.5,
+      rest: 0,
+    });
+    expect(settings.toDto()).toEqual({ inhale: 5.5, hold: 0, exhale: 5.5, rest: 0 });
+
     expect(() =>
-      BreathingSettings.fromDto({ inhale: 4.5, hold: 4, exhale: 6, rest: 2 }),
+      BreathingSettings.fromDto({ inhale: 4.25, hold: 4, exhale: 6, rest: 2 }),
     ).toThrow(DomainValidationError);
+    expect(() =>
+      BreathingSettings.fromDto({ inhale: 4.25, hold: 4, exhale: 6, rest: 2 }),
+    ).toThrow(/multiple of 0\.5/);
+  });
+
+  it("rejects non-finite durations", () => {
     expect(() =>
       BreathingSettings.fromDto({
         inhale: Number.NaN,
@@ -93,6 +98,35 @@ describe("BreathingSettings", () => {
         rest: 2,
       }),
     ).toThrow(DomainValidationError);
+  });
+
+  it("snaps a half-step increment up to the next whole second, and a half-step decrement down", () => {
+    const settings = BreathingSettings.fromDto({
+      inhale: 5.5,
+      hold: 0,
+      exhale: 5.5,
+      rest: 0,
+    });
+    expect(settings.adjust("inhale", 1).toDto().inhale).toBe(6);
+    expect(settings.adjust("inhale", -1).toDto().inhale).toBe(5);
+    expect(settings.adjust("exhale", 1).toDto().exhale).toBe(6);
+  });
+
+  it("leaves integer stepper behavior byte-identical", () => {
+    const settings = BreathingSettings.default();
+    expect(settings.adjust("inhale", 1).toDto().inhale).toBe(settings.inhale + 1);
+    expect(settings.adjust("inhale", -1).toDto().inhale).toBe(settings.inhale - 1);
+  });
+
+  it("sums the four phase durations as cycleSeconds", () => {
+    const settings = BreathingSettings.fromDto({
+      inhale: 5.5,
+      hold: 0,
+      exhale: 5.5,
+      rest: 0,
+    });
+    expect(settings.cycleSeconds()).toBe(11);
+    expect(BreathingSettings.fromDto({ inhale: 4, hold: 4, exhale: 6, rest: 2 }).cycleSeconds()).toBe(16);
   });
 
   it("maps a plain DTO without retaining the input object", () => {

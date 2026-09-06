@@ -4,6 +4,7 @@ import {
   preferencesFromRequestBody,
   sessionDtoToRow,
   sessionRowToDto,
+  sessionRowToHistoryRecord,
   settingsDtoToRow,
   settingsRowToDto,
 } from "@/infrastructure";
@@ -163,6 +164,70 @@ describe("session row mapper", () => {
       hold_seconds: 4,
       exhale_seconds: 6,
       rest_seconds: 2,
+    });
+  });
+});
+
+describe("settings row mapper coerces numeric-string durations", () => {
+  it("coerces string duration columns to numbers", () => {
+    expect(
+      settingsRowToDto({
+        inhale_seconds: "5.5",
+        hold_seconds: "0",
+        exhale_seconds: "5.5",
+        rest_seconds: "0",
+        goal_type: null,
+        goal_value: null,
+        ramp: null,
+      }),
+    ).toEqual({
+      durations: { inhale: 5.5, hold: 0, exhale: 5.5, rest: 0 },
+      goal: null,
+      ramp: null,
+    });
+  });
+});
+
+describe("session row mapper coerces numeric-string durations", () => {
+  it("coerces string duration columns on sessionRowToDto", () => {
+    expect(
+      sessionRowToDto({
+        id: SESSION_ID,
+        user_id: USER_ID,
+        cycle_count: 1,
+        elapsed_seconds: "12",
+        inhale_seconds: "3",
+        hold_seconds: "0",
+        exhale_seconds: "6",
+        rest_seconds: "1",
+      }),
+    ).toEqual({
+      id: SESSION_ID,
+      userId: USER_ID,
+      cycleCount: 1,
+      elapsedSeconds: 12,
+      durations: { inhale: 3, hold: 0, exhale: 6, rest: 1 },
+    });
+  });
+
+  it("coerces string duration columns on sessionRowToHistoryRecord", () => {
+    expect(
+      sessionRowToHistoryRecord(
+        {
+          cycle_count: 4,
+          elapsed_seconds: "44",
+          inhale_seconds: "5.5",
+          hold_seconds: "0",
+          exhale_seconds: "5.5",
+          rest_seconds: "0",
+          created_at: "2026-09-06T00:00:00Z",
+        },
+        "UTC",
+      ),
+    ).toMatchObject({
+      cycleCount: 4,
+      elapsedSeconds: 44,
+      durations: { inhale: 5.5, hold: 0, exhale: 5.5, rest: 0 },
     });
   });
 });

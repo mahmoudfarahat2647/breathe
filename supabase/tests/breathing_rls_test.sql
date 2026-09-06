@@ -1,5 +1,5 @@
 begin;
-select plan(30);
+select plan(33);
 
 insert into auth.users (
   instance_id,
@@ -132,13 +132,13 @@ select results_eq(
   $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds)
     values ('11111111-1111-4111-8111-111111111111', 4, 4, 6, 2)
     returning inhale_seconds$$,
-  array[4],
+  array[4::numeric],
   'the owner creates their own settings'
 );
 
 select results_eq(
   $$select inhale_seconds from public.breathing_settings$$,
-  array[4],
+  array[4::numeric],
   'the owner reads their own settings'
 );
 
@@ -147,7 +147,7 @@ select results_eq(
     set inhale_seconds = 7
     where user_id = '11111111-1111-4111-8111-111111111111'
     returning inhale_seconds$$,
-  array[7],
+  array[7::numeric],
   'the owner updates their own settings'
 );
 
@@ -196,6 +196,29 @@ select lives_ok(
     values ('11111111-1111-4111-8111-111111111111', 4, 0, 6, 0)
     on conflict (user_id) do update set hold_seconds = 0, rest_seconds = 0$$,
   'zero hold and rest are accepted by check constraints'
+);
+
+select lives_ok(
+  $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds)
+    values ('11111111-1111-4111-8111-111111111111', 5.5, 0, 5.5, 0)
+    on conflict (user_id) do update set inhale_seconds = 5.5, exhale_seconds = 5.5$$,
+  'half-second inhale/exhale durations are accepted'
+);
+
+-- Restore inhale_seconds to 7 so the later "denied update left the owner row
+-- intact" assertion is checking against the value it claims to guard, not
+-- against the half-second value this test case just wrote.
+select lives_ok(
+  $$update public.breathing_settings set inhale_seconds = 7
+    where user_id = '11111111-1111-4111-8111-111111111111'$$,
+  'inhale_seconds is restored to 7 after the half-second check'
+);
+
+select throws_ok(
+  $$update public.breathing_settings set inhale_seconds = 4.25 where user_id = '11111111-1111-4111-8111-111111111111'$$,
+  '23514',
+  null,
+  'a quarter-second duration is rejected by the half-step check constraint'
 );
 
 select throws_ok(
@@ -277,13 +300,13 @@ select results_eq(
   $$insert into public.breathing_settings (user_id, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds)
     values ('22222222-2222-4222-8222-222222222222', 5, 2, 8, 2)
     returning inhale_seconds$$,
-  array[5],
+  array[5::numeric],
   'another user can create their own settings'
 );
 
 select results_eq(
   $$select inhale_seconds from public.breathing_settings$$,
-  array[5],
+  array[5::numeric],
   'another user reads only their own settings'
 );
 
@@ -314,7 +337,7 @@ select set_config(
 select results_eq(
   $$select inhale_seconds from public.breathing_settings
     where user_id = '11111111-1111-4111-8111-111111111111'$$,
-  array[7],
+  array[7::numeric],
   'the denied settings update left the owner row intact'
 );
 
