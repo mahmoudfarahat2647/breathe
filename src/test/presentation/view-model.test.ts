@@ -7,7 +7,6 @@ import {
   pauseBreathing,
   startBreathing,
 } from "@/domain";
-import { interpolateTriangleDot } from "@/presentation/geometry";
 import { toBreathingViewModel } from "@/presentation/view-model";
 
 const settings = BreathingSettings.fromDto({
@@ -39,16 +38,16 @@ describe("toBreathingViewModel", () => {
     expect(view.announcement).toBe("INHALE. 4 seconds.");
   });
 
-  it("positions dot on triangle perimeter when rest is zero", () => {
-    const triangleSettings = BreathingSettings.fromDto({
+  it("renders four pending sides for a zero-rest preset (Square is the only shape)", () => {
+    const noRestSettings = BreathingSettings.fromDto({
       inhale: 4,
       hold: 4,
       exhale: 6,
       rest: 0,
     });
-    const view = toBreathingViewModel(createIdleBreathingState(), triangleSettings);
-    expect(view.dot).toEqual(interpolateTriangleDot("inhale", 0));
-    expect(view.dot).toEqual({ x: 40, y: 360 });
+    const view = toBreathingViewModel(createIdleBreathingState(), noRestSettings);
+    expect(Object.keys(view.sides)).toEqual(["inhale", "hold", "exhale", "rest"]);
+    expect(view.sides.rest.state).toBe("pending");
   });
 
   it("begins cycle 1 and removes idle when starting from rest", () => {

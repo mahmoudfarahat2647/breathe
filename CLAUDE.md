@@ -23,7 +23,7 @@ Two boundary rules the linter can't fully express:
 
 ### Domain model
 
-The breathing cycle has 4 phases in fixed order: **inhale -> hold -> exhale -> rest** (Hold/Rest can be 0s to skip). The engine (`src/domain/breathing-engine.ts`) is timestamp/RAF-driven, not `setInterval`. Stage rendering picks Square (rest > 0) vs Triangle (rest = 0) automatically based on the active preset. Full glossary and terminology (Phase/Preset/Stage/Session/Session Goal/Streak) is in [CONTEXT.md](CONTEXT.md) - use those exact terms, not synonyms it explicitly avoids (e.g. "Pattern" is deprecated in favor of "Preset").
+The breathing cycle has 4 phases in fixed order: **inhale -> hold -> exhale -> rest** (Hold/Rest can be 0s to skip). The engine (`src/domain/breathing-engine.ts`) is timestamp/RAF-driven, not `setInterval`. **The Stage always renders the Square — it is the only shape.** A preset with `rest: 0` (e.g. Resonance Coherence) still draws all four rounded-perimeter segments; the rest side just shows as instantly complete. The old Triangle rendering path (`rest = 0` used to swap to a triangle) was removed 2026-09-06 — do not reintroduce a second Stage shape. Full glossary and terminology (Phase/Preset/Stage/Session/Session Goal/Streak) is in [CONTEXT.md](CONTEXT.md) - use those exact terms, not synonyms it explicitly avoids (e.g. "Pattern" is deprecated in favor of "Preset").
 
 ### Reference/parity contract
 

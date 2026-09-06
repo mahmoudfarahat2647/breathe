@@ -15,10 +15,7 @@ import {
   type Phase,
   type SideState,
 } from "@/domain/phase";
-import {
-  interpolateTriangleDot,
-  strokeDashoffset,
-} from "./geometry";
+import { strokeDashoffset } from "./geometry";
 
 export type SideView = {
   state: SideState;
@@ -40,7 +37,6 @@ export type BreathingViewModel = {
   svgIdle: boolean;
   phaseClass: `phase-${Phase}`;
   sides: Record<Phase, SideView>;
-  dot: { x: number; y: number };
   announcement: string;
   stepperValues: Record<Phase, string>;
   displayedDuration: number;
@@ -61,11 +57,6 @@ export function toBreathingViewModel(
   const label = PHASE_LABELS[phase];
   const sides = sideStates(state.phaseIndex, state.status);
   const progressInfo = goalProgress(state, activeGoal);
-  const triangleMode = settings.rest === 0;
-  const dotPhase =
-    triangleMode && phase === "rest" ? ("exhale" as const) : phase;
-  const dotProgress =
-    triangleMode && phase === "rest" ? 1 : progress;
 
   return {
     phase,
@@ -91,13 +82,6 @@ export function toBreathingViewModel(
       exhale: sideView(sides.exhale, progress),
       rest: sideView(sides.rest, progress),
     },
-    dot: triangleMode
-      ? interpolateTriangleDot(
-          dotPhase === "rest" ? "exhale" : dotPhase,
-          dotProgress,
-        )
-      // Only read by BreathingTriangle (rest === 0); the square Stage positions its own dot.
-      : { x: 0, y: 0 },
     announcement: `${label}. ${displayedDuration} seconds.`,
     stepperValues: {
       inhale: `${settings.inhale}s`,

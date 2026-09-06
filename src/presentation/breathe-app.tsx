@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { BreathingStage } from "./breathing-stage";
-import { BreathingTriangle } from "./breathing-triangle";
 import { DurationStepper } from "./duration-stepper";
 import { GoalPicker } from "./goal-picker";
 import { RampPicker } from "./ramp-picker";
@@ -91,7 +90,6 @@ export function BreatheApp({
   }, [engine.engine.status, engine.pause, engine.reset, engine.start]);
 
   const { view } = engine;
-  const triangleMode = engine.settings.rest === 0;
   const isIdle = engine.engine.status === "idle";
 
   const cycleText = useMemo(() => {
@@ -119,27 +117,17 @@ export function BreatheApp({
 
       <main className="stage">
         <div className="mv-square" data-phase={view.phase}>
-          {EDGES.filter((edge) => !(triangleMode && edge.phase === "rest")).map(
-            (edge) => (
-              <span
-                key={edge.phase}
-                className={`mv-edge mv-edge-${edge.phase}`}
-                data-active={view.phase === edge.phase}
-              >
-                {edge.label}
-              </span>
-            ),
-          )}
+          {EDGES.map((edge) => (
+            <span
+              key={edge.phase}
+              className={`mv-edge mv-edge-${edge.phase}`}
+              data-active={view.phase === edge.phase}
+            >
+              {edge.label}
+            </span>
+          ))}
           <div className="mv-square-frame">
-            {triangleMode ? (
-              <BreathingTriangle
-                view={view}
-                pulse={engine.pulseNonce > 0}
-                pulseKey={engine.pulseNonce}
-              />
-            ) : (
-              <BreathingStage view={view} />
-            )}
+            <BreathingStage view={view} />
             <div className="mv-square-content" key={engine.pulseNonce}>
               <span className="mv-count">{view.countdown}</span>
               <span className="mv-coach">

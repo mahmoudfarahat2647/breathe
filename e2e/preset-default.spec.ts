@@ -1,31 +1,34 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("parity - default preset fallback renders Resonance Coherence Triangle", () => {
+test.describe("parity - default preset fallback renders Resonance Coherence", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("when settings api is unmocked, app uses compiled-in default preset and idle stage renders Resonance Coherence in triangle mode", async ({
+  test("when the settings api is unmocked, the app uses its compiled-in default preset and the idle Square stage shows Resonance Coherence durations", async ({
     page,
   }) => {
-    // No mock installed: /api/settings will return 401 / fail, falling back to compiled-in default preset
+    // No mock installed: /api/settings fails, so the app falls back to its
+    // compiled-in default preset (Resonance Coherence, 5.5/0/5.5/0).
     await page.goto("/");
 
-    // The Triangle stage renders .square-base and no .square-frame-border
-    await expect(page.locator(".square-base")).toBeAttached();
-    await expect(page.locator(".square-frame-border")).toHaveCount(0);
+    // The Stage always renders the Square — it is the only shape. A zero-rest
+    // preset still draws all four rounded-perimeter segments; the rest side is
+    // simply shown as instantly complete.
+    await expect(page.locator(".square-frame-border")).toBeAttached();
+    await expect(page.locator(".square-base")).toHaveCount(0);
 
-    // In Triangle mode only 3 side paths exist: inhale, hold, exhale (#side-rest is absent)
-    await expect(page.locator("#side-inhale")).toBeAttached();
-    await expect(page.locator("#side-hold")).toBeAttached();
-    await expect(page.locator("#side-exhale")).toBeAttached();
-    await expect(page.locator("#side-rest")).toHaveCount(0);
+    for (const phase of ["inhale", "hold", "exhale", "rest"] as const) {
+      await expect(page.locator(`#side-${phase}`)).toHaveAttribute(
+        "pathLength",
+        "1",
+      );
+    }
 
-    // Edges: rest edge is filtered out in triangle mode
     await expect(page.locator(".mv-edge-inhale")).toHaveText("Inhale");
     await expect(page.locator(".mv-edge-hold")).toHaveText("Hold");
     await expect(page.locator(".mv-edge-exhale")).toHaveText("Exhale");
-    await expect(page.locator(".mv-edge-rest")).toHaveCount(0);
+    await expect(page.locator(".mv-edge-rest")).toHaveText("Rest");
 
-    // Steppers: open advanced options and verify inhale/exhale values
+    // Steppers: open advanced options and verify the compiled-in default values.
     await page.getByRole("button", { name: "Show advanced options" }).click();
     await expect(page.locator("#inhaleValue")).toHaveText("5.5s");
     await expect(page.locator("#exhaleValue")).toHaveText("5.5s");

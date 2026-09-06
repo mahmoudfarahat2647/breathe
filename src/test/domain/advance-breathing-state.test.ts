@@ -490,20 +490,20 @@ describe("zero-duration phases", () => {
   });
 
   it("overflows through consecutive zero-duration phases in one frame", () => {
-    const triangle = BreathingSettings.fromDto({
+    const noRestPattern = BreathingSettings.fromDto({
       inhale: 2,
       hold: 0,
       exhale: 2,
       rest: 0,
     });
     let state = startBreathing(createIdleBreathingState());
-    state = advanceBreathingState(state, 0, triangle);
-    state = advanceBreathingState(state, 1_000, triangle);
-    state = advanceBreathingState(state, 2_000, triangle);
+    state = advanceBreathingState(state, 0, noRestPattern);
+    state = advanceBreathingState(state, 1_000, noRestPattern);
+    state = advanceBreathingState(state, 2_000, noRestPattern);
     expect(state.phaseIndex).toBe(2);
     expect(state.phaseElapsedSeconds).toBeCloseTo(0, 8);
 
-    const overflowed = advanceBreathingState(state, 2_100, triangle);
+    const overflowed = advanceBreathingState(state, 2_100, noRestPattern);
     expect(overflowed.phaseIndex).toBe(2);
     expect(overflowed.cycleCount).toBe(0);
     expect(overflowed.phaseElapsedSeconds).toBeCloseTo(0.1, 8);

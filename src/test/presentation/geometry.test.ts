@@ -3,11 +3,7 @@ import type { Phase } from "@/domain/phase";
 import {
   DOT_RADIUS,
   SQUARE_VIEWBOX,
-  TRIANGLE_BASE_PATH,
-  TRIANGLE_SIDE_PATHS,
-  TRIANGLE_VIEWBOX,
   VIEWBOX_SIZE,
-  interpolateTriangleDot,
   pointOnRoundedSegment,
   roundedPerimeterSegments,
   strokeDashoffset,
@@ -28,26 +24,6 @@ describe("square geometry", () => {
     expect(strokeDashoffset("active", 0)).toBe("1");
     expect(strokeDashoffset("active", 0.25)).toBe("0.75");
     expect(strokeDashoffset("active", 1)).toBe("0");
-  });
-});
-
-describe("triangle geometry", () => {
-  it("matches the triangle SVG viewBox and base path", () => {
-    expect(TRIANGLE_VIEWBOX).toBe("0 0 400 400");
-    expect(TRIANGLE_BASE_PATH).toBe("M40,360 L200,40 L360,360 Z");
-  });
-
-  it("matches inhale, hold, and exhale triangle side paths", () => {
-    expect(TRIANGLE_SIDE_PATHS.inhale).toBe("M40,360 L200,40");
-    expect(TRIANGLE_SIDE_PATHS.hold).toBe("M200,40 L360,360");
-    expect(TRIANGLE_SIDE_PATHS.exhale).toBe("M360,360 L40,360");
-  });
-
-  it("interpolates the triangle dot along each slanted side", () => {
-    expect(interpolateTriangleDot("inhale", 0)).toEqual({ x: 40, y: 360 });
-    expect(interpolateTriangleDot("inhale", 0.5)).toEqual({ x: 120, y: 200 });
-    expect(interpolateTriangleDot("hold", 1)).toEqual({ x: 360, y: 360 });
-    expect(interpolateTriangleDot("exhale", 0.5)).toEqual({ x: 200, y: 360 });
   });
 });
 
