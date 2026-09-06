@@ -59,14 +59,17 @@ export class BreathingSettings {
     return this[phase];
   }
 
+  cycleSeconds(): number {
+    return this.inhale + this.hold + this.exhale + this.rest;
+  }
+
   adjust(phase: Phase, direction: number): BreathingSettings {
     const limits = MANUAL_STEPPER_LIMITS[phase];
     const current = this.durationFor(phase);
     const min = Math.min(limits.min, current);
-    const next = Math.max(
-      min,
-      Math.min(limits.max, current + direction),
-    );
+    const snapped =
+      direction > 0 ? Math.floor(current) + 1 : Math.ceil(current) - 1;
+    const next = Math.max(min, Math.min(limits.max, snapped));
     return BreathingSettings.fromDto({
       ...this.toDto(),
       [phase]: next,
@@ -74,9 +77,15 @@ export class BreathingSettings {
   }
 }
 
+function isHalfStep(value: number): boolean {
+  return Number.isInteger(value * 2);
+}
+
 function assertDuration(phase: Phase, value: unknown): number {
-  if (typeof value !== "number" || !Number.isInteger(value)) {
-    throw new DomainValidationError(`${phase} duration must be an integer.`);
+  if (typeof value !== "number" || !Number.isFinite(value) || !isHalfStep(value)) {
+    throw new DomainValidationError(
+      `${phase} duration must be a multiple of 0.5.`,
+    );
   }
   const limits = PHASE_DURATION_LIMITS[phase];
   if (value < limits.min || value > limits.max) {

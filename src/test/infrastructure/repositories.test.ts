@@ -90,6 +90,46 @@ describe("SupabaseSettingsRepository", () => {
     });
   });
 
+  it("coerces a numeric-string duration returned by postgrest", async () => {
+    const repository = new SupabaseSettingsRepository(
+      {
+        from() {
+          return {
+            select() {
+              return {
+                eq() {
+                  return {
+                    async maybeSingle() {
+                      return {
+                        data: {
+                          user_id: USER_ID,
+                          inhale_seconds: "5.5",
+                          hold_seconds: "0",
+                          exhale_seconds: "5.5",
+                          rest_seconds: "0",
+                          goal_type: null,
+                          goal_value: null,
+                          ramp: null,
+                        },
+                        error: null,
+                      };
+                    },
+                  };
+                },
+              };
+            },
+          };
+        },
+      } as unknown as BreathingSupabaseClient,
+    );
+
+    await expect(repository.getByUserId(USER_ID)).resolves.toEqual({
+      durations: { inhale: 5.5, hold: 0, exhale: 5.5, rest: 0 },
+      goal: null,
+      ramp: null,
+    });
+  });
+
   it("upserts settings using database columns", async () => {
     let saved: unknown;
     const repository = new SupabaseSettingsRepository(

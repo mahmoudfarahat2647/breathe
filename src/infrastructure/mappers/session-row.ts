@@ -22,10 +22,10 @@ export function sessionRowToDto(
     cycleCount: row.cycle_count,
     elapsedSeconds: Number(row.elapsed_seconds),
     durations: {
-      inhale: row.inhale_seconds,
-      hold: row.hold_seconds,
-      exhale: row.exhale_seconds,
-      rest: row.rest_seconds,
+      inhale: Number(row.inhale_seconds),
+      hold: Number(row.hold_seconds),
+      exhale: Number(row.exhale_seconds),
+      rest: Number(row.rest_seconds),
     },
   };
 }
@@ -72,10 +72,10 @@ export function sessionRowToHistoryRecord(
     cycleCount: row.cycle_count,
     elapsedSeconds: Number(row.elapsed_seconds),
     durations: {
-      inhale: row.inhale_seconds,
-      hold: row.hold_seconds,
-      exhale: row.exhale_seconds,
-      rest: row.rest_seconds,
+      inhale: Number(row.inhale_seconds),
+      hold: Number(row.hold_seconds),
+      exhale: Number(row.exhale_seconds),
+      rest: Number(row.rest_seconds),
     },
     createdAtEpochMs,
     calendarDay: calendarDayFromIso(row.created_at, timeZone),

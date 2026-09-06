@@ -1,9 +1,9 @@
 export type BreathingSettingsRow = {
   user_id: string;
-  inhale_seconds: number;
-  hold_seconds: number;
-  exhale_seconds: number;
-  rest_seconds: number;
+  inhale_seconds: number | string;
+  hold_seconds: number | string;
+  exhale_seconds: number | string;
+  rest_seconds: number | string;
   goal_type: "minutes" | "cycles" | null;
   goal_value: number | null;
   ramp: string | null;
@@ -16,10 +16,10 @@ export type BreathingSessionRow = {
   user_id: string;
   cycle_count: number;
   elapsed_seconds: number | string;
-  inhale_seconds: number;
-  hold_seconds: number;
-  exhale_seconds: number;
-  rest_seconds: number;
+  inhale_seconds: number | string;
+  hold_seconds: number | string;
+  exhale_seconds: number | string;
+  rest_seconds: number | string;
   created_at: string;
 };
 

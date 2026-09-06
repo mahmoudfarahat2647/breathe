@@ -16,10 +16,10 @@ export function settingsRowToDto(
 ): BreathingPreferencesDto {
   return {
     durations: {
-      inhale: row.inhale_seconds,
-      hold: row.hold_seconds,
-      exhale: row.exhale_seconds,
-      rest: row.rest_seconds,
+      inhale: Number(row.inhale_seconds),
+      hold: Number(row.hold_seconds),
+      exhale: Number(row.exhale_seconds),
+      rest: Number(row.rest_seconds),
     },
     goal: goalFromRow(row.goal_type, row.goal_value),
     ramp: rampFromDto(row.ramp),
@@ -29,17 +29,16 @@ export function settingsRowToDto(
 export function settingsDtoToRow(
   userId: string,
   dto: BreathingPreferencesDto,
-): Pick<
-  BreathingSettingsRow,
-  | "user_id"
-  | "inhale_seconds"
-  | "hold_seconds"
-  | "exhale_seconds"
-  | "rest_seconds"
-  | "goal_type"
-  | "goal_value"
-  | "ramp"
-> {
+): {
+  user_id: string;
+  inhale_seconds: number;
+  hold_seconds: number;
+  exhale_seconds: number;
+  rest_seconds: number;
+  goal_type: BreathingSettingsRow["goal_type"];
+  goal_value: BreathingSettingsRow["goal_value"];
+  ramp: BreathingSettingsRow["ramp"];
+} {
   const goal = goalToRow(dto.goal);
   return {
     user_id: userId,
