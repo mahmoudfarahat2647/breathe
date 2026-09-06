@@ -14,10 +14,22 @@ const TEST_USER_ID = "11111111-1111-4111-8111-111111111111";
 /** Shape of the `/api/settings` wire body the specs round-trip. Defined here,
  *  not imported from `@/…` — the e2e layer treats the HTTP body as a black box
  *  and the specs already declared this inline. */
+export type StoredSettingsGoal =
+  | null
+  | string
+  | { kind: "minutes"; minutes: number }
+  | { kind: "cycles"; cycles: number };
+
 export type StoredSettings = {
   durations: { inhale: number; hold: number; exhale: number; rest: number };
-  goal: string | null;
+  goal: StoredSettingsGoal;
   ramp: string | null;
+};
+
+export const SQUARE_PREFERENCES: StoredSettings = {
+  durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+  goal: null,
+  ramp: null,
 };
 
 export type BreathingApiMock = {

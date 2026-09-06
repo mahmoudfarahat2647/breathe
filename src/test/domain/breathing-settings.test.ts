@@ -112,8 +112,22 @@ describe("BreathingSettings", () => {
     expect(settings.adjust("exhale", 1).toDto().exhale).toBe(6);
   });
 
+  it("defaults to the recommended Resonance Coherence pattern", () => {
+    expect(BreathingSettings.default().toDto()).toEqual({
+      inhale: 5.5,
+      hold: 0,
+      exhale: 5.5,
+      rest: 0,
+    });
+  });
+
   it("leaves integer stepper behavior byte-identical", () => {
-    const settings = BreathingSettings.default();
+    const settings = BreathingSettings.fromDto({
+      inhale: 4,
+      hold: 4,
+      exhale: 6,
+      rest: 2,
+    });
     expect(settings.adjust("inhale", 1).toDto().inhale).toBe(settings.inhale + 1);
     expect(settings.adjust("inhale", -1).toDto().inhale).toBe(settings.inhale - 1);
   });

@@ -35,6 +35,7 @@ export {
   type BreathingPreferencesDto,
 } from "./breathing-preferences";
 export {
+  CYCLES_LIMITS,
   goalProgress,
   isGoalMet,
   sessionGoalFromDto,

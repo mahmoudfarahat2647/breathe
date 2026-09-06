@@ -20,10 +20,10 @@ function memorySettings(
 }
 
 describe("GetSettings", () => {
-  it("returns the recommended 4-4-6-2 pattern when nothing is stored", async () => {
+  it("returns the default Resonance Coherence pattern when nothing is stored", async () => {
     const useCase = new GetSettings(memorySettings(new Map()));
     await expect(useCase.execute(USER_ID)).resolves.toEqual({
-      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      durations: { inhale: 5.5, hold: 0, exhale: 5.5, rest: 0 },
       goal: null,
       ramp: null,
     });

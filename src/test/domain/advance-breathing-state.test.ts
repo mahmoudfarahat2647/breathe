@@ -15,7 +15,12 @@ import {
   type Ramp,
 } from "@/domain";
 
-const settings = BreathingSettings.default();
+const settings = BreathingSettings.fromDto({
+  inhale: 4,
+  hold: 4,
+  exhale: 6,
+  rest: 2,
+});
 
 /** Drive the engine with explicit timestamps in ≤1s steps (no fake timers). */
 function play(

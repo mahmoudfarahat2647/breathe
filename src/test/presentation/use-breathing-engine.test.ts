@@ -65,7 +65,7 @@ describe("useBreathingEngine", () => {
     act(() => {
       frames.flush(1_000);
     });
-    expect(result.current.view.countdown).toBe("3");
+    expect(result.current.view.countdown).toBe("5");
     expect(result.current.view.elapsed).toBe("00:01");
 
     act(() => {
@@ -80,7 +80,7 @@ describe("useBreathingEngine", () => {
     act(() => {
       frames.flush(80_000);
     });
-    expect(result.current.view.countdown).toBe("3");
+    expect(result.current.view.countdown).toBe("5");
     expect(result.current.view.elapsed).toBe("00:01");
   });
 
@@ -121,7 +121,7 @@ describe("useBreathingEngine", () => {
     expect(frames.pendingCount).toBe(0);
   });
 
-  it("clamps duration steppers and restores recommended 4-4-6-2", () => {
+  it("clamps duration steppers and restores the default Resonance Coherence preset", () => {
     const { result } = renderHook(() => useBreathingEngine());
 
     act(() => {
@@ -132,26 +132,26 @@ describe("useBreathingEngine", () => {
     expect(result.current.activePresetId).toBe("custom");
 
     act(() => {
-      result.current.recommend();
+      result.current.applyPreset("resonance-coherence");
     });
     expect(result.current.view.stepperValues).toEqual({
-      inhale: "4s",
-      hold: "4s",
-      exhale: "6s",
-      rest: "2s",
+      inhale: "5.5s",
+      hold: "0s",
+      exhale: "5.5s",
+      rest: "0s",
     });
-    expect(result.current.activePresetId).toBe("current-calm");
+    expect(result.current.activePresetId).toBe("resonance-coherence");
   });
 
   it("applies presets and marks manual edits as custom", () => {
     const { result } = renderHook(() => useBreathingEngine());
 
-    expect(result.current.activePresetId).toBe("current-calm");
+    expect(result.current.activePresetId).toBe("resonance-coherence");
 
     act(() => {
-      result.current.applyPreset("box");
+      result.current.applyPreset("executive-focus");
     });
-    expect(result.current.activePresetId).toBe("box");
+    expect(result.current.activePresetId).toBe("executive-focus");
     expect(result.current.view.stepperValues).toEqual({
       inhale: "4s",
       hold: "4s",
@@ -282,7 +282,32 @@ describe("useBreathingEngine persistence", () => {
     });
   });
 
-  it("keeps the exercise on 4-4-6-2 when initialize fails", async () => {
+  it("loads a saved 4-4-6-2 duration set as Custom without rewriting settings", async () => {
+    const saveSettings = vi.fn(async () => {});
+    const persistence = fakePersistence({
+      saveSettings,
+      initialize: vi.fn(async () => ({
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+        goal: null,
+        ramp: null,
+      })),
+    });
+    const { result } = renderHook(() => useBreathingEngine({ persistence }));
+
+    await waitFor(() => {
+      expect(result.current.activePresetId).toBe("custom");
+      expect(result.current.view.stepperValues).toEqual({
+        inhale: "4s",
+        hold: "4s",
+        exhale: "6s",
+        rest: "2s",
+      });
+    });
+
+    expect(saveSettings).not.toHaveBeenCalled();
+  });
+
+  it("keeps the exercise on the default Resonance Coherence pattern when initialize fails", async () => {
     const persistence = fakePersistence({
       initialize: vi.fn(async () => {
         throw new Error("offline");
@@ -300,10 +325,10 @@ describe("useBreathingEngine persistence", () => {
     });
 
     expect(result.current.view.stepperValues).toEqual({
-      inhale: "4s",
-      hold: "4s",
-      exhale: "6s",
-      rest: "2s",
+      inhale: "5.5s",
+      hold: "0s",
+      exhale: "5.5s",
+      rest: "0s",
     });
 
     act(() => {
@@ -344,7 +369,7 @@ describe("useBreathingEngine persistence", () => {
     act(() => {
       result.current.adjust("inhale", 1);
     });
-    expect(result.current.view.stepperValues.inhale).toBe("5s");
+    expect(result.current.view.stepperValues.inhale).toBe("6s");
 
     await act(async () => {
       resolveInit({
@@ -355,10 +380,10 @@ describe("useBreathingEngine persistence", () => {
       await Promise.resolve();
     });
 
-    expect(result.current.view.stepperValues.inhale).toBe("5s");
+    expect(result.current.view.stepperValues.inhale).toBe("6s");
   });
 
-  it("debounces settings saves by 800 ms and persists recommended defaults", () => {
+  it("debounces settings saves by 800 ms and persists default preset selection", () => {
     const clocks = createScheduleStub();
     const saveSettings = vi.fn(async () => {});
     const { result } = renderHook(() =>
@@ -384,19 +409,19 @@ describe("useBreathingEngine persistence", () => {
     });
     expect(saveSettings).toHaveBeenCalledTimes(1);
     expect(saveSettings).toHaveBeenCalledWith({
-      durations: { inhale: 6, hold: 5, exhale: 6, rest: 2 },
+      durations: { inhale: 7, hold: 1, exhale: 5.5, rest: 0 },
       goal: null,
       ramp: null,
     });
 
     act(() => {
-      result.current.recommend();
+      result.current.applyPreset("resonance-coherence");
     });
     act(() => {
       clocks.advance(SETTINGS_SAVE_DEBOUNCE_MS);
     });
     expect(saveSettings).toHaveBeenLastCalledWith({
-      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      durations: { inhale: 5.5, hold: 0, exhale: 5.5, rest: 0 },
       goal: null,
       ramp: null,
     });
@@ -426,7 +451,7 @@ describe("useBreathingEngine persistence", () => {
     expect(saveSettings).toHaveBeenCalledTimes(1);
     expect(saveSettings).toHaveBeenCalledWith(
       {
-        durations: { inhale: 5, hold: 4, exhale: 7, rest: 2 },
+        durations: { inhale: 6, hold: 0, exhale: 6, rest: 0 },
         goal: null,
         ramp: null,
       },
@@ -455,7 +480,7 @@ describe("useBreathingEngine persistence", () => {
 
     expect(saveSettings).toHaveBeenCalledTimes(1);
     expect(saveSettings).toHaveBeenCalledWith({
-      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      durations: { inhale: 5.5, hold: 0, exhale: 5.5, rest: 0 },
       goal: null,
       ramp: "wind-down",
     });
@@ -476,7 +501,7 @@ describe("useBreathingEngine persistence", () => {
     });
   });
 
-  it("does not persist a zero-cycle reset and saves completed sessions once per id", () => {
+  it("does not persist a zero-cycle reset and saves completed sessions once per id", async () => {
     const frames = createRafStub();
     const saveSession = vi.fn(async () => {});
     const createSessionId = vi
@@ -493,6 +518,10 @@ describe("useBreathingEngine persistence", () => {
         createSessionId,
       }),
     );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     act(() => {
       result.current.start();
@@ -534,7 +563,7 @@ describe("useBreathingEngine persistence", () => {
     );
   });
 
-  it("resets even when session save throws", () => {
+  it("resets even when session save throws", async () => {
     const frames = createRafStub();
     const { result } = renderHook(() =>
       useBreathingEngine({
@@ -550,6 +579,10 @@ describe("useBreathingEngine persistence", () => {
       }),
     );
 
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     act(() => {
       result.current.start();
     });
@@ -563,7 +596,7 @@ describe("useBreathingEngine persistence", () => {
     expect(result.current.view.svgIdle).toBe(true);
   });
 
-  it("auto-completes a cycle goal, saves once, and does not save again on reset", () => {
+  it("auto-completes a cycle goal, saves once, and does not save again on reset", async () => {
     const frames = createRafStub();
     const saveSession = vi.fn(async () => {});
     const playCompletion = vi.fn();
@@ -581,6 +614,10 @@ describe("useBreathingEngine persistence", () => {
         createSessionId: () => SESSION_A,
       }),
     );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     act(() => {
       result.current.setGoal({ kind: "cycles", cycles: 1 });
@@ -720,11 +757,13 @@ describe("useBreathingEngine ramp", () => {
     });
     expect(result.current.activeRamp).toBe("wind-down");
 
-    // Default 4-4-6-2 cycle is 16s; by cycle 2's exhale Wind Down adds +1s.
-    completeCycles(frames, 41);
+    // Default Resonance Coherence cycle is 11s (5.5 inhale + 5.5 exhale, no
+    // hold/rest); by cycle 2's exhale, Wind Down has stepped once (floor(2/2)=1),
+    // adding +1s to the 5.5s base exhale.
+    completeCycles(frames, 28);
 
     expect(result.current.view.phase).toBe("exhale");
-    expect(result.current.view.displayedDuration).toBe(7);
-    expect(result.current.view.rampHint).toBe("Exhale now 7s");
+    expect(result.current.view.displayedDuration).toBe(6.5);
+    expect(result.current.view.rampHint).toBe("Exhale now 6.5s");
   });
 });

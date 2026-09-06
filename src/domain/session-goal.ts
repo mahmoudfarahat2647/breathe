@@ -11,7 +11,7 @@ export type SessionGoalDto =
   | { kind: "cycles"; cycles: number };
 
 const MINUTES_LIMITS = { min: 1, max: 120 } as const;
-const CYCLES_LIMITS = { min: 1, max: 100 } as const;
+export const CYCLES_LIMITS = { min: 1, max: 100 } as const;
 
 export type GoalProgress = {
   readonly remainingSeconds: number | null;
@@ -32,7 +32,7 @@ export function sessionGoalFromDto(dto: SessionGoalDto): SessionGoal {
   if (dto.kind === "cycles") {
     return {
       kind: "cycles",
-      cycles: assertGoalValue("cycles", dto.cycles, CYCLES_LIMITS),
+      cycles: assertCycleCount(dto.cycles),
     };
   }
   throw new DomainValidationError("Goal kind must be minutes or cycles.");
@@ -95,4 +95,8 @@ function assertGoalValue(
     );
   }
   return value;
+}
+
+export function assertCycleCount(value: unknown): number {
+  return assertGoalValue("cycles", value, CYCLES_LIMITS);
 }

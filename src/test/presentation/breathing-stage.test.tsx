@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -20,7 +20,12 @@ import {
 } from "@/presentation/geometry";
 import { toBreathingViewModel } from "@/presentation/view-model";
 
-const settings = BreathingSettings.default();
+const settings = BreathingSettings.fromDto({
+  inhale: 4,
+  hold: 4,
+  exhale: 6,
+  rest: 2,
+});
 const INSET = -0.5;
 const RADIUS = 32;
 
@@ -144,11 +149,22 @@ describe("BreathingStage", () => {
     expect(stageCode).not.toContain("useLayoutEffect");
   });
 
-  it("renders correctly within BreatheApp", () => {
-    const { container } = render(<BreatheApp />);
+  it("renders correctly within BreatheApp", async () => {
+    const persistence = {
+      initialize: async () => ({
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+        goal: null,
+        ramp: null,
+      }),
+      saveSettings: async () => {},
+      saveSession: async () => {},
+    };
+    const { container } = render(<BreatheApp persistence={persistence} />);
+    await waitFor(() => {
+      expect(container.querySelector(".square-frame-border")).not.toBeNull();
+    });
     const stage = container.querySelector(".mv-square-frame .square-wrap .square-svg");
     expect(stage).not.toBeNull();
-    expect(container.querySelector(".square-frame-border")).not.toBeNull();
     expect(container.querySelector("#side-inhale")).not.toBeNull();
   });
 });
