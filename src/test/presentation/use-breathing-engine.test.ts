@@ -422,7 +422,7 @@ describe("useBreathingEngine persistence", () => {
     });
     expect(saveSettings).toHaveBeenLastCalledWith({
       durations: { inhale: 5.5, hold: 0, exhale: 5.5, rest: 0 },
-      goal: null,
+      goal: { kind: "cycles", cycles: 25 },
       ramp: null,
     });
   });
@@ -767,3 +767,81 @@ describe("useBreathingEngine ramp", () => {
     expect(result.current.view.rampHint).toBe("Exhale now 6.5s");
   });
 });
+
+describe("useBreathingEngine applyPreset", () => {
+  it("keeps selectedGoal as null on a fresh hook mount", () => {
+    const { result } = renderHook(() => useBreathingEngine());
+    expect(result.current.selectedGoal).toBeNull();
+  });
+
+  it("sets selectedGoal to recommendedCycles, updates activePresetId, and leaves announcement empty", () => {
+    const { result } = renderHook(() => useBreathingEngine());
+
+    act(() => {
+      result.current.applyPreset("executive-focus");
+    });
+
+    expect(result.current.selectedGoal).toEqual({
+      kind: "cycles",
+      cycles: 12,
+    });
+    expect(result.current.activePresetId).toBe("executive-focus");
+    expect(result.current.announcement).toBe("");
+  });
+
+  it.each(["idle", "running", "paused", "completed"] as const)(
+    "silently applies preset without announcement in %s state",
+    (status) => {
+      const frames = createRafStub();
+      const { result } = renderHook(() =>
+        useBreathingEngine({
+          raf: frames.raf,
+          caf: frames.caf,
+          audio: {
+            ensure: vi.fn(),
+            playPhase: vi.fn(),
+            playCompletion: vi.fn(),
+            context: null,
+          },
+        }),
+      );
+
+      if (status === "running") {
+        act(() => {
+          result.current.start();
+        });
+      } else if (status === "paused") {
+        act(() => {
+          result.current.start();
+        });
+        act(() => {
+          result.current.pause();
+        });
+      } else if (status === "completed") {
+        act(() => {
+          result.current.setGoal({ kind: "cycles", cycles: 1 });
+          result.current.start();
+        });
+        completeCycles(frames, 16);
+      }
+
+      expect(result.current.engine.status).toBe(status);
+      const previousAnnouncement = result.current.announcement;
+
+      act(() => {
+        result.current.applyPreset("mood-elevation");
+      });
+
+      expect(result.current.announcement).toBe(previousAnnouncement);
+      expect(result.current.announcement).not.toBe(
+        "Goal will apply on your next session.",
+      );
+      expect(result.current.selectedGoal).toEqual({
+        kind: "cycles",
+        cycles: 10,
+      });
+      expect(result.current.activePresetId).toBe("mood-elevation");
+    },
+  );
+});
+

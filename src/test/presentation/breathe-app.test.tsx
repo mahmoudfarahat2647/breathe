@@ -70,6 +70,12 @@ describe("BreatheApp", () => {
     const user = userEvent.setup();
     render(<BreatheApp />);
 
+    const presetButtons = screen.getAllByRole("button", {
+      name: "Resonance Coherence",
+    });
+    expect(presetButtons).toHaveLength(1);
+    expect(presetButtons[0]).toHaveAttribute("aria-expanded", "false");
+
     const historyButtons = screen.getAllByRole("button", { name: "History" });
     expect(historyButtons).toHaveLength(1);
     const historyButton = historyButtons[0];
@@ -99,6 +105,35 @@ describe("BreatheApp", () => {
     await user.click(pauseButton);
     const resumeButton = screen.getByRole("button", { name: "Resume" });
     expect(resumeButton).toHaveFocus();
+  });
+
+  it("keeps the cycle denominator on the goal the running session is using, not one picked mid-session", async () => {
+    const user = userEvent.setup();
+    render(<BreatheApp />);
+
+    await user.click(screen.getByRole("button", { name: "Start" }));
+    const cycleStat = screen
+      .getByText("Cycle")
+      .closest(".mv-stat") as HTMLElement;
+    expect(within(cycleStat).getByText("1")).toBeInTheDocument();
+
+    // Pick a protocol mid-session: its 12-cycle goal applies next session, so it
+    // must NOT become the live denominator now.
+    await user.click(screen.getByRole("button", { name: "Resonance Coherence" }));
+    await user.click(
+      within(screen.getByRole("group", { name: "Protocols" })).getByRole(
+        "button",
+        { name: /Executive Focus/ },
+      ),
+    );
+
+    expect(within(cycleStat).queryByText("1 / 12")).not.toBeInTheDocument();
+    expect(within(cycleStat).getByText("1")).toBeInTheDocument();
+
+    // It does take effect on the next session.
+    await user.click(screen.getByRole("button", { name: "Reset" }));
+    await user.click(screen.getByRole("button", { name: "Start" }));
+    expect(within(cycleStat).getByText("1 / 12")).toBeInTheDocument();
   });
 
   it("handles Sound switch and updates visible On/Off label", async () => {
@@ -157,7 +192,13 @@ describe("BreatheApp", () => {
     skipLink.focus();
     expect(skipLink).toHaveFocus();
 
-    // 2. History disclosure button in header
+    // 2. Preset trigger button in header
+    await user.tab();
+    expect(
+      screen.getByRole("button", { name: "Resonance Coherence" }),
+    ).toHaveFocus();
+
+    // 3. History disclosure button in header
     await user.tab();
     expect(screen.getByRole("button", { name: "History" })).toHaveFocus();
 
