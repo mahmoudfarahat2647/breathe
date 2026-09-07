@@ -94,11 +94,16 @@ export function BreatheApp({
   const isIdle = engine.engine.status === "idle";
 
   const cycleText = useMemo(() => {
-    if (engine.selectedGoal?.kind === "cycles") {
-      return `${view.cycleCount} / ${engine.selectedGoal.cycles}`;
+    // Idle shows the selected goal as a preview of the next session; once a
+    // session is under way the denominator must track the goal the engine is
+    // actually enforcing (activeGoal), not a goal picked mid-session that only
+    // applies next time.
+    const goalForDenominator = isIdle ? engine.selectedGoal : engine.activeGoal;
+    if (goalForDenominator?.kind === "cycles") {
+      return `${view.cycleCount} / ${goalForDenominator.cycles}`;
     }
     return view.cycleCount;
-  }, [engine.selectedGoal, view.cycleCount]);
+  }, [engine.activeGoal, engine.selectedGoal, isIdle, view.cycleCount]);
 
   return (
     <div className={`breathe-root ${view.phaseClass}`}>
