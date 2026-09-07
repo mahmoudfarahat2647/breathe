@@ -70,6 +70,12 @@ describe("BreatheApp", () => {
     const user = userEvent.setup();
     render(<BreatheApp />);
 
+    const presetButtons = screen.getAllByRole("button", {
+      name: "Resonance Coherence",
+    });
+    expect(presetButtons).toHaveLength(1);
+    expect(presetButtons[0]).toHaveAttribute("aria-expanded", "false");
+
     const historyButtons = screen.getAllByRole("button", { name: "History" });
     expect(historyButtons).toHaveLength(1);
     const historyButton = historyButtons[0];
@@ -157,7 +163,13 @@ describe("BreatheApp", () => {
     skipLink.focus();
     expect(skipLink).toHaveFocus();
 
-    // 2. History disclosure button in header
+    // 2. Preset trigger button in header
+    await user.tab();
+    expect(
+      screen.getByRole("button", { name: "Resonance Coherence" }),
+    ).toHaveFocus();
+
+    // 3. History disclosure button in header
     await user.tab();
     expect(screen.getByRole("button", { name: "History" })).toHaveFocus();
 

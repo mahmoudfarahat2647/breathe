@@ -9,6 +9,7 @@ export { DurationStepper } from "./duration-stepper";
 export { GoalPicker } from "./goal-picker";
 export { RampPicker } from "./ramp-picker";
 export { HistoryPanel } from "./history-panel";
+export { PresetPicker } from "./preset-picker";
 export {
   createHttpBreathingPersistence,
   SETTINGS_SAVE_DEBOUNCE_MS,

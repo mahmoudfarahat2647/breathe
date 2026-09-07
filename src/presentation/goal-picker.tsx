@@ -26,7 +26,35 @@ function isSelected(
   return false;
 }
 
+type ExtraChip = {
+  kind: "minutes" | "cycles";
+  value: number;
+};
+
+function needsExtraChip(selectedGoal: SessionGoal): ExtraChip | null {
+  if (selectedGoal === null) return null;
+  if (
+    selectedGoal.kind === "minutes" &&
+    !MINUTE_OPTIONS.includes(
+      selectedGoal.minutes as (typeof MINUTE_OPTIONS)[number],
+    )
+  ) {
+    return { kind: "minutes", value: selectedGoal.minutes };
+  }
+  if (
+    selectedGoal.kind === "cycles" &&
+    !CYCLE_OPTIONS.includes(
+      selectedGoal.cycles as (typeof CYCLE_OPTIONS)[number],
+    )
+  ) {
+    return { kind: "cycles", value: selectedGoal.cycles };
+  }
+  return null;
+}
+
 export function GoalPicker({ selectedGoal, onSelect }: GoalPickerProps) {
+  const extraChip = needsExtraChip(selectedGoal);
+
   return (
     <div className="goal-picker gap-0 py-[clamp(12px,2vh,16px)]">
       <span className="goal-picker-label label-tier">Session goal</span>
@@ -72,6 +100,20 @@ export function GoalPicker({ selectedGoal, onSelect }: GoalPickerProps) {
             {cycles} cycles
           </Button>
         ))}
+        {extraChip ? (
+          <Button
+            key={`extra-${extraChip.kind}-${extraChip.value}`}
+            type="button"
+            variant="breathePrimary"
+            size="breathe"
+            aria-pressed={true}
+            onClick={() => onSelect(selectedGoal)}
+          >
+            {extraChip.kind === "cycles"
+              ? `${extraChip.value} cycles`
+              : `${extraChip.value} min`}
+          </Button>
+        ) : null}
       </div>
     </div>
   );

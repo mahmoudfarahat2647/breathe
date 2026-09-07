@@ -17,6 +17,7 @@ import { DurationStepper } from "./duration-stepper";
 import { GoalPicker } from "./goal-picker";
 import { RampPicker } from "./ramp-picker";
 import { HistoryPanel } from "./history-panel";
+import { PresetPicker } from "./preset-picker";
 import { handleBreathingKeydown } from "./keyboard";
 import {
   createHttpBreathingPersistence,
@@ -112,6 +113,10 @@ export function BreatheApp({
           <MarkIcon className="mv-mark-icon" strokeWidth={1.5} aria-hidden="true" />
           <span>Breathe</span>
         </span>
+        <PresetPicker
+          activePresetId={engine.activePresetId}
+          onSelect={engine.applyPreset}
+        />
         <HistoryPanel sessionSavedRevision={sessionSavedRevision} />
       </header>
 

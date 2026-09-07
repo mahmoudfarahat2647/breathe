@@ -272,6 +272,12 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
       activePresetIdRef.current = presetId;
       setSettings(next);
       setActivePresetId(presetId);
+      const nextGoal: SessionGoal = {
+        kind: "cycles",
+        cycles: dto.recommendedCycles,
+      };
+      selectedGoalRef.current = nextGoal;
+      setSelectedGoal(nextGoal);
       queueSettingsSave();
     },
     [queueSettingsSave],
