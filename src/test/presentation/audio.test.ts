@@ -158,4 +158,30 @@ describe("createBreathingAudio", () => {
     audio.playPhase("inhale", false);
     expect(oscillators).toHaveLength(0);
   });
+
+  it("plays a rising top-off tone (330→523 over 0.25s) when sound is on", () => {
+    const { FakeAudioContext, oscillators } = fakeAudioContext();
+    const audio = createBreathingAudio({
+      Context: FakeAudioContext as unknown as typeof AudioContext,
+    });
+    audio.ensure();
+    audio.playTopOff(true);
+
+    expect(oscillators).toHaveLength(1);
+    expect(oscillators[0]?.frequency.setValueAtTime).toHaveBeenCalledWith(330, 10);
+    expect(oscillators[0]?.frequency.linearRampToValueAtTime).toHaveBeenCalledWith(
+      523,
+      10.25,
+    );
+  });
+
+  it("stays silent for top-off when sound is disabled", () => {
+    const { FakeAudioContext, oscillators } = fakeAudioContext();
+    const audio = createBreathingAudio({
+      Context: FakeAudioContext as unknown as typeof AudioContext,
+    });
+    audio.ensure();
+    audio.playTopOff(false);
+    expect(oscillators).toHaveLength(0);
+  });
 });

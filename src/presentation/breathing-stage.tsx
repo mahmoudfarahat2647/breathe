@@ -27,6 +27,11 @@ export function BreathingStage({ view }: { view: BreathingViewModel }) {
     ? pointOnRoundedSegment("inhale", 0, INSET, RADIUS)
     : pointOnRoundedSegment(view.phase, progress, INSET, RADIUS);
 
+  const topOffTick =
+    view.phase === "inhale" && view.topOffFraction !== null
+      ? pointOnRoundedSegment("inhale", view.topOffFraction, INSET, RADIUS)
+      : null;
+
   return (
     <div className="square-wrap">
       <svg
@@ -51,6 +56,15 @@ export function BreathingStage({ view }: { view: BreathingViewModel }) {
             />
           );
         })}
+        {topOffTick ? (
+          <circle
+            className="square-topoff-tick"
+            aria-hidden="true"
+            r={3}
+            cx={topOffTick.x}
+            cy={topOffTick.y}
+          />
+        ) : null}
         <circle
           id="progressDot"
           className="progress-dot"

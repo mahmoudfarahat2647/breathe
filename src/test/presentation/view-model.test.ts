@@ -196,4 +196,195 @@ describe("toBreathingViewModel", () => {
       expect(view.rampHint).toBeNull();
     });
   });
+
+  describe("hint — technique cues and merge", () => {
+    const SIGH_PRESET = {
+      id: "acute-de-stress" as const,
+      name: "Acute De-Stress",
+      description: "Physiological sigh.",
+      durations: { inhale: 3, hold: 0, exhale: 6, rest: 1 },
+      recommendedCycles: 4,
+      topOffSeconds: 1,
+      alternateNostrils: false,
+    };
+
+    const NOSTRIL_PRESET = {
+      id: "mood-elevation" as const,
+      name: "Mood Elevation",
+      description: "Nadi Shodhana.",
+      durations: { inhale: 4, hold: 2, exhale: 6, rest: 1 },
+      recommendedCycles: 10,
+      topOffSeconds: null,
+      alternateNostrils: true,
+    };
+
+    it("shows the top-off hint once the running inhale has crossed the boundary", () => {
+      const runningPastBoundary = {
+        ...startBreathing(createIdleBreathingState()),
+        status: "running" as const,
+        phaseIndex: 0,
+        phaseElapsedSeconds: 2.2,
+        totalElapsedSeconds: 2.2,
+        cycleCount: 0,
+        lastFrameTimeMs: 2_200,
+        phaseDurationSeconds: 3,
+      };
+      const view = toBreathingViewModel(
+        runningPastBoundary,
+        BreathingSettings.fromDto({ inhale: 3, hold: 0, exhale: 6, rest: 1 }),
+        null,
+        null,
+        SIGH_PRESET,
+      );
+      expect(view.techniqueHint).toBe("Top-off breath");
+      expect(view.hint).toBe("Top-off breath");
+    });
+
+    it("does not show top-off hint before crossing the boundary", () => {
+      const runningBeforeBoundary = {
+        ...startBreathing(createIdleBreathingState()),
+        status: "running" as const,
+        phaseIndex: 0,
+        phaseElapsedSeconds: 1.5,
+        totalElapsedSeconds: 1.5,
+        cycleCount: 0,
+        lastFrameTimeMs: 1_500,
+        phaseDurationSeconds: 3,
+      };
+      const view = toBreathingViewModel(
+        runningBeforeBoundary,
+        BreathingSettings.fromDto({ inhale: 3, hold: 0, exhale: 6, rest: 1 }),
+        null,
+        null,
+        SIGH_PRESET,
+      );
+      expect(view.techniqueHint).toBeNull();
+      expect(view.hint).toBeNull();
+    });
+
+    it("shows the nostril hint on inhale, keyed to cycle parity", () => {
+      const running = {
+        ...startBreathing(createIdleBreathingState()),
+        status: "running" as const,
+        phaseIndex: 0,
+        phaseElapsedSeconds: 1,
+        totalElapsedSeconds: 1,
+        cycleCount: 1,
+        lastFrameTimeMs: 1_000,
+        phaseDurationSeconds: 4,
+      };
+      const view = toBreathingViewModel(
+        running,
+        BreathingSettings.fromDto({ inhale: 4, hold: 2, exhale: 6, rest: 1 }),
+        null,
+        null,
+        NOSTRIL_PRESET,
+      );
+      expect(view.techniqueHint).toBe("Right nostril");
+      expect(view.hint).toBe("Right nostril");
+      expect(view.announcement).toBe("INHALE. 4 seconds. Right nostril.");
+    });
+
+    it("joins a ramp hint and a technique hint with a middle dot when both apply", () => {
+      const running = {
+        ...startBreathing(createIdleBreathingState()),
+        status: "running" as const,
+        phaseIndex: 2,
+        phaseElapsedSeconds: 1,
+        totalElapsedSeconds: 30,
+        cycleCount: 0,
+        lastFrameTimeMs: 30_000,
+        phaseDurationSeconds: 7,
+      };
+      const view = toBreathingViewModel(
+        running,
+        BreathingSettings.fromDto({ inhale: 4, hold: 2, exhale: 6, rest: 1 }),
+        null,
+        "wind-down",
+        NOSTRIL_PRESET,
+      );
+      expect(view.rampHint).toBe("Exhale now 7s");
+      expect(view.techniqueHint).toBe("Right nostril");
+      expect(view.hint).toBe("Exhale now 7s · Right nostril");
+      expect(view.announcement).toBe("EXHALE. 7 seconds. Right nostril.");
+    });
+
+    it("is null when neither applies", () => {
+      const view = toBreathingViewModel(createIdleBreathingState(), settings);
+      expect(view.hint).toBeNull();
+      expect(view.techniqueHint).toBeNull();
+    });
+  });
+
+  describe("topOffFraction", () => {
+    const SIGH_PRESET = {
+      id: "acute-de-stress" as const,
+      name: "Acute De-Stress",
+      description: "Physiological sigh.",
+      durations: { inhale: 3, hold: 0, exhale: 6, rest: 1 },
+      recommendedCycles: 4,
+      topOffSeconds: 1,
+      alternateNostrils: false,
+    };
+
+    it("is boundary / inhaleDuration when activePreset has topOffSeconds and phase is inhale", () => {
+      const view = toBreathingViewModel(
+        createIdleBreathingState(),
+        BreathingSettings.fromDto({ inhale: 3, hold: 0, exhale: 6, rest: 1 }),
+        null,
+        null,
+        SIGH_PRESET,
+      );
+      // boundary = 3 - 1 = 2; fraction = 2 / 3
+      expect(view.topOffFraction).toBeCloseTo(2 / 3, 5);
+    });
+
+    it("is null when activePreset has no topOffSeconds", () => {
+      const view = toBreathingViewModel(createIdleBreathingState(), settings);
+      expect(view.topOffFraction).toBeNull();
+    });
+
+    it("is null when the active phase is not inhale", () => {
+      const runningExhale = {
+        ...startBreathing(createIdleBreathingState()),
+        status: "running" as const,
+        phaseIndex: 2,
+        phaseElapsedSeconds: 1,
+        totalElapsedSeconds: 10,
+        cycleCount: 0,
+        lastFrameTimeMs: 10_000,
+        phaseDurationSeconds: 6,
+      };
+      const view = toBreathingViewModel(
+        runningExhale,
+        BreathingSettings.fromDto({ inhale: 3, hold: 0, exhale: 6, rest: 1 }),
+        null,
+        null,
+        SIGH_PRESET,
+      );
+      expect(view.topOffFraction).toBeNull();
+    });
+
+    it("tracks the live ramped inhale duration while running, not the base setting (ramp-safety)", () => {
+      const rampedInhale = {
+        ...startBreathing(createIdleBreathingState()),
+        status: "running" as const,
+        phaseIndex: 0,
+        phaseElapsedSeconds: 1,
+        totalElapsedSeconds: 1,
+        cycleCount: 3,
+        lastFrameTimeMs: 1_000,
+        phaseDurationSeconds: 5,
+      };
+      const view = toBreathingViewModel(
+        rampedInhale,
+        BreathingSettings.fromDto({ inhale: 3, hold: 0, exhale: 6, rest: 1 }),
+        null,
+        "slow-down",
+        SIGH_PRESET,
+      );
+      // boundary = 5 - 1 = 4; fraction = 4 / 5
+      expect(view.topOffFraction).toBeCloseTo(4 / 5, 5);
+    });
+  });
 });

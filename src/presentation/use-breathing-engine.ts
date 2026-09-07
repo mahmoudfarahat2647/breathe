@@ -7,12 +7,15 @@ import { BreathingPreferences } from "@/domain/breathing-preferences";
 import { BreathingSettings } from "@/domain/breathing-settings";
 import {
   DEFAULT_PRESET_ID,
+  findPresetById,
   matchPresetId,
+  type BreathingPresetDto,
   type BreathingPresetId,
 } from "@/domain/breathing-preset";
 import {
   advanceBreathingState,
   createIdleBreathingState,
+  currentPhase,
   pauseBreathing,
   resetBreathing,
   startBreathing,
@@ -20,6 +23,7 @@ import {
 } from "@/domain/breathing-engine";
 import type { Phase } from "@/domain/phase";
 import { rampToDto, type Ramp } from "@/domain/ramp";
+import { inhaleTopOffBoundary } from "@/domain/technique";
 import {
   sessionGoalToDto,
   type SessionGoal,
@@ -59,10 +63,18 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
   const [soundEnabled, setSoundEnabledState] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [pulseNonce, setPulseNonce] = useState(0);
+  const [activeTopOffSeconds, setActiveTopOffSeconds] =
+    useState<number | null>(null);
+  const [activeAlternateNostrils, setActiveAlternateNostrils] = useState(false);
+  const [activePreset, setActivePreset] = useState<BreathingPresetDto | null>(null);
 
   const engineRef = useRef(engine);
   const settingsRef = useRef(settings);
   const activePresetIdRef = useRef(activePresetId);
+  const activeTopOffSecondsRef = useRef(activeTopOffSeconds);
+  const activeAlternateNostrilsRef = useRef(activeAlternateNostrils);
+  const activePresetRef = useRef(activePreset);
+  const topOffFiredRef = useRef(false);
   const selectedGoalRef = useRef(selectedGoal);
   const activeGoalRef = useRef(activeGoal);
   const selectedRampRef = useRef(selectedRamp);
@@ -102,6 +114,9 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     activeGoalRef.current = activeGoal;
     selectedRampRef.current = selectedRamp;
     activeRampRef.current = activeRamp;
+    activeTopOffSecondsRef.current = activeTopOffSeconds;
+    activeAlternateNostrilsRef.current = activeAlternateNostrils;
+    activePresetRef.current = activePreset;
     soundRef.current = soundEnabled;
   }, [
     engine,
@@ -111,6 +126,9 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     activeGoal,
     selectedRamp,
     activeRamp,
+    activeTopOffSeconds,
+    activeAlternateNostrils,
+    activePreset,
     soundEnabled,
   ]);
 
@@ -186,16 +204,26 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     void persistence.saveSession(snapshot).catch(() => {});
   }, []);
 
-  const cuePhase = useCallback((state: BreathingEngineState) => {
-    const view = toBreathingViewModel(
-      state,
-      settingsRef.current,
-      activeGoalRef.current,
-    );
-    audioRef.current.playPhase(view.phase, soundRef.current);
-    setAnnouncement(view.announcement);
-    setPulseNonce((nonce) => nonce + 1);
-  }, []);
+  const cuePhase = useCallback(
+    (
+      state: BreathingEngineState,
+      overridePreset?: BreathingPresetDto | null,
+    ) => {
+      const preset =
+        overridePreset !== undefined ? overridePreset : activePresetRef.current;
+      const view = toBreathingViewModel(
+        state,
+        settingsRef.current,
+        activeGoalRef.current,
+        activeRampRef.current,
+        preset,
+      );
+      audioRef.current.playPhase(view.phase, soundRef.current);
+      setAnnouncement(view.announcement);
+      setPulseNonce((nonce) => nonce + 1);
+    },
+    [],
+  );
 
   const handleCompletion = useCallback((state: BreathingEngineState) => {
     audioRef.current.playCompletion(soundRef.current);
@@ -208,6 +236,8 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     if (previous.status === "running") return;
     audioRef.current.ensure();
 
+    let currentActivePreset = activePresetRef.current;
+
     if (previous.status === "idle" || previous.status === "completed") {
       const nextActiveGoal = selectedGoalRef.current;
       activeGoalRef.current = nextActiveGoal;
@@ -215,6 +245,22 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
       const nextActiveRamp = selectedRampRef.current;
       activeRampRef.current = nextActiveRamp;
       setActiveRamp(nextActiveRamp);
+
+      const preset =
+        activePresetIdRef.current === "custom"
+          ? null
+          : findPresetById(activePresetIdRef.current)?.toDto() ?? null;
+      currentActivePreset = preset;
+      activePresetRef.current = preset;
+      setActivePreset(preset);
+      const nextTopOffSeconds = preset?.topOffSeconds ?? null;
+      activeTopOffSecondsRef.current = nextTopOffSeconds;
+      setActiveTopOffSeconds(nextTopOffSeconds);
+      const nextAlternateNostrils = preset?.alternateNostrils ?? false;
+      activeAlternateNostrilsRef.current = nextAlternateNostrils;
+      setActiveAlternateNostrils(nextAlternateNostrils);
+      topOffFiredRef.current = false;
+
       sessionIdRef.current = createSessionIdRef.current();
       sessionSavedRef.current = false;
     }
@@ -223,7 +269,7 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     engineRef.current = next;
     setEngine(next);
     if (previous.status === "idle" || previous.status === "completed") {
-      cuePhase(next);
+      cuePhase(next, currentActivePreset);
     }
   }, [cuePhase]);
 
@@ -256,6 +302,13 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     setActiveGoal(null);
     activeRampRef.current = null;
     setActiveRamp(null);
+    activePresetRef.current = null;
+    setActivePreset(null);
+    activeTopOffSecondsRef.current = null;
+    setActiveTopOffSeconds(null);
+    activeAlternateNostrilsRef.current = false;
+    setActiveAlternateNostrils(false);
+    topOffFiredRef.current = false;
     sessionIdRef.current = null;
     if (snapshot && persistence) {
       sessionSavedRef.current = true;
@@ -421,7 +474,28 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
         return;
       }
       if (next.phaseIndex !== previous.phaseIndex) {
+        topOffFiredRef.current = false;
         cuePhase(next);
+      } else if (
+        currentPhase(next) === "inhale" &&
+        activeTopOffSecondsRef.current !== null
+      ) {
+        const duration =
+          next.phaseDurationSeconds ?? settingsRef.current.durationFor("inhale");
+        const boundary = inhaleTopOffBoundary(
+          activeTopOffSecondsRef.current,
+          duration,
+        );
+        if (
+          boundary !== null &&
+          !topOffFiredRef.current &&
+          next.phaseElapsedSeconds >= boundary
+        ) {
+          topOffFiredRef.current = true;
+          audioRef.current.playTopOff(soundRef.current);
+          setAnnouncement("Inhale again.");
+          setPulseNonce((nonce) => nonce + 1);
+        }
       }
       frameId = rafRef.current(loop);
     };
@@ -433,8 +507,15 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
   }, [cuePhase, engine.status, handleCompletion]);
 
   const view = useMemo(
-    () => toBreathingViewModel(engine, settings, activeGoal, activeRamp),
-    [engine, settings, activeGoal, activeRamp],
+    () =>
+      toBreathingViewModel(
+        engine,
+        settings,
+        activeGoal,
+        activeRamp,
+        activePreset,
+      ),
+    [engine, settings, activeGoal, activeRamp, activePreset],
   );
 
   const announce = useCallback((message: string) => {
@@ -445,6 +526,9 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     engine,
     settings,
     activePresetId,
+    activeTopOffSeconds,
+    activeAlternateNostrils,
+    activePreset,
     selectedGoal,
     activeGoal,
     selectedRamp,

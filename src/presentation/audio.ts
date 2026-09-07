@@ -108,10 +108,16 @@ export function createBreathingAudio(deps: { Context?: AudioContextCtor } = {}) 
     playTone(523, 659, 0.45, 0.18);
   }
 
+  function playTopOff(soundEnabled: boolean) {
+    if (!soundEnabled || !ctx) return;
+    playTone(330, 523, 0.25, 0);
+  }
+
   return {
     ensure,
     playPhase,
     playCompletion,
+    playTopOff,
     get context() {
       return ctx;
     },

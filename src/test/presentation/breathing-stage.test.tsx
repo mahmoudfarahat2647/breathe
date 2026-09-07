@@ -167,4 +167,37 @@ describe("BreathingStage", () => {
     expect(stage).not.toBeNull();
     expect(container.querySelector("#side-inhale")).not.toBeNull();
   });
+
+  it("renders a top-off tick on the inhale segment when view.topOffFraction is set", () => {
+    const view = toBreathingViewModel(
+      createIdleBreathingState(),
+      BreathingSettings.fromDto({ inhale: 3, hold: 0, exhale: 6, rest: 1 }),
+      null,
+      null,
+      {
+        id: "acute-de-stress",
+        name: "Acute De-Stress",
+        description: "Physiological sigh.",
+        durations: { inhale: 3, hold: 0, exhale: 6, rest: 1 },
+        recommendedCycles: 4,
+        topOffSeconds: 1,
+        alternateNostrils: false,
+      },
+    );
+    const { container } = render(<BreathingStage view={view} />);
+
+    const tick = container.querySelector(".square-topoff-tick");
+    expect(tick).not.toBeNull();
+    expect(tick).toHaveAttribute("aria-hidden", "true");
+
+    const expectedPoint = pointOnRoundedSegment("inhale", 2 / 3, INSET, RADIUS);
+    expect(Number(tick?.getAttribute("cx"))).toBeCloseTo(expectedPoint.x, 5);
+    expect(Number(tick?.getAttribute("cy"))).toBeCloseTo(expectedPoint.y, 5);
+  });
+
+  it("renders no top-off tick when view.topOffFraction is null", () => {
+    const view = toBreathingViewModel(createIdleBreathingState(), settings);
+    const { container } = render(<BreathingStage view={view} />);
+    expect(container.querySelector(".square-topoff-tick")).toBeNull();
+  });
 });

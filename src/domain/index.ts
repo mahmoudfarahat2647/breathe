@@ -54,6 +54,12 @@ export {
   type RampRule,
 } from "./ramp";
 export {
+  crossedTopOff,
+  inhaleTopOffBoundary,
+  nostrilFor,
+  techniqueHint,
+} from "./technique";
+export {
   BreathingSession,
   type BreathingSessionDto,
 } from "./breathing-session";

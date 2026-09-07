@@ -609,6 +609,10 @@
 .mv-square-frame .square-svg.idle .progress-dot {
   opacity: 0;
 }
+.mv-square-frame .square-topoff-tick {
+  fill: var(--mv-dot);
+  opacity: 0.6;
+}
 
 .mv-square-content {
   position: absolute;
@@ -635,7 +639,8 @@
   color: var(--mv-coach);
   letter-spacing: 0.01em;
 }
-.mv-ramp-hint {
+.mv-ramp-hint,
+.mv-hint {
   font-size: clamp(0.68rem, 2cqmin, 0.8rem);
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -1232,6 +1237,9 @@
   }
   .progress-dot {
     display: none !important;
+  }
+  .square-topoff-tick {
+    transition: none !important;
   }
   .mv-advanced .durations-toggle::before {
     transition: none !important;

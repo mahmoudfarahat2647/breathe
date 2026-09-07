@@ -143,8 +143,8 @@ export function BreatheApp({
               <span className="mv-coach">
                 {isIdle ? COACH.inhale : COACH[view.phase]}
               </span>
-              {view.rampHint ? (
-                <span className="mv-ramp-hint">{view.rampHint}</span>
+              {view.hint ? (
+                <span className="mv-ramp-hint mv-hint">{view.hint}</span>
               ) : null}
             </div>
           </div>

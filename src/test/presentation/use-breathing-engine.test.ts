@@ -37,6 +37,7 @@ describe("useBreathingEngine", () => {
       ensure: vi.fn(),
       playPhase: vi.fn(),
       playCompletion: vi.fn(),
+      playTopOff: vi.fn(),
       context: null,
     };
 
@@ -90,6 +91,7 @@ describe("useBreathingEngine", () => {
       ensure: vi.fn(),
       playPhase: vi.fn(),
       playCompletion: vi.fn(),
+      playTopOff: vi.fn(),
       context: null,
     };
     const { result } = renderHook(() =>
@@ -171,6 +173,7 @@ describe("useBreathingEngine", () => {
       ensure: vi.fn(),
       playPhase: vi.fn(),
       playCompletion: vi.fn(),
+      playTopOff: vi.fn(),
       context: null,
     };
     const { result } = renderHook(() =>
@@ -316,7 +319,7 @@ describe("useBreathingEngine persistence", () => {
     const { result } = renderHook(() =>
       useBreathingEngine({
         persistence,
-        audio: { ensure: vi.fn(), playPhase: vi.fn(), playCompletion: vi.fn(), context: null },
+        audio: { ensure: vi.fn(), playPhase: vi.fn(), playCompletion: vi.fn(), playTopOff: vi.fn(), context: null },
       }),
     );
 
@@ -513,7 +516,7 @@ describe("useBreathingEngine persistence", () => {
       useBreathingEngine({
         raf: frames.raf,
         caf: frames.caf,
-        audio: { ensure: vi.fn(), playPhase: vi.fn(), playCompletion: vi.fn(), context: null },
+        audio: { ensure: vi.fn(), playPhase: vi.fn(), playCompletion: vi.fn(), playTopOff: vi.fn(), context: null },
         persistence: fakePersistence({ saveSession }),
         createSessionId,
       }),
@@ -569,7 +572,7 @@ describe("useBreathingEngine persistence", () => {
       useBreathingEngine({
         raf: frames.raf,
         caf: frames.caf,
-        audio: { ensure: vi.fn(), playPhase: vi.fn(), playCompletion: vi.fn(), context: null },
+        audio: { ensure: vi.fn(), playPhase: vi.fn(), playCompletion: vi.fn(), playTopOff: vi.fn(), context: null },
         persistence: fakePersistence({
           saveSession: vi.fn(async () => {
             throw new Error("offline");
@@ -608,6 +611,7 @@ describe("useBreathingEngine persistence", () => {
           ensure: vi.fn(),
           playPhase: vi.fn(),
           playCompletion,
+          playTopOff: vi.fn(),
           context: null,
         },
         persistence: fakePersistence({ saveSession }),
@@ -654,6 +658,7 @@ describe("useBreathingEngine persistence", () => {
           ensure: vi.fn(),
           playPhase: vi.fn(),
           playCompletion: vi.fn(),
+          playTopOff: vi.fn(),
           context: null,
         },
       }),
@@ -676,6 +681,7 @@ describe("useBreathingEngine ramp", () => {
     ensure: vi.fn(),
     playPhase: vi.fn(),
     playCompletion: vi.fn(),
+    playTopOff: vi.fn(),
     context: null,
   });
 
@@ -801,6 +807,7 @@ describe("useBreathingEngine applyPreset", () => {
             ensure: vi.fn(),
             playPhase: vi.fn(),
             playCompletion: vi.fn(),
+            playTopOff: vi.fn(),
             context: null,
           },
         }),
@@ -843,5 +850,233 @@ describe("useBreathingEngine applyPreset", () => {
       expect(result.current.activePresetId).toBe("mood-elevation");
     },
   );
+});
+
+describe("useBreathingEngine technique cues", () => {
+  const silentAudioWithSpies = () => ({
+    ensure: vi.fn(),
+    playPhase: vi.fn(),
+    playCompletion: vi.fn(),
+    playTopOff: vi.fn(),
+    context: null,
+  });
+
+  it("fires the top-off cue once per inhale at the ramp-adjusted boundary when Slow Down lengthens inhale", () => {
+    const frames = createRafStub();
+    const audio = silentAudioWithSpies();
+    const { result } = renderHook(() =>
+      useBreathingEngine({ raf: frames.raf, caf: frames.caf, audio }),
+    );
+
+    act(() => {
+      result.current.applyPreset("acute-de-stress"); // inhale 3s, topOff 1s -> base boundary 2s
+      result.current.setRamp("slow-down"); // lengthens inhale +1s every 3 cycles
+      result.current.start();
+    });
+
+    // Inhale 0 to 1.9s: before boundary
+    act(() => {
+      frames.flush(0);
+    });
+    act(() => {
+      frames.flush(1_000);
+    });
+    act(() => {
+      frames.flush(1_900);
+    });
+    expect(audio.playTopOff).not.toHaveBeenCalled();
+
+    // Cross boundary at 2.0s
+    act(() => {
+      frames.flush(2_000);
+    });
+    expect(audio.playTopOff).toHaveBeenCalledTimes(1);
+    expect(result.current.announcement).toBe("Inhale again.");
+
+    // Advance to cycle 3 where slow-down has lengthened inhale from 3s to 4s:
+    // Cycle is (3+0+6+1) = 10s. Cycles 0, 1, 2 take 30s.
+    // By 31s, engine is in cycle 3 inhale, lengthened to 4s.
+    // Boundary is now 4 - 1 = 3s into the phase (elapsed 34s).
+    for (let sec = 3; sec <= 32; sec++) {
+      act(() => {
+        frames.flush(sec * 1000);
+      });
+    }
+    expect(result.current.view.phase).toBe("inhale");
+    expect(result.current.view.displayedDuration).toBe(4);
+
+    // At 32s (2s into 4s inhale), base boundary (2s) is reached, but the ramped boundary (3s) is NOT:
+    // playTopOff has only been called for previous inhales (cycles 0, 1, 2 = 3 times total)
+    expect(audio.playTopOff).toHaveBeenCalledTimes(3);
+
+    // Now advance to 33s (3s into 4s inhale) - crosses the ramped 3s boundary!
+    act(() => {
+      frames.flush(33_000);
+    });
+    expect(audio.playTopOff).toHaveBeenCalledTimes(4);
+  });
+
+  it("does not double-fire across a pause/resume that straddles the boundary", () => {
+    const frames = createRafStub();
+    const audio = silentAudioWithSpies();
+    const { result } = renderHook(() =>
+      useBreathingEngine({ raf: frames.raf, caf: frames.caf, audio }),
+    );
+
+    act(() => {
+      result.current.applyPreset("acute-de-stress"); // boundary at 2s
+      result.current.start();
+    });
+
+    // Advance to 1.5s, then pause
+    act(() => {
+      frames.flush(0);
+    });
+    act(() => {
+      frames.flush(1_500);
+    });
+    expect(audio.playTopOff).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.pause();
+    });
+    expect(audio.playTopOff).not.toHaveBeenCalled();
+
+    // Resume and cross boundary
+    act(() => {
+      result.current.start();
+    });
+    act(() => {
+      frames.flush(0);
+    });
+    act(() => {
+      frames.flush(1_000); // 1.5s + 1s = 2.5s, crosses 2s boundary
+    });
+    expect(audio.playTopOff).toHaveBeenCalledTimes(1);
+
+    // Pause again after firing, then resume
+    act(() => {
+      result.current.pause();
+    });
+    act(() => {
+      result.current.start();
+    });
+    act(() => {
+      frames.flush(0);
+    });
+    act(() => {
+      frames.flush(200); // 2.7s
+    });
+    // Must NOT fire again in the same inhale!
+    expect(audio.playTopOff).toHaveBeenCalledTimes(1);
+  });
+
+  it("is absent entirely when the preset has no top-off metadata", () => {
+    const frames = createRafStub();
+    const audio = silentAudioWithSpies();
+    const { result } = renderHook(() =>
+      useBreathingEngine({ raf: frames.raf, caf: frames.caf, audio }),
+    );
+
+    act(() => {
+      result.current.applyPreset("executive-focus"); // no top-off
+      result.current.start();
+    });
+
+    expect(result.current.activeTopOffSeconds).toBeNull();
+    expect(result.current.activeAlternateNostrils).toBe(false);
+
+    // Advance through entire inhale (4s)
+    for (let t = 0; t <= 4_000; t += 500) {
+      act(() => {
+        frames.flush(t);
+      });
+    }
+    expect(audio.playTopOff).not.toHaveBeenCalled();
+    expect(result.current.view.topOffFraction).toBeNull();
+  });
+
+  it("drives technique cues from captured activePreset, never from mid-session picks", () => {
+    const frames = createRafStub();
+    const audio = silentAudioWithSpies();
+    const { result } = renderHook(() =>
+      useBreathingEngine({ raf: frames.raf, caf: frames.caf, audio }),
+    );
+
+    act(() => {
+      result.current.applyPreset("acute-de-stress"); // topOff 1s
+      result.current.start();
+    });
+
+    expect(result.current.activeTopOffSeconds).toBe(1);
+
+    // Mid-session pick of a preset with NO top-off:
+    act(() => {
+      result.current.applyPreset("executive-focus");
+    });
+    expect(result.current.activePresetId).toBe("executive-focus");
+    // Running session still retains captured top-off!
+    expect(result.current.activeTopOffSeconds).toBe(1);
+
+    act(() => {
+      frames.flush(0);
+    });
+    act(() => {
+      frames.flush(1_000);
+    });
+    act(() => {
+      frames.flush(2_000);
+    });
+    expect(audio.playTopOff).not.toHaveBeenCalled();
+
+    act(() => {
+      frames.flush(3_000);
+    });
+    // Top-off cue fires at 3s (4s inhale - 1s top-off) because the session's captured preset had topOffSeconds!
+    expect(audio.playTopOff).toHaveBeenCalledTimes(1);
+  });
+
+  it("alternates nostril cue by completed cycle parity for alternateNostrils preset", () => {
+    const frames = createRafStub();
+    const audio = silentAudioWithSpies();
+    const { result } = renderHook(() =>
+      useBreathingEngine({ raf: frames.raf, caf: frames.caf, audio }),
+    );
+
+    act(() => {
+      result.current.applyPreset("mood-elevation"); // alternateNostrils: true, 4/2/6/1
+      result.current.start();
+    });
+
+    expect(result.current.activeAlternateNostrils).toBe(true);
+
+    // Cycle 0 Inhale: Left nostril
+    expect(result.current.view.phase).toBe("inhale");
+    expect(result.current.view.techniqueHint).toBe("Left nostril");
+    expect(result.current.announcement).toContain("Left nostril");
+
+    // Advance to hold: 4s into cycle
+    act(() => {
+      frames.flush(0);
+    });
+    completeCycles(frames, 4); // enters hold
+    expect(result.current.view.phase).toBe("hold");
+    expect(result.current.view.techniqueHint).toBeNull();
+    expect(result.current.announcement).not.toContain("nostril");
+
+    // Advance to exhale: 6s into cycle
+    completeCycles(frames, 2); // enters exhale
+    expect(result.current.view.phase).toBe("exhale");
+    expect(result.current.view.techniqueHint).toBe("Right nostril");
+    expect(result.current.announcement).toContain("Right nostril");
+
+    // Complete cycle 0 (exhale 6s + rest 1s = 7s) -> enters cycle 1 Inhale
+    completeCycles(frames, 7);
+    expect(result.current.view.phase).toBe("inhale");
+    expect(result.current.engine.cycleCount).toBe(1);
+    // Cycle 1 Inhale: swapped to Right nostril!
+    expect(result.current.view.techniqueHint).toBe("Right nostril");
+    expect(result.current.announcement).toContain("Right nostril");
+  });
 });
 
