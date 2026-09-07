@@ -195,6 +195,7 @@ function computeTopOffFraction(
   state: BreathingEngineState,
 ): number | null {
   if (activePreset === null || activePreset.topOffSeconds === null) return null;
+  if (state.status === "completed") return null;
   const phase = currentPhase(state);
   if (phase !== "inhale") return null;
   const liveInhaleDuration =

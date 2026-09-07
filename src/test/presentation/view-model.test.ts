@@ -386,5 +386,26 @@ describe("toBreathingViewModel", () => {
       // boundary = 5 - 1 = 4; fraction = 4 / 5
       expect(view.topOffFraction).toBeCloseTo(4 / 5, 5);
     });
+
+    it("is null once the session has completed, even though phase is inhale and activePreset is still set", () => {
+      const completed = {
+        ...startBreathing(createIdleBreathingState()),
+        status: "completed" as const,
+        phaseIndex: 0,
+        phaseElapsedSeconds: 0,
+        totalElapsedSeconds: 12,
+        cycleCount: 4,
+        lastFrameTimeMs: null,
+        phaseDurationSeconds: 3,
+      };
+      const view = toBreathingViewModel(
+        completed,
+        BreathingSettings.fromDto({ inhale: 3, hold: 0, exhale: 6, rest: 1 }),
+        null,
+        null,
+        SIGH_PRESET,
+      );
+      expect(view.topOffFraction).toBeNull();
+    });
   });
 });
