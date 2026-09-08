@@ -27,8 +27,8 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Behavior | Check |
 | --- | --- |
 | Phases order: inhale → hold → exhale → rest. Cycle increments when index wraps to inhale | A |
-| Default pattern 4-4-6-2 seconds | A |
-| Duration validation (`PHASE_DURATION_LIMITS`) allows inhale/exhale 2–15 and hold/rest **0–15**; the manual steppers (`MANUAL_STEPPER_LIMITS`) additionally clamp hold/rest to 1–15 when adjusting by hand | A |
+| Default pattern is Resonance Coherence, 5.5-0-5.5-0 seconds (`DEFAULT_PRESET_ID`, `BreathingSettings.default()`); a fresh, never-configured load renders the Square with the rest side shown as instantly complete | A |
+| Duration validation (`PHASE_DURATION_LIMITS`) allows inhale/exhale 2–15 and hold/rest **0–15**, in half-second (0.5) steps; the manual steppers (`MANUAL_STEPPER_LIMITS`) additionally clamp hold/rest to 1–15 and always snap to the next whole second in the direction pressed, so hand-adjusting a fractional value (e.g. 5.5) lands on a whole number | A |
 | Phase advancement is timestamp-driven (`requestAnimationFrame`), not `setInterval` | A |
 | Delta capped at 1s when tab was backgrounded | A |
 | Multi-phase overflow while-loop advances correctly across four phases | A |
@@ -53,6 +53,8 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | History is a header disclosure opening a non-modal overlay | A / V |
 | Ramp picker (Off / Wind down / Slow down) is a `role="group"` inside the advanced options disclosure panel; each chip carries `aria-pressed` | A |
 | Ramp hint ("Exhale now Ns" / "Inhale now Ns") appears under the coaching line while a Ramp has lengthened the live phase past its base duration; absent when Ramp is Off or the phase is at base | V |
+| Preset Picker is a header disclosure alongside History: trigger shows the active protocol's name (or "Custom" when no catalog entry matches current durations), `aria-expanded`/`aria-controls` on the trigger, non-modal overlay dismissible by Escape or outside click, focus restored to the trigger on close; each protocol card carries `aria-pressed` reflecting whether it is the active preset (no card pressed when Custom); picking a card applies its durations, sets the Session Goal to its `recommendedCycles` without emitting the "next session" goal-change announcement, and closes the overlay; a goal value with no matching fixed Goal-picker chip renders one extra, pressed chip for that exact value | A |
+| Ramp hint and technique hint (top-off / nostril cue) share one line under the coaching text, joined by " · " when both are present, Ramp hint first; the technique hint alone reads "Top-off breath", "Left nostril", or "Right nostril" | A |
 
 ## Audio
 
@@ -115,10 +117,11 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Behavior | Check |
 | --- | --- |
 | Settings DTO, session snapshot, HTTP body, mappers, repository select, and generated types include `rest` / `rest_seconds` | A |
-| `breathing_settings.rest_seconds` integer not null default 2, check between 0 and 15 | A |
-| `breathing_sessions.rest_seconds` integer not null default 0, check `>= 0` (no backfill of 2 onto historical rows) | A |
+| `breathing_settings.rest_seconds` numeric(3,1) not null default 2, check between 0 and 15 and a half-second-step check constraint | A |
+| `breathing_sessions.rest_seconds` numeric(3,1) not null default 0, check `>= 0` and a half-second-step check constraint (no backfill of 2 onto historical rows) | A |
 | Settings equality checks compare rest so a saved rest duration actually loads | A |
 | Settings DTO, HTTP body, mapper (both directions), repository select, and generated types carry `ramp`; `breathing_settings.ramp` is nullable text checked against `('wind-down', 'slow-down')` | A |
+| All four duration columns (`inhale_seconds`, `hold_seconds`, `exhale_seconds`, `rest_seconds`) on both `breathing_settings` and `breathing_sessions` are `numeric(3,1)` with a half-step (`value * 2 = floor(value * 2)`) check constraint per column, additive to the existing range checks; every mapper coerces the column to a JS number, since numeric columns can round-trip as numeric-formatted strings | A |
 
 ## Out of scope for parity
 
@@ -127,4 +130,5 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 - Forest-photo ground added over the gradient — approved 2026-09-02 (supersedes #23's "gradient ground, not forest photo" departure; contrast, reduced-motion and reduced-transparency re-verified).
 - Ramp (Wind Down / Slow Down) — re-verified end-to-end 2026-09-03 (#36 Ramp T4): `e2e/ramp.spec.ts` proves both ramps in a real browser; layout-budget e2e re-enabled and green at all four protected viewports (1280×800, 1024×600, 1024×472, 390×844), panel open and closed, after trimming the Stage height term to `82cqh` in the ≥1200×≥641 regime so the open advanced panel's Ramp row no longer pushes the `Exhale` label into the deck; reduced-motion and the Stage hint line visually re-checked.
 - Single Stage shape — approved 2026-09-06: the Stage now always renders the Square. The former "`rest = 0` swaps to a Triangle" rendering path (`BreathingTriangle`, the `TRIANGLE_*` geometry, and the `interpolateTriangleDot` dot path) is removed; a zero-rest preset (e.g. Resonance Coherence) draws all four rounded-perimeter segments with the rest side shown as instantly complete. Supersedes the "default preset renders the Triangle" departure noted for #39. `e2e/preset-default.spec.ts` re-verifies the unmocked compiled-in default renders the Square with Resonance Coherence durations.
-- Default pattern is Resonance Coherence (5.5/0/5.5/0) — approved 2026-09-06 (#41): supersedes the `Default pattern 4-4-6-2 seconds` row above; half-second duration validation also lands with it. Fuller parity-row rewrite tracked in #44.
+- Default pattern is Resonance Coherence (5.5/0/5.5/0) — approved 2026-09-06 (#41): supersedes the former `Default pattern 4-4-6-2 seconds` row; half-second duration validation lands with it.
+- Protocol Library (five named, science-backed presets) — approved 2026-09-08 (#39, #40–#43): `BREATHING_PRESET_CATALOG` is replaced wholesale (Acute De-Stress, Mood Elevation, Resonance Coherence, Sleep Shift (4-7-8), Executive Focus), each carrying a `recommendedCycles` dosage, and Resonance Coherence's 5.5s inhale/exhale durations require the half-second validation step above. Two technique cues ship with it: the physiological sigh's top-off (audio tone + "Inhale again." announcement + Stage tick, ramp-safe, fires once per inhale) and Nadi Shodhana's alternating nostril hint — both surfaced via the merged Ramp/technique hint line rather than a second stacked line. A saved duration set that matches no current catalog entry (including the pre-#41 default, 4-4-6-2) loads as Custom; no migration is performed on existing saved settings.
