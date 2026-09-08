@@ -28,7 +28,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | --- | --- |
 | Phases order: inhale → hold → exhale → rest. Cycle increments when index wraps to inhale | A |
 | Default pattern is Resonance Coherence, 5.5-0-5.5-0 seconds (`DEFAULT_PRESET_ID`, `BreathingSettings.default()`); a fresh, never-configured load renders the Square with the rest side shown as instantly complete | A |
-| Duration validation (`PHASE_DURATION_LIMITS`) allows inhale/exhale 2–15 and hold/rest **0–15**, in half-second (0.5) steps; the manual steppers (`MANUAL_STEPPER_LIMITS`) additionally clamp hold/rest to 1–15 and always snap to the next whole second in the direction pressed, so hand-adjusting a fractional value (e.g. 5.5) lands on a whole number | A |
+| Duration validation (`PHASE_DURATION_LIMITS`) allows inhale/exhale 2–15 and hold/rest **0–15**, in half-second (0.5) steps; the manual steppers (`MANUAL_STEPPER_LIMITS`) additionally clamp hold/rest to 1–15 and snap to the next whole second in the direction pressed, so hand-adjusting a fractional value (e.g. 5.5) lands on a whole number. A value already below the stepper's own minimum (a hand-set 0.5 hold/rest) is held in place by the never-push-below-current floor rather than snapped | A |
 | Phase advancement is timestamp-driven (`requestAnimationFrame`), not `setInterval` | A |
 | Delta capped at 1s when tab was backgrounded | A |
 | Multi-phase overflow while-loop advances correctly across four phases | A |
@@ -53,7 +53,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | History is a header disclosure opening a non-modal overlay | A / V |
 | Ramp picker (Off / Wind down / Slow down) is a `role="group"` inside the advanced options disclosure panel; each chip carries `aria-pressed` | A |
 | Ramp hint ("Exhale now Ns" / "Inhale now Ns") appears under the coaching line while a Ramp has lengthened the live phase past its base duration; absent when Ramp is Off or the phase is at base | V |
-| Preset Picker is a header disclosure alongside History: trigger shows the active protocol's name (or "Custom" when no catalog entry matches current durations), `aria-expanded`/`aria-controls` on the trigger, non-modal overlay dismissible by Escape or outside click, focus restored to the trigger on close; each protocol card carries `aria-pressed` reflecting whether it is the active preset (no card pressed when Custom); picking a card applies its durations, sets the Session Goal to its `recommendedCycles` without emitting the "next session" goal-change announcement, and closes the overlay; a goal value with no matching fixed Goal-picker chip renders one extra, pressed chip for that exact value | A |
+| Preset Picker is a header disclosure alongside History: trigger shows the active protocol's name (or "Custom" when no catalog entry matches current durations), `aria-expanded`/`aria-controls` on the trigger, non-modal overlay dismissible by Escape or outside click, with focus restored to the trigger on Escape and on card selection (an outside click closes without moving focus, matching History); each protocol card carries `aria-pressed` reflecting whether it is the active preset (no card pressed when Custom); picking a card applies its durations, sets the Session Goal to its `recommendedCycles` without emitting the "next session" goal-change announcement, and closes the overlay; a goal value with no matching fixed Goal-picker chip renders one extra, pressed chip for that exact value | A |
 | Ramp hint and technique hint (top-off / nostril cue) share one line under the coaching text, joined by " · " when both are present, Ramp hint first; the technique hint alone reads "Top-off breath", "Left nostril", or "Right nostril" | A |
 
 ## Audio
@@ -95,7 +95,7 @@ Legend: **A** = automated (unit / component / Playwright), **V** = explicit visu
 | Labelled `.mv-square` extent bottom (square box plus the `Exhale` edge label) is strictly above `#controls` top at all four protected viewports — 1280×800, 1024×600, 1024×472, 390×844 — with advanced options both open and closed | A |
 | `@media (max-width: 480px)` tighter transport/buttons and bottom-sheet History overlay | V |
 | `@media (max-height: 640px)` compact stage sizing and tighter edge-label offsets | A / V |
-| History is a non-modal disclosure (Escape / outside-click dismiss, focus restored to trigger); scrollable within its max-height; on ≤480px it is a bottom sheet that may cover controls while open but never leaves one unreachable | A / V |
+| History is a non-modal disclosure (Escape / outside-click dismiss, focus restored to trigger on Escape); scrollable within its max-height; on ≤480px it is a bottom sheet that may cover controls while open but never leaves one unreachable | A / V |
 
 ## Reduced motion
 
