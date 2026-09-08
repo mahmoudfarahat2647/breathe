@@ -1,5 +1,5 @@
 begin;
-select plan(33);
+select plan(35);
 
 insert into auth.users (
   instance_id,
@@ -219,6 +219,30 @@ select throws_ok(
   '23514',
   null,
   'a quarter-second duration is rejected by the half-step check constraint'
+);
+
+select lives_ok(
+  $$insert into public.breathing_sessions (
+      id, user_id, cycle_count, elapsed_seconds, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds
+    ) values (
+      'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      '11111111-1111-4111-8111-111111111111',
+      1, 11, 5.5, 0, 5.5, 0
+    )$$,
+  'half-second session durations are accepted'
+);
+
+select throws_ok(
+  $$insert into public.breathing_sessions (
+      id, user_id, cycle_count, elapsed_seconds, inhale_seconds, hold_seconds, exhale_seconds, rest_seconds
+    ) values (
+      'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+      '11111111-1111-4111-8111-111111111111',
+      1, 14, 4.25, 0, 6, 2
+    )$$,
+  '23514',
+  null,
+  'a quarter-second session duration is rejected by the half-step check constraint'
 );
 
 select throws_ok(

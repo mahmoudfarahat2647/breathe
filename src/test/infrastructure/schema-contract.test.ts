@@ -22,8 +22,27 @@ describe("schema contract", () => {
     expect(migration).toMatch(/hold_seconds between 0 and 15/);
     expect(migration).toMatch(/exhale_seconds between 2 and 15/);
     expect(migration).toMatch(/rest_seconds between 0 and 15/);
-    expect(migration).toMatch(/inhale_seconds \* 2\) = floor\(inhale_seconds \* 2\)/);
-    expect(migration).toMatch(/alter column inhale_seconds type numeric\(3,1\)/);
+    for (const column of ["inhale_seconds", "hold_seconds", "exhale_seconds", "rest_seconds"]) {
+      const typeMatches = migration.match(
+        new RegExp(`alter column ${column} type numeric\\(3,1\\)`, "g"),
+      );
+      expect(typeMatches, `${column} is widened to numeric(3,1) on both tables`).toHaveLength(2);
+
+      const halfStepMatches = migration.match(
+        new RegExp(`\\(${column} \\* 2\\) = floor\\(${column} \\* 2\\)`, "g"),
+      );
+      expect(
+        halfStepMatches,
+        `${column} has a half-step check constraint on both tables`,
+      ).toHaveLength(2);
+
+      expect(migration).toMatch(
+        new RegExp(`breathing_settings_${column}_half_step_check`),
+      );
+      expect(migration).toMatch(
+        new RegExp(`breathing_sessions_${column}_half_step_check`),
+      );
+    }
     expect(migration).toMatch(/goal_type = 'minutes' and goal_value between 1 and 120/);
     expect(migration).toMatch(/goal_type = 'cycles' and goal_value between 1 and 100/);
     expect(migration).toMatch(/breathing_settings_goal_pair_check/);
