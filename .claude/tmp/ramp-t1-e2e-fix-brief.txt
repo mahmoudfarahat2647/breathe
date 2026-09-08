@@ -1,0 +1,48 @@
+## Delta task — fix one parity e2e selector collision introduced by the Ramp picker
+
+The Ramp T1 work added a **RampPicker** inside the "Show advanced options" panel with two
+chips: "Off" and "Wind down". The "Off" chip text now collides with the Sound toggle's
+visible "Off" word in tests that use an unscoped `getByText("Off")` once the advanced panel
+is open.
+
+`pnpm vitest run` is already green (a `within(...)` scope was added to
+`src/test/presentation/breathe-app.test.tsx`). One Playwright test still fails:
+
+    e2e/parity.spec.ts:66
+    > await expect(page.getByText("Off")).toBeVisible();
+    strict mode violation: getByText('Off') resolved to 2 elements
+      1) <span>Off</span>            (the Sound toggle word)
+      2) <button aria-pressed="true">Off</button>  (the new Ramp chip)
+
+### Change — `e2e/parity.spec.ts` only
+
+At line 66, scope the assertion to the Sound toggle so it targets the toggle's visible word,
+not the Ramp chip. The Sound word is a `<span>` inside `<span class="mv-sound-toggle">`.
+Change:
+
+    await expect(page.getByText("Off")).toBeVisible();
+
+to:
+
+    await expect(
+      page.locator(".mv-sound-toggle").getByText("Off"),
+    ).toBeVisible();
+
+That is the whole change. Do not touch any other line, any other file, the RampPicker, or
+`src/`. The intent of the assertion (parity row "Sound switch opt-in (default off) with
+visible On/Off word") is preserved and made more precise.
+
+### Also verify (do not change unless it is wrong)
+
+Confirm `src/test/presentation/breathe-app.test.tsx` around the "handles Sound switch" test
+already scopes its `getByText("Off")` / `getByText("On")` via
+`within(soundSwitch.closest(".mv-sound-toggle") as HTMLElement)`. If it does, leave it. If
+that scoping is missing or broken, apply the same `.mv-sound-toggle` scoping there.
+
+### Gates (run, report exact output)
+
+    pnpm vitest run src/test/presentation/breathe-app.test.tsx
+    pnpm playwright test e2e/parity.spec.ts e2e/smoke.spec.ts
+
+Both must be fully green. Report the pass/fail summary lines and the diff you made.
+Do not run `git add` / `git commit`.

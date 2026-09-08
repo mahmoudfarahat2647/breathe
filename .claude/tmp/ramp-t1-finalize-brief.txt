@@ -1,0 +1,63 @@
+## Task — finalize Ramp T1: shrink the CSS footprint to ramp-only, and defer the 1280×800 layout-budget re-check to #36
+
+Decision made by the orchestrator + user: the advanced panel with the Ramp row is ~4px over
+the parity layout budget at 1280×800 (panel open) and the `minmax(260px,1fr)` stage
+re-expands into any deck height trimmed, so CSS can't close it. **Ramp T4 (#36)** already owns
+"layout-budget e2e passes at all four viewports with advanced options open and closed", so we
+defer that one viewport's open-panel re-check to #36 and stop trimming the deck.
+
+Two changes:
+
+### 1. `src/app/globals.css` — revert the two edits that touched non-Ramp rules; keep ramp-scoped styling
+
+Currently the diff has two changes outside the Ramp's own selectors. Revert BOTH to their
+original values:
+
+- The shared rule `/* goal + ramp chips */ .goal-picker, .ramp-picker { … gap: 6px; }` —
+  change `gap: 6px;` back to `gap: 10px;`. (The Session Goal picker must keep its original
+  spacing. The in-panel ramp picker already has its own `.mv-advanced .ramp-picker { gap: 4px; }`
+  override, so it is unaffected.)
+- The `.mv-advanced { … padding: clamp(6px, 1vh, 8px) 0 clamp(6px, 1vh, 10px); … }` rule —
+  change that `padding` line back to the original
+  `padding: clamp(8px, 1.4vh, 12px) 0 clamp(10px, 2vh, 16px);`.
+
+KEEP everything else in the current globals.css diff (it is all scoped to `.ramp-picker` /
+`.mv-advanced .ramp-options` / `.mv-ramp-hint` / the `.duration-fields .ramp-picker`
+grid-column, plus the one selector-list extension adding `.mv-advanced .ramp-options
+.breathe-btn` to the shared chip base rule). Do not add anything new.
+
+### 2. `e2e/parity.spec.ts` — defer only the 1280×800 open-panel re-check
+
+In the `parity — desktop` describe (viewport 1280×800), the test "renders square geometry,
+labels, and idle state" calls `expectSquareAboveControls(page)` twice: once with the
+advanced-options disclosure CLOSED, and again right after `await disclosure.click()` opens it.
+
+Keep the CLOSED-panel call. Replace ONLY the second call (the one after the disclosure is
+opened) with this, keeping the `disclosure.click()` and any following `await
+disclosure.click()` that closes it again:
+
+    // TODO(#36 Ramp T4): with the Ramp row the advanced panel is ~4px over the 1280×800
+    // layout budget; the minmax(260px,1fr) stage re-expands into any deck height trimmed.
+    // Ramp T4 owns re-verifying the layout-budget test at all four viewports, panel open.
+    // await expectSquareAboveControls(page);
+
+Do NOT change the panel-open `expectSquareAboveControls` calls in the other describes
+(mobile 390×844, short-viewport 600, short-viewport 472) — those pass and must keep asserting.
+Do not touch the `.mv-sound-toggle` selector fix already in this file.
+
+### Gates (run all, report exact summaries + both diffs)
+
+    pnpm typecheck
+    pnpm lint
+    pnpm vitest run
+    pnpm playwright test e2e/parity.spec.ts e2e/smoke.spec.ts
+
+- typecheck: silent exit 0.
+- lint: NOTE — `pnpm lint` (eslint .) is ALREADY broken on `main` because of an untracked
+  `.claude/worktrees/` checkout; that is pre-existing and NOT ours. Instead run
+  `npx eslint src/domain/ramp.ts src/presentation/ramp-picker.tsx src/presentation/view-model.ts src/presentation/use-breathing-engine.ts src/domain/breathing-engine.ts e2e/parity.spec.ts`
+  and confirm THOSE are clean.
+- vitest: all 36 files pass.
+- playwright: all tests pass (parity + smoke), no failures.
+
+Do not commit.

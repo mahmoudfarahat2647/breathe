@@ -1,0 +1,127 @@
+## Goal
+
+Add a **RampPicker** React component and its CSS to the Breathe app. It is a small chip
+group ("Off" / "Wind down") that will live inside the existing "Show advanced options"
+disclosure. This is one slice of GitHub issue #33 (Ramp T1). You are NOT wiring it into
+the page and you will NOT commit — the orchestrator does both.
+
+## Current state (already on disk, do not change)
+
+`src/domain/ramp.ts` exists and is exported from `src/domain/index.ts`. It provides:
+
+    export type Ramp = null | "wind-down";
+    export type RampRule = {
+      readonly id: "wind-down";
+      readonly name: string;         // "Wind down"
+      readonly description: string;  // "Exhale lengthens by 1s every 2 cycles, up to +4s."
+      readonly phases: readonly Phase[];
+      readonly every: number;
+      readonly cap: number;
+    };
+    export const RAMP_CATALOG: Record<"wind-down", RampRule>;
+
+The existing Session Goal picker is the template to mirror. Read these files first:
+- `src/presentation/goal-picker.tsx`  — component pattern to copy (chips, aria-pressed, label)
+- `src/components/ui/button.tsx`       — the <Button> variants: `breathePrimary`, `breatheSecondary`, size `breathe`
+- `src/app/globals.css`                — search for the comment `/* goal chips */` (around line 824); the
+  block from `.goal-picker` through the `.mv-deck .breathe-btn[aria-pressed="true"]::after` rule is the
+  chip styling to extend. Also find the rule `.duration-fields .default-row,\n.duration-fields .default-hint { grid-column: 1 / -1; }`.
+- `src/presentation/index.ts`          — barrel; add the new export here.
+
+## What to change
+
+### 1. New file `src/presentation/ramp-picker.tsx`
+
+Model it exactly on `src/presentation/goal-picker.tsx` (same `"use client"` header, same import
+style, same `<Button>` usage).
+
+- Props: `type RampPickerProps = { selectedRamp: Ramp; onSelect: (ramp: Ramp) => void };`
+  Import `Ramp` and `RAMP_CATALOG` from `@/domain/ramp`.
+- Render:
+  - Outer `<div className="ramp-picker">`
+  - `<span className="ramp-picker-label label-tier">Ramp</span>`
+  - `<div className="ramp-options" role="group" aria-label="Ramp">` containing two chip buttons:
+    - "Off"       — selected when `selectedRamp === null`; `onClick={() => onSelect(null)}`
+    - "Wind down" — selected when `selectedRamp === "wind-down"`; `onClick={() => onSelect("wind-down")}`
+      (use `RAMP_CATALOG["wind-down"].name` for the label text)
+  - Each chip: `<Button type="button" size="breathe" variant={selected ? "breathePrimary" : "breatheSecondary"} aria-pressed={selected}>`
+  - After the options div, a description line:
+    `<p className="default-hint">{selectedRamp ? RAMP_CATALOG[selectedRamp].description : "No ramp — durations stay as you set them."}</p>`
+
+Keep it a pure presentational component — no `useState`, no effAects, no domain logic beyond
+reading `RAMP_CATALOG`.
+
+### 2. `src/presentation/index.ts`
+
+Add `export { RampPicker } from "./ramp-picker";` next to the existing `GoalPicker` export
+(match the surrounding export style — check whether the file re-exports types too).
+
+### 3. `src/app/globals.css`
+
+The chip visual treatment is currently scoped behind the `.mv-deck` ancestor, e.g.:
+
+    .mv-deck .breathe-btn { ... }
+    .mv-deck .breathe-btn[aria-checked="true"],
+    .mv-deck .breathe-btn[aria-pressed="true"] { ... }
+    .mv-deck .breathe-btn[aria-checked="true"]::after,
+    .mv-deck .breathe-btn[aria-pressed="true"]::after { ... }
+
+The RampPicker renders inside `.mv-advanced` (NOT inside `.mv-deck`), so it gets none of that.
+**Extend each of those selector lists** to also match the ramp chips by adding a
+`.mv-advanced .ramp-options .breathe-btn` variant to every selector in that group (including the
+`.mv-deck .goal-options` layout rule → also `.mv-advanced .ramp-options`, and the `::after` dot
+rules). Do not delete or restyle the existing `.mv-deck ...` selectors — only add the parallel
+`.mv-advanced .ramp-options ...` selector to each comma list.
+
+Then add, near the `/* goal chips */` block:
+
+    .ramp-picker {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ramp-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+And extend the existing full-width grid rule so the ramp row spans all columns of the
+`.duration-fields` grid — change:
+
+    .duration-fields .default-row,
+    .duration-fields .default-hint {
+      grid-column: 1 / -1;
+    }
+
+to also list `.duration-fields .ramp-picker`.
+
+Do NOT introduce any new CSS custom properties / design tokens — reuse the existing
+`--mv-*` vars the goal chips already use. Do NOT add any `transition` to `.ramp-picker`,
+`.ramp-options`, or `.default-hint`.
+
+## Do not touch
+
+- `src/presentation/duration-stepper.tsx`, `src/presentation/breathe-app.tsx`,
+  `src/presentation/use-breathing-engine.ts`, `src/presentation/view-model.ts` — the
+  orchestrator wires the picker in separately.
+- Any domain, application, infrastructure, or test file.
+- `docs/`, `CONTEXT.md`.
+- Do not run `git commit` or `git add`. Leave all changes unstaged in the working tree.
+
+## Gates (run these, report exact output)
+
+    pnpm typecheck
+    pnpm lint
+
+Both must pass. (There are no component tests for this picker — that is expected; the spec
+says the hook and e2e tests cover its behaviour. Do not add a test file.)
+
+## Report contract
+
+End your run with:
+- The full list of files you created/modified.
+- The exact `pnpm typecheck` and `pnpm lint` output (last ~15 lines each).
+- The full contents of the new `src/presentation/ramp-picker.tsx`.
+- Any decision you made that the brief did not spell out (naming, CSS placement, etc.).

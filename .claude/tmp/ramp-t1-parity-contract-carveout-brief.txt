@@ -1,0 +1,51 @@
+## Task — split the responsive-breakpoints layout-budget row in `docs/parity-contract.md` so it stops claiming an automated open-panel guarantee at 1280×800 that no longer runs
+
+### Why
+
+The Ramp row was added to the "Show advanced options" panel. At the 1280×800 viewport with
+that panel OPEN, the labelled `.mv-square` now overlaps `#controls` by ~4px, and the e2e
+assertion that checked it (`expectSquareAboveControls` after the disclosure opens, in
+`e2e/parity.spec.ts`) is commented out with a `TODO(#36 Ramp T4)` note. Re-verifying that
+layout budget at all four viewports with the panel open is owned by issue **#36 (Ramp T4)**.
+
+But `docs/parity-contract.md` line 90 still lists the 1280×800 open-panel case as an
+automated (A) guarantee. That row must be split so it only asserts what is actually tested
+today.
+
+### The change — ONE line, `docs/parity-contract.md`
+
+Current line 90 (inside the `## Responsive breakpoints` table):
+
+```
+| Labelled `.mv-square` extent bottom is strictly above `#controls` top at 1280×800, 1024×600, 1024×472, and 390×844 (advanced options open and closed) | A |
+```
+
+Replace that single line with these two rows (keep them in the same table position, same
+column layout — `| Behavior | Check |`):
+
+```
+| Labelled `.mv-square` extent bottom is strictly above `#controls` top at 1024×600, 1024×472, and 390×844 (advanced options open and closed), and at 1280×800 with advanced options closed | A |
+| Labelled `.mv-square` extent bottom is strictly above `#controls` top at 1280×800 with advanced options **open** — re-verification deferred to #36 (Ramp T4); the Ramp row currently puts this ~4px over budget and the e2e assertion is disabled | V |
+```
+
+### Do NOT touch
+
+- Any other line in `docs/parity-contract.md`.
+- Any other file. This is a documentation-only, single-line-to-two-line edit.
+- Do not reformat the table, adjust unrelated rows, or change whitespace elsewhere.
+
+### Gates (run all, report exact output)
+
+```
+pnpm typecheck
+pnpm vitest run
+pnpm playwright test e2e/parity.spec.ts e2e/smoke.spec.ts
+```
+
+- typecheck: silent exit 0.
+- vitest: all 36 files pass (this change is docs-only; nothing should move).
+- playwright: all parity + smoke tests pass, no failures.
+
+Also print `git diff docs/parity-contract.md`.
+
+Do NOT commit. The orchestrator reviews the diff, re-runs gates, and commits.

@@ -1,0 +1,97 @@
+## Task — apply an EXACT, minimal set of CSS additions for the Ramp T1 picker
+
+`src/app/globals.css` has just been reverted to HEAD (it currently has NO Ramp CSS). Your
+previous attempt changed far too much (transport, stats, deck, stepper spacing, and the
+existing Session Goal chip dot). This brief specifies the complete, minimal change. Apply
+exactly this and nothing more.
+
+### Background
+
+A new `RampPicker` component (`src/presentation/ramp-picker.tsx`, already on disk, DO NOT
+edit it) renders inside the "Show advanced options" panel. Its DOM:
+
+    <div class="ramp-picker">
+      <span class="ramp-picker-label label-tier">Ramp</span>
+      <div class="ramp-options" role="group" aria-label="Ramp">
+        <button class="breathe-btn breathe-btn-primary…" aria-pressed="true">Off</button>
+        <button class="breathe-btn breathe-btn-secondary…" aria-pressed="false">Wind down</button>
+      </div>
+      <p class="default-hint">No ramp — durations stay as you set them.</p>
+    </div>
+
+It sits inside `.mv-advanced` > `.durations` > `#duration-panel.duration-fields` (a CSS grid),
+after the four `.duration-row`s. The Session Goal picker (`.goal-picker` / `.goal-options`,
+scoped under `.mv-deck`) must be visually UNCHANGED by your edits.
+
+### Exact edits to `src/app/globals.css` — 4 hunks, nothing else
+
+**Hunk 1** — after the `.mv-coach { … }` rule (around line 573), add:
+
+    .mv-ramp-hint {
+      font-size: clamp(0.68rem, 2cqmin, 0.8rem);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mv-ink-faint);
+    }
+
+**Hunk 2** — replace the comment `/* goal chips */` and the `.goal-picker { … }` /
+`.goal-options { … }` rules (around lines 824-836) so the Ramp picker shares the layout:
+
+    /* goal + ramp chips */
+    .goal-picker,
+    .ramp-picker {
+      width: 100%;
+      max-width: 880px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .goal-options,
+    .ramp-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+(Note: the shared `gap` becomes 6px — this is the ONLY change to the shared rule. The Session
+Goal picker tolerates it; do not add a separate override.)
+
+**Hunk 3** — extend the four `.mv-deck .breathe-btn…` chip-style selector lists (around lines
+844-884) to ALSO match the ramp chips. Add the parallel selector to each comma list; change
+nothing else in these rules (same declarations, same `bottom: 0.5em`, NO box-shadow):
+
+- `.mv-deck .goal-picker-label, .mv-deck .goal-picker span:first-child` → also add
+  `.mv-advanced .ramp-picker-label`
+- `.mv-deck .goal-options` → also add `.mv-advanced .ramp-options`
+- `.mv-deck .breathe-btn` → also add `.mv-advanced .ramp-options .breathe-btn`
+- `.mv-deck .breathe-btn[aria-checked="true"], .mv-deck .breathe-btn[aria-pressed="true"]` →
+  also add `.mv-advanced .ramp-options .breathe-btn[aria-pressed="true"]`
+- `.mv-deck .breathe-btn[aria-checked="true"]::after, .mv-deck .breathe-btn[aria-pressed="true"]::after`
+  → also add `.mv-advanced .ramp-options .breathe-btn[aria-pressed="true"]::after`
+
+**Hunk 4** — extend the `.duration-fields .default-row, .duration-fields .default-hint {
+grid-column: 1 / -1; }` rule (around lines 952-955) to also list `.duration-fields
+.ramp-picker`:
+
+    .duration-fields .default-row,
+    .duration-fields .default-hint,
+    .duration-fields .ramp-picker {
+      grid-column: 1 / -1;
+    }
+
+That is the complete change. **Do NOT** touch `.mv-transport`, `.mv-stats`, `.mv-deck`
+padding, `.mv-advanced` padding, `.durations` gap, `.duration-fields` gap, the grid-row
+template, `ramp-picker.tsx`, or any file other than `globals.css`. No `box-shadow`, no new
+tokens, no grid layout for `.ramp-picker`.
+
+### Gates
+
+    pnpm playwright test e2e/parity.spec.ts e2e/smoke.spec.ts
+    pnpm vitest run src/test/presentation
+
+If `e2e/parity.spec.ts` STILL fails on `expectSquareAboveControls` with the panel open at any
+viewport (1280×800, 1024×600, 1024×472, 390×844), do NOT start changing other selectors.
+Instead report the exact `squareBottom` vs `controlsY` numbers for each failing viewport and
+STOP — the orchestrator will decide the next lever. Report your full `globals.css` diff and
+the gate summary lines. Do not commit.

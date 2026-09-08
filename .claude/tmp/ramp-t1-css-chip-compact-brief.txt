@@ -1,0 +1,39 @@
+## Task — compact the Ramp chips (scoped), then run full gates
+
+Keep `src/app/globals.css` as it is now and make the Ramp chips inside `.mv-advanced` more
+compact — scoped ENTIRELY to `.mv-advanced .ramp-options .breathe-btn`. The Session Goal
+picker (`.mv-deck .breathe-btn`) must be untouched.
+
+### Edits to `src/app/globals.css`
+
+**1.** After the existing rule
+`.mv-deck .breathe-btn, .mv-advanced .ramp-options .breathe-btn { … padding: 0.6em 1em; }`
+add an override that tightens ONLY the ramp chips:
+
+    .mv-advanced .ramp-options .breathe-btn {
+      padding: 0.32em 0.8em;
+      font-size: 0.82rem;
+    }
+
+**2.** In the selector list
+`.mv-deck .breathe-btn[aria-checked="true"], .mv-deck .breathe-btn[aria-pressed="true"], .mv-advanced .ramp-options .breathe-btn[aria-pressed="true"] { … padding-bottom: 1.1em; }`
+— REMOVE `.mv-advanced .ramp-options .breathe-btn[aria-pressed="true"]` from that list (so the
+ramp chips do NOT get `padding-bottom: 1.1em`), and REMOVE
+`.mv-advanced .ramp-options .breathe-btn[aria-pressed="true"]::after` from the `::after`
+selector list (the ramp chips do NOT get the dot marker — their `aria-pressed` background
+fill is the selected indicator). Leave both rules fully intact for the `.mv-deck` selectors.
+
+Net effect: ramp chips are a plain pill that fills with `--mv-chip-sel` when pressed, no
+dot, less vertical padding. Nothing else changes. Do NOT touch `.mv-transport`, `.mv-stats`,
+`.mv-deck`, `.durations`, `.duration-fields` grid gap, the grid-row template, or
+`ramp-picker.tsx`.
+
+### Gates (run all, report exact summary + full globals.css diff + per-viewport margins)
+
+    pnpm typecheck
+    pnpm vitest run
+    pnpm playwright test e2e/parity.spec.ts e2e/smoke.spec.ts
+
+Report, for `e2e/parity.spec.ts`, the `squareBottom` vs `controlsY` margin for 1280×800 /
+1024×600 / 1024×472 / 390×844 with advanced options OPEN. If 1280×800 open is still over
+budget, report the exact numbers and STOP — do not touch any other selector. Do not commit.

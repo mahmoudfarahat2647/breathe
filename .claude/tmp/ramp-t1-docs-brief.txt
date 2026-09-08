@@ -1,0 +1,86 @@
+## Goal
+
+Finish the documentation portion of GitHub issue #33 ("Ramp T1: Wind Down works end to
+end (in memory)") for the Breathe app, and run the verification gates. The code portion is
+already implemented and on disk (uncommitted). You are ONLY doing the two doc edits below
+plus verification. You will NOT commit — the orchestrator commits.
+
+## Context: what "Ramp" is (from spec #32)
+
+A **Ramp** is an optional rule, off by default, that steps phase durations from the active
+Preset's values toward a target as cycles complete. Two ramps are planned; T1 ships only
+**Wind Down** — Exhale lengthens by 1s every 2 completed cycles, up to +4s, never past 15s.
+Hold and Rest never change. Like a Session Goal, the Ramp selected at Start applies for the
+whole Session; changing it mid-Session takes effect on the next Session.
+
+## What is already done (do NOT redo, do NOT modify these files)
+
+- `src/domain/ramp.ts` (new) — `Ramp` type, `RAMP_CATALOG`, `rampFromDto`, `settingsForCycle`.
+- `src/domain/breathing-engine.ts` — `advanceBreathingState` gained an optional trailing `ramp` arg.
+- `src/domain/index.ts` — barrel exports the ramp module.
+- `src/presentation/use-breathing-engine.ts` — `selectedRamp` / `activeRamp` / `setRamp` plumbing.
+- `src/presentation/view-model.ts` — `rampHint: string | null` on the view model.
+- `src/presentation/ramp-picker.tsx` (new) + `src/presentation/breathe-app.tsx` + `duration-stepper.tsx` + `globals.css` — the picker UI.
+- Tests: `src/test/domain/ramp.test.ts` (new), and additions to `advance-breathing-state.test.ts`,
+  `use-breathing-engine.test.ts`, `view-model.test.ts` — all passing.
+
+## Change 1 — `CONTEXT.md` (repo root): add a "Ramp" glossary entry
+
+The glossary is the `## Language` section. Entries follow this exact house style:
+
+    **Term**:
+    Definition prose on the next line(s).
+    _Avoid_: synonym1, synonym2, synonym3.
+
+    (one blank line between entries)
+
+Insert a new **Ramp** entry immediately AFTER the `**Preset**:` entry (which ends with
+`_Avoid_: Pattern, breathing pattern.`) and BEFORE the `**Stage**:` entry. Use exactly:
+
+    **Ramp**:
+    An optional rule that changes phase durations from cycle to cycle during a Session, stepping from the active Preset's durations toward a target. Off by default. Two ramps ship: Wind Down and Slow Down. Like a Session Goal, the Ramp selected at Start is the one that applies for that whole Session.
+    _Avoid_: taper, ladder, progression.
+
+Keep the blank-line spacing consistent with the surrounding entries. Change nothing else in the file.
+
+## Change 2 — `docs/parity-contract.md`: rename one table row
+
+In the `## Phase rules and engine` table there is a row whose left cell reads exactly:
+
+    Progression is timestamp-driven (`requestAnimationFrame`), not `setInterval`
+
+Change only the leading word "Progression" to "Phase advancement", so it reads:
+
+    Phase advancement is timestamp-driven (`requestAnimationFrame`), not `setInterval`
+
+Leave the `| A |` check cell and every other row untouched. (Rationale: the parity contract
+already uses "progression" for the RAF advance loop; spec #32 reserves clear wording for the
+new Ramp concept. The broader set of Ramp parity-contract rows is a later ticket, #36 — do
+NOT add them here.)
+
+## Do not touch
+
+- Any file under `src/`.
+- Any other part of `docs/` or any other doc/config file.
+- Do not run `git add` or `git commit`.
+- Do not attempt to fix `pnpm lint` repo-wide noise coming from `.claude/worktrees/` — that is
+  a stray untracked worktree, out of scope.
+
+## Gates (run these and report exact output)
+
+    pnpm typecheck
+    pnpm vitest run src/test/domain src/test/presentation
+
+Both must be green. `pnpm typecheck` should print nothing but the script banner. The vitest
+run should report all test files passing.
+
+Optionally also run `npx eslint src/domain/ramp.ts src/presentation/ramp-picker.tsx` and
+confirm it is clean (it currently is).
+
+## Report contract
+
+End your run with:
+- The exact diff you made to `CONTEXT.md` and `docs/parity-contract.md` (the changed lines).
+- The full `pnpm typecheck` output.
+- The `pnpm vitest run src/test/domain src/test/presentation` summary line (files/tests passed).
+- Anything you had to decide that this brief did not spell out.

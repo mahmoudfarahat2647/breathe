@@ -1,0 +1,32 @@
+## Task — one line: tighten the advanced panel's own vertical padding
+
+Keep `src/app/globals.css` exactly as it is now (your 4 Ramp hunks + the 2 scoped
+`.mv-advanced .ramp-picker` rules). Change ONE existing declaration and nothing else.
+
+The `.mv-advanced` panel (the "Show advanced options" disclosure wrapper — NOT the transport,
+stats, or deck) now holds one extra row (the Ramp picker) and is ~6px over the layout budget
+at 1280×800 with the panel open. Tighten `.mv-advanced`'s own vertical padding.
+
+### Change (`src/app/globals.css`, the `.mv-advanced { … }` rule near line 901)
+
+From:
+
+    padding: clamp(8px, 1.4vh, 12px) 0 clamp(10px, 2vh, 16px);
+
+To:
+
+    padding: clamp(6px, 1vh, 8px) 0 clamp(6px, 1vh, 10px);
+
+Do not touch anything else — not `.mv-transport`, `.mv-stats`, `.mv-deck`, `.durations`,
+`.duration-fields`, the grid-row template, `.ramp-picker` rules, or any other file.
+
+### Gates (run all, report exact summary lines + the one-line diff)
+
+    pnpm typecheck
+    pnpm vitest run
+    pnpm playwright test e2e/parity.spec.ts e2e/smoke.spec.ts
+
+All must be fully green, including `expectSquareAboveControls` at 1280×800 / 1024×600 /
+1024×472 / 390×844 with advanced options open AND closed. Report the per-viewport
+`squareBottom` vs `controlsY` margins. If 1280×800 open is still over budget, report numbers
+and STOP. Do not commit.

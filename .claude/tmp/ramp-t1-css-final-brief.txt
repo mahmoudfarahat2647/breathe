@@ -1,0 +1,40 @@
+## Task — add exactly 2 scoped CSS rules to close the last 6.8px of layout budget
+
+Your last run applied the 4 Ramp hunks correctly and stopped at 1280×800 open-panel overlap
+of 6.81px (all other viewports pass). Keep `src/app/globals.css` exactly as it is now and add
+ONLY the two rules below. They are scoped entirely to `.mv-advanced .ramp-picker` descendants,
+so nothing else on the page can shift.
+
+### Add to `src/app/globals.css`
+
+Place these immediately AFTER the
+`.duration-fields .default-row, .duration-fields .default-hint, .duration-fields .ramp-picker { grid-column: 1 / -1; }`
+rule:
+
+    .mv-advanced .ramp-picker {
+      gap: 4px;
+    }
+    .mv-advanced .ramp-picker .default-hint {
+      margin-top: 0;
+      font-size: 0.76rem;
+      line-height: 1.3;
+    }
+
+That is the entire change — 2 rules, ~7 lines. Do NOT modify any existing rule, any other
+file, `.mv-transport`, `.mv-stats`, `.mv-deck`, `.mv-advanced` padding, `.durations`,
+`.duration-fields` gap, the grid-row template, or `ramp-picker.tsx`. No box-shadow, no new
+tokens.
+
+### Gates (run all, report exact summary lines + your diff)
+
+    pnpm typecheck
+    pnpm vitest run
+    pnpm playwright test e2e/parity.spec.ts e2e/smoke.spec.ts
+
+- `pnpm typecheck`: silent, exit 0.
+- `pnpm vitest run`: all test files pass.
+- `pnpm playwright test …`: ALL tests pass, including `expectSquareAboveControls` at
+  1280×800 / 1024×600 / 1024×472 / 390×844 with advanced options open AND closed.
+
+If 1280×800 is STILL over budget, report the exact `squareBottom` vs `controlsY` for every
+viewport and STOP — do not touch other selectors. Do not commit.

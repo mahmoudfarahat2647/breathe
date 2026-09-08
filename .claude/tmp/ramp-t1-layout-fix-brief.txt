@@ -1,0 +1,59 @@
+## Delta task — the Ramp picker makes the advanced panel too tall; restore the layout budget
+
+The Ramp T1 work added a **RampPicker** (label + two chips + a one-line description) inside
+the "Show advanced options" disclosure panel (`.mv-advanced` > `.duration-fields`). With the
+panel open it adds enough vertical height that the parity **layout-budget** check now fails —
+the square/exhale-label bottom edge overlaps the top of `#controls`.
+
+Failing test:
+
+    pnpm playwright test e2e/parity.spec.ts
+    e2e/parity.spec.ts:38  parity — desktop  (viewport 1280×800)
+      expectSquareAboveControls  →  expect(squareBottom).toBeLessThan(controlsBox.y)
+      Expected: < 324   Received: 332.08     (~8px overlap once advanced options is open)
+
+`expectSquareAboveControls` (e2e/parity.spec.ts:18-33) is also asserted with the panel open
+at viewports 1024×600 (line ~252), 1024×472 (line ~271), and 390×844 (line ~222). All four
+must pass with advanced options both closed AND open.
+
+### Root cause
+
+The extra height comes almost entirely from CSS the Ramp work added to
+`src/app/globals.css`. In particular this block adds 26px + a border above the ramp row:
+
+    .duration-fields .ramp-picker {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--panel-border);
+    }
+
+and `.ramp-picker { gap: 10px; }` + the description `<p class="default-hint">` line add more.
+
+### What to change — `src/app/globals.css` only
+
+Make the RampPicker compact enough that the layout-budget check passes at all four protected
+viewports with the panel open. Recommended, in order — apply the minimum that makes the e2e
+green:
+
+1. **Delete** the `.duration-fields .ramp-picker { margin-top / padding-top / border-top }`
+   rule entirely (lines ~971-975). Keep the `grid-column: 1 / -1` on `.duration-fields
+   .default-row, .default-hint, .ramp-picker` (lines ~966-970) — that one stays.
+2. If still over budget, tighten `.ramp-picker` `gap` from `10px` to `6px` **scoped to the
+   advanced panel** (add `.mv-advanced .ramp-picker { gap: 6px; }` — do NOT change the shared
+   `.goal-picker, .ramp-picker` rule, the Session Goal picker must not shift).
+3. If still over budget, reduce the description line's top spacing inside the panel:
+   `.mv-advanced .ramp-picker .default-hint { margin-top: 2px; font-size: 0.78rem; }`.
+
+Do not touch `ramp-picker.tsx`, any other `src/` file, `e2e/`, or the grid-row template
+(`grid-template-rows: auto minmax(260px, 1fr) auto`). No new design tokens. Keep the two-chip
+picker fully visible and usable — this is about trimming padding/margins/gaps, not hiding
+anything.
+
+### Gates (run, report exact output + your diff)
+
+    pnpm playwright test e2e/parity.spec.ts e2e/smoke.spec.ts
+    pnpm vitest run src/test/presentation
+
+Both must be fully green (parity.spec.ts: all tests pass, including the 4 layout-budget
+viewports open+closed). Report the summary lines and the exact `globals.css` diff.
+Do not run `git add` / `git commit`.
