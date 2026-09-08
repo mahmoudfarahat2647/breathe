@@ -9,8 +9,17 @@ One of the four beats of a breath cycle: Inhale, Hold, Exhale, Rest. Phases adva
 _Avoid_: Step, stage (see Stage below — different concept, same word collides), side.
 
 **Preset**:
-A named set of phase durations a user can select as a starting point (one of the science-backed catalog protocols), or Custom once durations are hand-adjusted.
+A named set of phase durations a user can select as a starting point via the Preset Picker, or Custom once durations are hand-adjusted. The catalog holds five science-backed protocols: Acute De-Stress (physiological sigh), Mood Elevation (alternate-nostril / Nadi Shodhana), Resonance Coherence (the default), Sleep Shift (4-7-8), and Executive Focus (box breathing).
 _Avoid_: Pattern, breathing pattern.
+
+**Dosage**:
+A Preset's recommended cycle count. Selecting a Preset from the Preset Picker applies its dosage as the Session Goal automatically; the Goal picker can still override it afterward. Picking nothing leaves a fresh user's Session Goal unset (None).
+
+**Top-off**:
+The physiological sigh's second, shorter inhale segment, layered onto the tail of Acute De-Stress's inhale phase. A tone, an announced hint ("Inhale again."), and a Stage tick mark the boundary where it begins; the boundary tracks the live (Ramp-adjusted) inhale length, not the Preset's base duration.
+
+**Nostril cue**:
+The left/right hint shown during inhale and exhale for Presets with alternate-nostril breathing (Mood Elevation), alternating every completed cycle. Absent during Hold and Rest, which carry no nostril side.
 
 **Ramp**:
 An optional rule that changes phase durations from cycle to cycle during a Session, stepping from the active Preset's durations toward a target. Off by default. Two ramps ship: Wind Down and Slow Down. Like a Session Goal, the Ramp selected at Start is the one that applies for that whole Session.
