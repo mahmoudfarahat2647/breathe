@@ -10,6 +10,19 @@ import type { BreathingSupabaseClient } from "../supabase/server-client";
 export class SupabaseSessionRepository implements SessionRepository {
   constructor(private readonly client: BreathingSupabaseClient) {}
 
+  async countByUserId(userId: string): Promise<number> {
+    const { count, error } = await this.client
+      .from("breathing_sessions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (error) {
+      throw new PersistenceError(error.message);
+    }
+
+    return count ?? 0;
+  }
+
   async save(session: BreathingSessionDto): Promise<void> {
     const { error } = await this.client
       .from("breathing_sessions")

@@ -18,5 +18,9 @@ export {
   type GetSessionHistoryResult,
 } from "./get-session-history";
 export { SaveSettings } from "./save-settings";
-export { SaveSession, type SaveSessionResult } from "./save-session";
+export {
+  MAX_SESSIONS_PER_USER,
+  SaveSession,
+  type SaveSessionResult,
+} from "./save-session";
 export { ApplyPreset } from "./apply-preset";

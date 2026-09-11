@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { GetSessionHistory } from "@/application";
 import { DomainValidationError } from "@/domain";
 import { PersistenceError } from "@/infrastructure";
 import {
@@ -186,5 +187,80 @@ describe("SupabaseSessionHistoryRepository", () => {
     await expect(repository.listByUserId(USER_ID)).rejects.toBeInstanceOf(
       PersistenceError,
     );
+  });
+
+  it("paginates beyond 500 rows to exhaustion so history aggregates include all sessions", async () => {
+    const ranges: Array<[number, number]> = [];
+    const repository = new SupabaseSessionHistoryRepository(
+      {
+        from() {
+          return {
+            select() {
+              return {
+                eq() {
+                  return {
+                    order() {
+                      return {
+                        range(from: number, to: number) {
+                          ranges.push([from, to]);
+                          const pageIndex = Math.floor(from / 100);
+                          if (pageIndex < 6) {
+                            return Promise.resolve({
+                              data: Array.from({ length: 100 }, () => ({
+                                cycle_count: 1,
+                                elapsed_seconds: 10,
+                                inhale_seconds: 4,
+                                hold_seconds: 4,
+                                exhale_seconds: 6,
+                                rest_seconds: 2,
+                                created_at: "2026-08-26T12:00:00.000Z",
+                              })),
+                              error: null,
+                            });
+                          }
+                          return Promise.resolve({
+                            data: [
+                              {
+                                cycle_count: 1,
+                                elapsed_seconds: 10,
+                                inhale_seconds: 4,
+                                hold_seconds: 4,
+                                exhale_seconds: 6,
+                                rest_seconds: 2,
+                                created_at: "2026-08-26T12:00:00.000Z",
+                              },
+                            ],
+                            error: null,
+                          });
+                        },
+                      };
+                    },
+                  };
+                },
+              };
+            },
+          };
+        },
+      } as unknown as BreathingSupabaseClient,
+      "UTC",
+    );
+
+    const records = await repository.listByUserId(USER_ID);
+    expect(records).toHaveLength(601);
+    expect(ranges).toEqual([
+      [0, 99],
+      [100, 199],
+      [200, 299],
+      [300, 399],
+      [400, 499],
+      [500, 599],
+      [600, 699],
+    ]);
+
+    const useCase = new GetSessionHistory(repository);
+    const today = { year: 2026, month: 8, day: 26 };
+    const result = await useCase.execute(USER_ID, today);
+    expect(result.records).toHaveLength(5);
+    expect(result.summary.totalSessions).toBe(601);
   });
 });
