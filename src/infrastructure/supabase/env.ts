@@ -1,4 +1,5 @@
-const SERVICE_ROLE = "service_role";
+const MODERN_PUBLISHABLE_PREFIX = "sb_publishable_";
+const LEGACY_ANON_ROLE = "anon";
 
 export type SupabasePublicEnv = {
   url: string;
@@ -42,21 +43,22 @@ export function getSupabasePublicEnv(
     );
   }
 
-  if (keyHasRole(anonKey, SERVICE_ROLE)) {
+  if (!isPublicSupabaseKey(anonKey)) {
     throw new PersistenceConfigError(
-      "Service-role keys must not be used in the application client.",
+      "Only anon or publishable keys belong in NEXT_PUBLIC_* variables. Service-role keys must not be used in the application client.",
     );
   }
 
   return { url, anonKey };
 }
 
-function keyHasRole(key: string, role: string): boolean {
-  const payload = decodeJwtPayload(key);
-  if (payload?.role === role) {
+function isPublicSupabaseKey(key: string): boolean {
+  if (key.startsWith(MODERN_PUBLISHABLE_PREFIX)) {
     return true;
   }
-  return key.toLowerCase().includes(role);
+
+  const payload = decodeJwtPayload(key);
+  return payload?.role === LEGACY_ANON_ROLE;
 }
 
 function decodeJwtPayload(token: string): { role?: string } | null {
