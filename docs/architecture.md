@@ -32,3 +32,7 @@ Dependencies point **inward**. Outer layers adapt to inner layers. Boundary data
 ## Reference Implementation
 
 The Next.js implementation is the sole application in the repository. Full behavioral, visual, responsive, accessibility, and security parity has been verified against the original reference contract.
+
+## Data lifecycle
+
+Retention and erasure for the user-owned tables are documented in [data-retention.md](data-retention.md).
