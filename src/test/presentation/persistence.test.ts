@@ -293,7 +293,7 @@ describe("createHttpBreathingPersistence", () => {
     ]);
   });
 
-  it("does not retry validation failures", async () => {
+  it("does not retry validation failures and rejects", async () => {
     let sessionAttempts = 0;
     const persistence = createHttpBreathingPersistence({
       fetch: vi.fn(async (input) => {
@@ -305,16 +305,18 @@ describe("createHttpBreathingPersistence", () => {
       }) as typeof fetch,
     });
 
-    await persistence.saveSession({
-      id: SESSION_ID,
-      cycleCount: 1,
-      elapsedSeconds: 14,
-      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
-    });
+    await expect(
+      persistence.saveSession({
+        id: SESSION_ID,
+        cycleCount: 1,
+        elapsedSeconds: 14,
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      }),
+    ).rejects.toThrow(/400/);
     expect(sessionAttempts).toBe(1);
   });
 
-  it("does not throw when session retries also fail", async () => {
+  it("rejects when session retries also fail", async () => {
     const persistence = createHttpBreathingPersistence({
       fetch: vi.fn(async () => jsonResponse({ error: "down" }, 503)) as typeof fetch,
     });
@@ -326,6 +328,139 @@ describe("createHttpBreathingPersistence", () => {
         elapsedSeconds: 14,
         durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
       }),
+    ).rejects.toThrow(/503/);
+  });
+
+  it("rejects when fetch throws a network error", async () => {
+    const persistence = createHttpBreathingPersistence({
+      fetch: vi.fn(async (input) => {
+        if (String(input) === "/api/auth/anonymous") {
+          return jsonResponse({ userId: USER_ID });
+        }
+        throw new TypeError("Failed to fetch");
+      }) as typeof fetch,
+    });
+
+    await expect(
+      persistence.saveSession({
+        id: SESSION_ID,
+        cycleCount: 1,
+        elapsedSeconds: 14,
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      }),
+    ).rejects.toThrow("Failed to fetch");
+  });
+
+  it("rejects when final response is not ok", async () => {
+    const persistence = createHttpBreathingPersistence({
+      fetch: vi.fn(async (input) => {
+        if (String(input) === "/api/auth/anonymous") {
+          return jsonResponse({ userId: USER_ID });
+        }
+        return jsonResponse({ error: "internal server error" }, 500);
+      }) as typeof fetch,
+    });
+
+    await expect(
+      persistence.saveSession({
+        id: SESSION_ID,
+        cycleCount: 1,
+        elapsedSeconds: 14,
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      }),
+    ).rejects.toThrow(/500/);
+  });
+
+  it("resolves and makes one auth call on retry when 401 then 200 on retry", async () => {
+    const authCalls: string[] = [];
+    let sessionAttempts = 0;
+    const persistence = createHttpBreathingPersistence({
+      fetch: vi.fn(async (input, init) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+        if (url === "/api/auth/anonymous") {
+          authCalls.push(`${method} ${url}`);
+          return jsonResponse({ userId: USER_ID });
+        }
+        if (url === "/api/settings") {
+          return jsonResponse({
+            durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+            goal: null,
+            ramp: null,
+          });
+        }
+        sessionAttempts += 1;
+        if (sessionAttempts === 1) {
+          return jsonResponse({ error: "unauthorized" }, 401);
+        }
+        return jsonResponse({ outcome: "saved" });
+      }) as typeof fetch,
+    });
+
+    await persistence.initialize();
+    authCalls.length = 0;
+
+    await expect(
+      persistence.saveSession({
+        id: SESSION_ID,
+        cycleCount: 1,
+        elapsedSeconds: 14,
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      }),
     ).resolves.toBeUndefined();
+
+    expect(authCalls).toEqual(["POST /api/auth/anonymous"]);
+    expect(sessionAttempts).toBe(2);
+  });
+
+  it("rejects when 401 retry returns a 500 server error", async () => {
+    let sessionAttempts = 0;
+    const persistence = createHttpBreathingPersistence({
+      fetch: vi.fn(async (input) => {
+        const url = String(input);
+        if (url === "/api/auth/anonymous") {
+          return jsonResponse({ userId: USER_ID });
+        }
+        sessionAttempts += 1;
+        if (sessionAttempts === 1) {
+          return jsonResponse({ error: "unauthorized" }, 401);
+        }
+        return jsonResponse({ error: "internal server error" }, 500);
+      }) as typeof fetch,
+    });
+
+    await expect(
+      persistence.saveSession({
+        id: SESSION_ID,
+        cycleCount: 1,
+        elapsedSeconds: 14,
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      }),
+    ).rejects.toThrow(/500/);
+    expect(sessionAttempts).toBe(2);
+  });
+
+  it("resolves on first try when response is ok", async () => {
+    let sessionAttempts = 0;
+    const persistence = createHttpBreathingPersistence({
+      fetch: vi.fn(async (input) => {
+        const url = String(input);
+        if (url === "/api/auth/anonymous") {
+          return jsonResponse({ userId: USER_ID });
+        }
+        sessionAttempts += 1;
+        return jsonResponse({ outcome: "saved" });
+      }) as typeof fetch,
+    });
+
+    await expect(
+      persistence.saveSession({
+        id: SESSION_ID,
+        cycleCount: 1,
+        elapsedSeconds: 14,
+        durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+      }),
+    ).resolves.toBeUndefined();
+    expect(sessionAttempts).toBe(1);
   });
 });

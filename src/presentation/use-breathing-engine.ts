@@ -81,6 +81,7 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
   const activeRampRef = useRef(activeRamp);
   const sessionIdRef = useRef<string | null>(null);
   const sessionSavedRef = useRef(false);
+  const sessionSavingRef = useRef(false);
   const soundRef = useRef(soundEnabled);
   const settingsDirtyRef = useRef(false);
   const persistTimerRef = useRef<number | null>(null);
@@ -191,7 +192,14 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
   const persistSession = useCallback((state: BreathingEngineState) => {
     const persistence = persistenceRef.current;
     const sessionId = sessionIdRef.current;
-    if (!persistence || !sessionId || sessionSavedRef.current) return;
+    if (
+      !persistence ||
+      !sessionId ||
+      sessionSavedRef.current ||
+      sessionSavingRef.current
+    ) {
+      return;
+    }
 
     const snapshot = snapshotCompletedSession(
       sessionId,
@@ -200,8 +208,20 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     );
     if (!snapshot) return;
 
-    sessionSavedRef.current = true;
-    void persistence.saveSession(snapshot).catch(() => {});
+    sessionSavingRef.current = true;
+    void persistence
+      .saveSession(snapshot)
+      .then(() => {
+        if (sessionIdRef.current === sessionId) {
+          sessionSavedRef.current = true;
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (sessionIdRef.current === sessionId) {
+          sessionSavingRef.current = false;
+        }
+      });
   }, []);
 
   const cuePhase = useCallback(
@@ -263,6 +283,7 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
 
       sessionIdRef.current = createSessionIdRef.current();
       sessionSavedRef.current = false;
+      sessionSavingRef.current = false;
     }
 
     const next = startBreathing(previous);
@@ -283,13 +304,14 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     const persistence = persistenceRef.current;
     const current = engineRef.current;
     const shouldSaveOnReset =
-      current.status !== "completed" &&
       !sessionSavedRef.current &&
+      !sessionSavingRef.current &&
       current.cycleCount >= 1;
+    const sessionId = sessionIdRef.current ?? createSessionIdRef.current();
     const snapshot =
       persistence && shouldSaveOnReset
         ? snapshotCompletedSession(
-            sessionIdRef.current ?? createSessionIdRef.current(),
+            sessionId,
             current,
             settingsRef.current,
           )
@@ -309,10 +331,25 @@ export function useBreathingEngine(adapters: BreathingEngineAdapters = {}) {
     activeAlternateNostrilsRef.current = false;
     setActiveAlternateNostrils(false);
     topOffFiredRef.current = false;
-    sessionIdRef.current = null;
+    sessionIdRef.current = snapshot ? sessionId : null;
+    if (!sessionSavingRef.current && !snapshot) {
+      sessionSavedRef.current = false;
+    }
     if (snapshot && persistence) {
-      sessionSavedRef.current = true;
-      void persistence.saveSession(snapshot).catch(() => {});
+      sessionSavingRef.current = true;
+      void persistence
+        .saveSession(snapshot)
+        .then(() => {
+          if (sessionIdRef.current === sessionId) {
+            sessionSavedRef.current = true;
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (sessionIdRef.current === sessionId) {
+            sessionSavingRef.current = false;
+          }
+        });
     }
   }, []);
 
