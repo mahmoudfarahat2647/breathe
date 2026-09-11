@@ -648,6 +648,206 @@ describe("useBreathingEngine persistence", () => {
     expect(result.current.view.svgIdle).toBe(true);
   });
 
+  it("leaves session uncompleted after failed save and retries save on subsequent trigger", async () => {
+    const frames = createRafStub();
+    const saveSession = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("500 Internal Server Error"))
+      .mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() =>
+      useBreathingEngine({
+        raf: frames.raf,
+        caf: frames.caf,
+        audio: {
+          ensure: vi.fn(),
+          playPhase: vi.fn(),
+          playCompletion: vi.fn(),
+          playTopOff: vi.fn(),
+          context: null,
+        },
+        persistence: fakePersistence({ saveSession }),
+        createSessionId: () => SESSION_A,
+      }),
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.setGoal({ kind: "cycles", cycles: 1 });
+      result.current.start();
+    });
+
+    // Complete cycle 1 to trigger auto-complete and first save attempt
+    completeCycles(frames, 16);
+    expect(result.current.engine.status).toBe("completed");
+    expect(saveSession).toHaveBeenCalledTimes(1);
+    expect(saveSession).toHaveBeenLastCalledWith({
+      id: SESSION_A,
+      cycleCount: 1,
+      elapsedSeconds: expect.any(Number),
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+    });
+
+    // Wait for the rejected save promise to settle
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Subsequent trigger: Reset after failed save.
+    // The engine must NOT have marked the session saved, so reset retries saving SESSION_A.
+    act(() => {
+      result.current.reset();
+    });
+
+    expect(saveSession).toHaveBeenCalledTimes(2);
+    expect(saveSession).toHaveBeenLastCalledWith({
+      id: SESSION_A,
+      cycleCount: 1,
+      elapsedSeconds: expect.any(Number),
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+    });
+
+    // Wait for the second save promise to settle
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Once successfully saved, an additional reset does NOT attempt another save
+    act(() => {
+      result.current.reset();
+    });
+    expect(saveSession).toHaveBeenCalledTimes(2);
+  });
+
+  it("guards against concurrent double-submission while a save is in flight", async () => {
+    const frames = createRafStub();
+    let resolveSave!: () => void;
+    const savePromise = new Promise<void>((resolve) => {
+      resolveSave = resolve;
+    });
+    const saveSession = vi.fn().mockImplementation(() => savePromise);
+
+    const { result } = renderHook(() =>
+      useBreathingEngine({
+        raf: frames.raf,
+        caf: frames.caf,
+        audio: {
+          ensure: vi.fn(),
+          playPhase: vi.fn(),
+          playCompletion: vi.fn(),
+          playTopOff: vi.fn(),
+          context: null,
+        },
+        persistence: fakePersistence({ saveSession }),
+        createSessionId: () => SESSION_A,
+      }),
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.setGoal({ kind: "cycles", cycles: 1 });
+      result.current.start();
+    });
+
+    completeCycles(frames, 16);
+    expect(saveSession).toHaveBeenCalledTimes(1);
+
+    // Concurrently trigger reset while save is still in flight
+    act(() => {
+      result.current.reset();
+    });
+    // Must NOT double-submit concurrently
+    expect(saveSession).toHaveBeenCalledTimes(1);
+
+    // Resolve the in-flight save
+    await act(async () => {
+      resolveSave();
+      await Promise.resolve();
+    });
+
+    expect(saveSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("prevents stale resolution of an earlier session from marking a new session as already saved", async () => {
+    const frames = createRafStub();
+    let resolveSessionA!: () => void;
+    const sessionAPromise = new Promise<void>((resolve) => {
+      resolveSessionA = resolve;
+    });
+
+    const saveSession = vi
+      .fn()
+      .mockImplementationOnce(() => sessionAPromise)
+      .mockImplementationOnce(async () => {});
+
+    const createSessionId = vi
+      .fn()
+      .mockReturnValueOnce(SESSION_A)
+      .mockReturnValueOnce(SESSION_B);
+
+    const { result } = renderHook(() =>
+      useBreathingEngine({
+        raf: frames.raf,
+        caf: frames.caf,
+        audio: {
+          ensure: vi.fn(),
+          playPhase: vi.fn(),
+          playCompletion: vi.fn(),
+          playTopOff: vi.fn(),
+          context: null,
+        },
+        persistence: fakePersistence({ saveSession }),
+        createSessionId,
+      }),
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Start session A with goal of 1 cycle
+    act(() => {
+      result.current.setGoal({ kind: "cycles", cycles: 1 });
+      result.current.start();
+    });
+
+    // Complete session A; saveSession is dispatched for SESSION_A and remains in flight
+    completeCycles(frames, 16);
+    expect(result.current.engine.status).toBe("completed");
+    expect(saveSession).toHaveBeenCalledTimes(1);
+    expect(saveSession).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: SESSION_A }),
+    );
+
+    // Start new session B before session A's save promise settles
+    act(() => {
+      result.current.start();
+    });
+    expect(result.current.engine.status).toBe("running");
+
+    // Settle session A's save promise successfully
+    await act(async () => {
+      resolveSessionA();
+      await Promise.resolve();
+    });
+
+    // Complete session B (cycle 1)
+    completeCycles(frames, 16);
+    expect(result.current.engine.status).toBe("completed");
+
+    // Assert that session B was NOT skipped: the stale resolution of session A
+    // must not mark session B as already saved.
+    expect(saveSession).toHaveBeenCalledTimes(2);
+    expect(saveSession).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: SESSION_B }),
+    );
+  });
+
   it("announces that a mid-session goal change applies on the next run", () => {
     const frames = createRafStub();
     const { result } = renderHook(() =>

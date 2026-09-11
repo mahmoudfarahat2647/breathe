@@ -1,8 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { BreatheApp } from "@/presentation/breathe-app";
+import {
+  BreatheApp,
+  createPersistenceWithHistory,
+} from "@/presentation/breathe-app";
 
 describe("BreatheApp", () => {
   it("renders the wordmark, announcer, decorative SVG, and controls without preset radios", () => {
@@ -254,4 +257,29 @@ describe("BreatheApp", () => {
       expect(screen.getByRole("button", { name: label })).toHaveFocus();
     }
   }, 20_000);
+
+  it("does not increment sessionSavedRevision when session save rejects and re-throws to caller", async () => {
+    const onSessionSaved = vi.fn();
+    const saveSession = vi.fn().mockRejectedValue(new Error("500 Server Error"));
+    const persistence = {
+      initialize: vi.fn(),
+      saveSettings: vi.fn(),
+      saveSession,
+    };
+    const wrapped = createPersistenceWithHistory(persistence, onSessionSaved);
+
+    const snapshot = {
+      id: "test-session",
+      cycleCount: 1,
+      elapsedSeconds: 16,
+      durations: { inhale: 4, hold: 4, exhale: 6, rest: 2 },
+    };
+
+    await expect(wrapped.saveSession(snapshot)).rejects.toThrow("500 Server Error");
+    expect(onSessionSaved).not.toHaveBeenCalled();
+
+    saveSession.mockResolvedValueOnce(undefined);
+    await expect(wrapped.saveSession(snapshot)).resolves.toBeUndefined();
+    expect(onSessionSaved).toHaveBeenCalledTimes(1);
+  });
 });
