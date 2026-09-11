@@ -8,7 +8,9 @@ import { sessionRowToHistoryRecord } from "../mappers/session-row";
 import type { BreathingSupabaseClient } from "../supabase/server-client";
 
 const PAGE_SIZE = 100;
-const MAX_PAGES = 5;
+// Runaway safety ceiling: prevents an infinite loop if pagination fails to terminate,
+// not a product limit on user session history.
+const MAX_PAGES = 1000;
 
 export class SupabaseSessionHistoryRepository implements SessionHistoryRepository {
   constructor(

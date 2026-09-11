@@ -42,6 +42,19 @@ const EDGES: { phase: Phase; label: string }[] = [
   { phase: "rest", label: "Rest" },
 ];
 
+export function createPersistenceWithHistory(
+  persistence: BreathingPersistence,
+  onSessionSaved: () => void,
+): BreathingPersistence {
+  return {
+    ...persistence,
+    async saveSession(session) {
+      await persistence.saveSession(session);
+      onSessionSaved();
+    },
+  };
+}
+
 export function BreatheApp({
   persistence = httpPersistence,
 }: {
@@ -49,13 +62,9 @@ export function BreatheApp({
 } = {}) {
   const [sessionSavedRevision, setSessionSavedRevision] = useState(0);
   const persistenceWithHistory = useMemo<BreathingPersistence>(() => {
-    return {
-      ...persistence,
-      async saveSession(session) {
-        await persistence.saveSession(session);
-        setSessionSavedRevision((revision) => revision + 1);
-      },
-    };
+    return createPersistenceWithHistory(persistence, () => {
+      setSessionSavedRevision((revision) => revision + 1);
+    });
   }, [persistence]);
 
   const engine = useBreathingEngine({ persistence: persistenceWithHistory });

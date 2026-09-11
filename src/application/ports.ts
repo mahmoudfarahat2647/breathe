@@ -16,6 +16,7 @@ export interface SettingsRepository {
 }
 
 export interface SessionRepository {
+  countByUserId(userId: string): Promise<number>;
   save(session: BreathingSessionDto): Promise<void>;
 }
 

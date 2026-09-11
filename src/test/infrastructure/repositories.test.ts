@@ -213,4 +213,84 @@ describe("SupabaseSessionRepository", () => {
       }),
     ).rejects.toBeInstanceOf(PersistenceError);
   });
+
+  it("counts sessions by user id using an exact head query", async () => {
+    let selectedTable: string | null = null;
+    let selectedColumns: string | null = null;
+    let selectedOptions: unknown;
+    let filteredColumn: string | null = null;
+    let filteredValue: unknown;
+
+    const repository = new SupabaseSessionRepository(
+      {
+        from(table: string) {
+          selectedTable = table;
+          return {
+            select(columns: string, options: unknown) {
+              selectedColumns = columns;
+              selectedOptions = options;
+              return {
+                async eq(column: string, value: unknown) {
+                  filteredColumn = column;
+                  filteredValue = value;
+                  return { count: 42, error: null };
+                },
+              };
+            },
+          };
+        },
+      } as unknown as BreathingSupabaseClient,
+    );
+
+    const count = await repository.countByUserId(USER_ID);
+    expect(count).toBe(42);
+    expect(selectedTable).toBe("breathing_sessions");
+    expect(selectedColumns).toBe("*");
+    expect(selectedOptions).toEqual({ count: "exact", head: true });
+    expect(filteredColumn).toBe("user_id");
+    expect(filteredValue).toBe(USER_ID);
+  });
+
+  it("returns 0 when count is null", async () => {
+    const repository = new SupabaseSessionRepository(
+      {
+        from() {
+          return {
+            select() {
+              return {
+                async eq() {
+                  return { count: null, error: null };
+                },
+              };
+            },
+          };
+        },
+      } as unknown as BreathingSupabaseClient,
+    );
+
+    const count = await repository.countByUserId(USER_ID);
+    expect(count).toBe(0);
+  });
+
+  it("surfaces database errors when counting sessions", async () => {
+    const repository = new SupabaseSessionRepository(
+      {
+        from() {
+          return {
+            select() {
+              return {
+                async eq() {
+                  return { count: null, error: { message: "count query failed" } };
+                },
+              };
+            },
+          };
+        },
+      } as unknown as BreathingSupabaseClient,
+    );
+
+    await expect(repository.countByUserId(USER_ID)).rejects.toBeInstanceOf(
+      PersistenceError,
+    );
+  });
 });

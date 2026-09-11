@@ -10,7 +10,9 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   globalIgnores([
+    ".claude/**",
     ".next/**",
+    "**/.next/**",
     "out/**",
     "build/**",
     "coverage/**",

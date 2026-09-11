@@ -1,18 +1,22 @@
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import * as application from "@/application/index";
+import * as domain from "@/domain/index";
+import * as infrastructure from "@/infrastructure/index";
 
 /**
  * Guardrail: domain and application modules must stay free of outer-layer packages.
  * ESLint `no-restricted-imports` and `boundaries/dependencies` enforce this at lint time.
  */
 describe("architecture boundary", () => {
-  it("domain entry exports an object without pulling React", async () => {
-    const domain = await import("@/domain/index");
+  it("domain entry exports an object without pulling React", () => {
     expect(domain).toBeTypeOf("object");
     expect("react" in domain).toBe(false);
   });
 
-  it("application use cases load without pulling React or Next.js", async () => {
-    const application = await import("@/application/index");
+  it("application use cases load without pulling React or Next.js", () => {
     expect(application).toBeTypeOf("object");
     expect("react" in application).toBe(false);
     expect("next" in application).toBe(false);
@@ -24,8 +28,6 @@ describe("architecture boundary", () => {
   });
 
   it("presentation never imports infrastructure or Supabase", async () => {
-    const { readdir, readFile } = await import("node:fs/promises");
-    const { join } = await import("node:path");
     const presentationDir = join(process.cwd(), "src", "presentation");
     const files = await readdir(presentationDir, { recursive: true });
     for (const file of files) {
@@ -36,8 +38,7 @@ describe("architecture boundary", () => {
     }
   });
 
-  it("infrastructure adapters are available without presentation imports", async () => {
-    const infrastructure = await import("@/infrastructure/index");
+  it("infrastructure adapters are available without presentation imports", () => {
     expect(typeof infrastructure.createSupabaseServerClient).toBe("function");
     expect(typeof infrastructure.SupabaseSettingsRepository).toBe("function");
     expect(typeof infrastructure.SupabaseSessionRepository).toBe("function");

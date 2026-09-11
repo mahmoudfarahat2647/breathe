@@ -20,6 +20,16 @@ export type BreathingPersistence = {
   saveSession(session: ClientSessionSnapshot): Promise<void>;
 };
 
+export class SessionPersistenceError extends Error {
+  readonly status?: number;
+
+  constructor(message: string, options?: { status?: number; cause?: unknown }) {
+    super(message, options?.cause !== undefined ? { cause: options.cause } : undefined);
+    this.name = "SessionPersistenceError";
+    this.status = options?.status;
+  }
+}
+
 const DEFAULT_PREFERENCES: BreathingPreferencesDto =
   BreathingPreferences.default().toDto();
 
@@ -119,27 +129,31 @@ export function createHttpBreathingPersistence(options?: {
     },
 
     async saveSession(session) {
-      try {
-        await awaitAuthReady();
+      await awaitAuthReady();
 
-        const postOnce = () =>
-          request("/api/sessions", {
-            method: "POST",
-            body: JSON.stringify(session),
-          });
+      const postOnce = () =>
+        request("/api/sessions", {
+          method: "POST",
+          body: JSON.stringify(session),
+        });
 
-        let response = await postOnce();
+      let response = await postOnce();
+      if (response.ok) {
+        return;
+      }
+
+      if (response.status === 401 || response.status === 403) {
+        await trackAuth(ensureAnonymous());
+        response = await postOnce();
         if (response.ok) {
           return;
         }
-
-        if (response.status === 401 || response.status === 403) {
-          await trackAuth(ensureAnonymous());
-          response = await postOnce();
-        }
-      } catch {
-        // Persistence must never block the breathing exercise.
       }
+
+      throw new SessionPersistenceError(
+        `Failed to save session (status: ${response.status})`,
+        { status: response.status },
+      );
     },
   };
 }

@@ -20,6 +20,9 @@ export async function POST(request: Request) {
     if (result.outcome === "skipped") {
       return jsonResponse(result, 202);
     }
+    if (result.outcome === "rejected") {
+      return jsonResponse(result, 429);
+    }
 
     return jsonResponse(result);
   } catch (error) {
